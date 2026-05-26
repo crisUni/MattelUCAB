@@ -5,7 +5,7 @@ services:
     image: postgres:alpine
     restart: no # TODO: Change these to always when deploying
     environment:
-      POSTGRES_DB: fundana
+      POSTGRES_DB: postgres
       POSTGRES_PASSWORD: admin
     volumes:
       - /var/lib/postgresql/data
