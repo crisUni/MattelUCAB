@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS DEPARTAMENTO(
 CREATE TABLE IF NOT EXISTS CARGO (
     car_id SERIAL PRIMARY KEY,
     car_nombre VARCHAR(100) NOT NULL,
-    car_sueldobase INT NOT NULL   
+    car_sueldobase FLOAT NOT NULL   
 )
 
 CREATE TABLE IF NOT EXISTS TURNO (
@@ -189,8 +189,173 @@ CREATE TABLE IF NOT EXISTS DEFECTO_LOTE (
 #SECTION - PRODUCTO
 
 CREATE TABLE IF NOT EXISTS CATEGORIA_PRODUCTO(
-    
+    catpro_id SERIAL PRIMARY KEY,
+    catpro_descripcion TEXT NOT NULL
 )
+
+CREATE TABLE IF NOT EXISTS EDICION (
+    edi_id SERIAL PRIMARY KEY,
+    edi_nombre VARCHAR(100) NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS PROFESION(
+    prof_id SERIAL PRIMARY KEY,
+    prof_nombre VARCHAR(100) NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS EXCLUSIVIDAD(
+    exc_id SERIAL PRIMARY KEY,
+    exc_nombre VARCHAR(100),
+    exc_limiteproducto INT
+)
+
+#TODO - ADD CHECK FOR TIPO PRODUCTO
+CREATE TABLE IF NOT EXISTS PRODUCTO (
+    fk_jug_id INT,
+    pro_id INT UNIQUE,
+    pro_sku INT NOT NULL,
+    pro_nombre VARCHAR(100) NOT NULL,
+    pro_preciobase FLOAT NOT NULL,
+    pro_lanzamientofecha DATE NOT NULL,
+    pro_tipo VARCHAR(100) NOT NULL,
+    fk_catpro_id INT NOT NULL,
+    fk_lotpro_id INT NOT NULL,
+    fk_edi_id INT NOT NULL,
+    fk_exc_id INT NOT NULL,
+
+    PRIMARY KEY(fk_jug_id, pro_id),
+    Foreign Key (fk_jug_id) REFERENCES JUGUETE(jug_id),
+    Foreign Key (fk_catpro_id) REFERENCES CATEGORIA_PRODUCTO(catpro_id),
+    Foreign Key (fk_lotpro_id) REFERENCES LOTE_PRODUCCION(lotpro_id),
+    Foreign Key (fk_edi_id) REFERENCES EDICION(edi_id),
+    Foreign Key (fk_exc_id) REFERENCES EXCLUSIVIDAD(exc_id)
+)
+
+CREATE TABLE IF NOT EXISTS DETALLE_SET(
+    fk_pro1 INT,
+    fk_pro2 INT,
+    detset_nombre VARCHAR(100) NOT NULL,
+
+    PRIMARY KEY(fk_pro1, fk_pro2),
+    Foreign Key (fk_pro1) REFERENCES PRODUCTO(pro_id),
+    Foreign Key (fk_pro2) REFERENCES PRODUCTO(pro_id)
+)
+
+CREATE TABLE IF NOT EXISTS HISTORICO_PROFESION(
+    hispro_anoasignacion VARCHAR(4) NOT NULL,
+    fk_prof_id INT,
+    fk_pro_id INT,
+
+    PRIMARY KEY(fk_pro_id, fk_prof_id),
+    Foreign Key (fk_pro_id) REFERENCES PRODUCTO (pro_id),
+    Foreign Key (fk_prof_id) REFERENCES PROFESION(prof_id)
+)
+
+#!SECTION
+#SECTION - ALMACEN
+CREATE TABLE IF NOT EXISTS HUB_REGIONAL(
+    hubreg_id SERIAL PRIMARY KEY,
+    hubreg_nombre VARCHAR(100) NOT NULL,
+    fk_lug_id INT NOT NULL,
+    Foreign Key (fk_lug_id) REFERENCES LUGAR(lug_id)
+)
+
+#TODO - ADD CHECK FOR TIPO DE INSTALACION
+CREATE TABLE IF NOT EXISTS ALMACEN (
+    alm_id SERIAL PRIMARY KEY,
+    alm_tipoinstalacion VARCHAR(100) NOT NULL,
+    fk_hubreg_id INT NOT NULL,
+    fk_lug_id INT NOT NULL,
+
+    Foreign Key (fk_hubreg_id) REFERENCES HUB_REGIONAL(hubreg_id),
+    Foreign Key (fk_lug_id) REFERENCES LUGAR(lug_id)
+)
+
+CREATE TABLE IF NOT EXISTS INVENTARIO(
+    inv_fk_jug_id INT NOT NULL,
+    inv_pro_id INT NOT NULL,
+    fk_alm_id INT NOT NULL,
+    inv_stockdisponible INT NOT NULL,
+    inv_cantidad INT NOT NULL,
+    inv_fecha_actualizacion DATE NOT NULL,
+
+    PRIMARY KEY (inv_fk_jug_id, inv_pro_id, fk_alm_id),
+    FOREIGN KEY (inv_fk_jug_id, inv_pro_id) REFERENCES PRODUCTO(fk_jug_id, pro_id),
+    FOREIGN KEY (fk_alm_id) REFERENCES ALMACEN(alm_id)
+)
+
+#!SECTION
+#SECTION - PAGO
+CREATE TABLE IF NOT EXISTS METODO_PAGO(
+    metpag_id SERIAL PRIMARY KEY
+)
+
+CREATE TABLE IF NOT EXISTS EFECTIVO(
+    fk_metpag_id FLOAT PRIMARY KEY,
+    efe_denominacion VARCHAR(50) NOT NULL,
+    Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id)
+)
+
+#emisor es el payment procesor
+CREATE TABLE IF NOT EXISTS TARJETA (
+    fk_metpag_id INT PRIMARY KEY,
+    Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id),
+    tar_numero INT NOT NULL,
+    tar_cvv INT NOT NULL,
+    tar_banco VARCHAR(100) NOT NULL,
+    tar_emisor VARCHAR(100) NOT NULL,
+    tar_fechaven DATE NOT NULL,
+    tar_titular VARCHAR(100) NOT NULL,
+    tar_tipo VARCHAR(7) NOT NULL CHECK(tar_tipo IN ('DEBITO', 'CREDITO'))
+)
+
+CREATE TABLE IF NOT EXISTS CHEQUE (
+    fk_metpag_id INT PRIMARY KEY,
+    Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id),
+    che_codigocuenta INT NOT NULL,
+    che_monto FLOAT NOT NULL,
+    che_banco VARCHAR(100) NOT NULL,
+    che_emisor VARCHAR(100) NOT NULL,
+    che_fechaemision DATE NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS DEPOSITO_BANCARIO (
+    fk_metpag_id INT PRIMARY KEY,
+    Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id),
+    depban_cuentadestino INT NOT NULL,
+    depban_bancodestino INT NOT NULL,
+    depban_fecha DATE NOT NULL,
+    depban_numref INT NOT NULL,
+    depban_monto FLOAT NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS TRANSFERENCIA(
+    fk_metpag_id INT PRIMARY KEY,
+    Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id),
+    tra_numref INT NOT NULL,
+    tra_fecha DATE NOT NULL,
+    tra_monto FLOAT NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS CRIPTOMONEDA(
+    fk_metpag_id INT PRIMARY KEY,
+    Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id),
+    cri_idtransaccion INT NOT NULL,
+    cri_fecha DATE NOT NULL,
+    cri_monto FLOAT NOT NULL,
+    cri_direcciondestino VARCHAR(100) NOT NULL,
+    cri_monedanombre VARCHAR(100) NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS BILLETERA_DIGITAL(
+    fk_metpag_id INT PRIMARY KEY,
+    Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id),
+    bildig_codigoreferencia VARCHAR(50) NOT NULL,
+    bildig_fecha DATE NOT NULL,
+    bildig_monto FLOAT NOT NULL
+)
+
+#!SECTION
 CREATE TABLE IF NOT EXISTS
 CREATE TABLE IF NOT EXISTS
 CREATE TABLE IF NOT EXISTS
@@ -207,5 +372,4 @@ CREATE TABLE IF NOT EXISTS
 CREATE TABLE IF NOT EXISTS
 CREATE TABLE IF NOT EXISTS
 CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
+
