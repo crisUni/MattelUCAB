@@ -211,8 +211,8 @@ CREATE TABLE IF NOT EXISTS EXCLUSIVIDAD(
 
 #TODO - ADD CHECK FOR TIPO PRODUCTO
 CREATE TABLE IF NOT EXISTS PRODUCTO (
-    fk_jug_id INT,
-    pro_id INT UNIQUE,
+    fk_jug_id INT NOT NULL,
+    pro_id INT PRIMARY KEY,
     pro_sku INT NOT NULL,
     pro_nombre VARCHAR(100) NOT NULL,
     pro_preciobase FLOAT NOT NULL,
@@ -223,7 +223,6 @@ CREATE TABLE IF NOT EXISTS PRODUCTO (
     fk_edi_id INT NOT NULL,
     fk_exc_id INT NOT NULL,
 
-    PRIMARY KEY(fk_jug_id, pro_id),
     Foreign Key (fk_jug_id) REFERENCES JUGUETE(jug_id),
     Foreign Key (fk_catpro_id) REFERENCES CATEGORIA_PRODUCTO(catpro_id),
     Foreign Key (fk_lotpro_id) REFERENCES LOTE_PRODUCCION(lotpro_id),
@@ -272,15 +271,14 @@ CREATE TABLE IF NOT EXISTS ALMACEN (
 )
 
 CREATE TABLE IF NOT EXISTS INVENTARIO(
-    inv_fk_jug_id INT NOT NULL,
-    inv_pro_id INT NOT NULL,
+    fk_pro_id INT NOT NULL,
     fk_alm_id INT NOT NULL,
     inv_stockdisponible INT NOT NULL,
     inv_cantidad INT NOT NULL,
     inv_fecha_actualizacion DATE NOT NULL,
 
-    PRIMARY KEY (inv_fk_jug_id, inv_pro_id, fk_alm_id),
-    FOREIGN KEY (inv_fk_jug_id, inv_pro_id) REFERENCES PRODUCTO(fk_jug_id, pro_id),
+    PRIMARY KEY (fk_pro_id, fk_alm_id),
+    FOREIGN KEY (fk_pro_id) REFERENCES PRODUCTO(pro_id),
     FOREIGN KEY (fk_alm_id) REFERENCES ALMACEN(alm_id)
 )
 
@@ -291,7 +289,7 @@ CREATE TABLE IF NOT EXISTS METODO_PAGO(
 )
 
 CREATE TABLE IF NOT EXISTS EFECTIVO(
-    fk_metpag_id FLOAT PRIMARY KEY,
+    fk_metpag_id SERIAL PRIMARY KEY,
     efe_denominacion VARCHAR(50) NOT NULL,
     Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id)
 )
@@ -356,20 +354,203 @@ CREATE TABLE IF NOT EXISTS BILLETERA_DIGITAL(
 )
 
 #!SECTION
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS
+#SECTION - CLIENTE 
+CREATE TABLE IF NOT EXISTS CLIENTE(
+    cli_id SERIAL PRIMARY KEY,
+    cli_fecharegis DATE NOT NULL,
+    fk_lug_id INT NOT NULL,
+    Foreign Key (fk_lug_id) REFERENCES LUGAR(lug_id)
+)
 
+CREATE TABLE IF NOT EXISTS PERSONA_NATURAL(
+    fk_cli_id INT PRIMARY KEY,
+    Foreign Key (fk_cli_id) REFERENCES CLIENTE(cli_id),
+    pernat_cedula INT NOT NULL,
+    pernat_pnombre VARCHAR (50) NOT NULL,
+    pernat_snombre VARCHAR (50),
+    pernat_papellido VARCHAR (50) NOT NULL,
+    pernat_sapellido VARCHAR (50) NOT NULL,
+    pernat_fechanac DATE NOT NULL,
+    pernat_direccion TEXT NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS PERSONA_JURIDICA(
+    fk_cli_id INT PRIMARY KEY,
+    Foreign Key (fk_cli_id) REFERENCES CLIENTE(cli_id),
+    perjur_rif INT NOT NULL,
+    perjur_razonsocial VARCHAR(100) NOT NULL,
+    perjur_reprelegal VARCHAR(100) NOT NULL    
+)
+
+#!SECTION
+#SECTION - USUARIOS
+CREATE TABLE IF NOT EXISTS PERMISO (
+    per_id SERIAL PRIMARY KEY,
+    per_moduloacceso VARCHAR(50) NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS ROL(
+    rol_id SERIAL PRIMARY KEY,
+    rol_nombre VARCHAR(50) NOT NULL    
+)
+
+CREATE TABLE IF NOT EXISTS USUARIO(
+    usu_id SERIAL PRIMARY KEY,
+    usu_nombre VARCHAR(50) NOT NULL,
+    usu_clave VARCHAR(50) NOT NULL,
+    usu_correo VARCHAR(50) NOT NULL,
+    fk_rol_id INT NOT NULL,
+    fk_emp_id INT,
+    fk_cli_id INT,
+
+    Foreign Key (fk_rol_id) REFERENCES ROL(rol_id),
+    Foreign Key (fk_emp_id) REFERENCES EMPLEADO(emp_id),
+    Foreign Key (fk_cli_id) REFERENCES CLIENTE(cli_id),
+    CONSTRAINT con_partial_empcli CHECK((fk_emp_id != NULL) OR (fk_cli_id != NULL))
+)
+
+#!SECTION
+#SECTION - SUBASTA
+CREATE TABLE IF NOT EXISTS PERMISO_ROL(
+    fk_rol_id INT,
+    fk_per_id INT,
+    PRIMARY KEY (fk_rol_id, fk_per_id),
+    Foreign Key (fk_rol_id) REFERENCES ROL(rol_id),
+    Foreign Key (fk_per_id) REFERENCES PERMISO(per_id)
+)
+
+CREATE TABLE IF NOT EXISTS CONDICION_SUBASTA (
+    consub_id SERIAL PRIMARY KEY,
+    consub_nombre VARCHAR(100) NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS SUBASTA (
+    sub_id SERIAL PRIMARY KEY,
+    sub_fechaini DATE NOT NULL,
+    sub_fechafin DATE NOT NULL,
+    sub_estado VARCHAR(100) NOT NULL,
+    sub_montoini FLOAT NOT NULL,
+    fk_pro_id INT NOT NULL,
+    fk_consub_id INT NOT NULL,
+
+    Foreign Key (fk_pro_id) REFERENCES PRODUCTO(pro_id),
+    Foreign Key (fk_consub_id) REFERENCES CONDICION_SUBASTA(consub_id)
+)
+
+CREATE TABLE IF NOT EXISTS PUJA_SUBASTA (
+    pujsub_id SERIAL PRIMARY KEY,
+    pujsub_monto FLOAT NOT NULL,
+    pujsub_fechahor DATE NOT NULL,
+    fk_usu_id INT NOT NULL,
+    fk_sub_id INT NOT NULL,
+    Foreign Key (fk_usu_id) REFERENCES USUARIO(usu_id),
+    Foreign Key (fk_sub_id) REFERENCES SUBASTA(sub_id)
+)
+
+#!SECTION
+#SECTION - COMPRA  
+#NOTE - wtf is plazo pago???
+CREATE TABLE IF NOT EXISTS ACUERDO_COMERCIAL (
+    acucom_id SERIAL PRIMARY KEY,
+    acucom_limitecredito INT NOT NULL,
+    acucom_plazopago INT NOT NULL,
+    acucom_descuentomayorista INT NOT NULL,
+    fk_perjur_id INT NOT NULL,
+    Foreign Key (fk_perjur_id) REFERENCES PERSONA_JURIDICA(fk_cli_id)
+)
+
+CREATE TABLE IF NOT EXISTS TRANSPORTISTA (
+    tra_id SERIAL PRIMARY KEY,
+    tra_empresa VARCHAR(100) NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS COMPRA(
+    com_id SERIAL PRIMARY KEY,
+    com_fechahor DATE NOT NULL,
+    com_numfactura INT NOT NULL,
+    com_subtotal FLOAT NOT NULL,
+    com_total FLOAT NOT NULL,
+    fk_tra_id INT NOT NULL,
+    fk_acucom_id INT NOT NULL,
+    fk_usu_id INT NOT NULL,
+    fk_lug_id INT NOT NULL,
+
+    Foreign Key (fk_tra_id) REFERENCES TRANSPORTISTA(tra_id),
+    Foreign Key (fk_acucom_id) REFERENCES ACUERDO_COMERCIAL(acucom_id),
+    Foreign Key (fk_usu_id) REFERENCES USUARIO(usu_id),
+    Foreign Key (fk_lug_id) REFERENCES LUGAR(lug_id)
+)
+
+CREATE TABLE IF NOT EXISTS ESTATUS_COMPRA(
+    estcom_id SERIAL PRIMARY KEY,
+    estcom_nom VARCHAR(100) NOT NULL,
+    estcom_fechahoracierre DATE NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS HISTORIO_ESTATUS (
+    hisest_fechahora DATE NOT NULL,
+    fk_estcom_id INT,
+    fk_com_id INT,
+    PRIMARY KEY(fk_estcom_id, fk_com_id),
+    Foreign Key (fk_estcom_id) REFERENCES ESTATUS_COMPRA(estcom_id),
+    Foreign Key (fk_com_id) REFERENCES COMPRA(com_id)
+)
+
+CREATE TABLE IF NOT EXISTS DESCUENTO(
+    des_id SERIAL PRIMARY KEY,
+    des_nombre VARCHAR(100) NOT NULL,
+    des_porcentaje FLOAT NOT NULL,
+    des_fechaven DATE
+)
+
+CREATE TABLE IF NOT EXISTS DESCUENTO_COMPRA(
+    fk_des_id INT,
+    fk_com_id INT,
+    PRIMARY KEY(fk_des_id, fk_com_id),
+    Foreign Key (fk_des_id) REFERENCES DESCUENTO(des_id),
+    Foreign Key (fk_com_id) REFERENCES COMPRA(com_id)
+)
+
+CREATE TABLE IF NOT EXISTS HISTORICO_TASA_CAMBIO(
+    histascam_id SERIAL PRIMARY KEY,
+    histascam_monedaoriginal VARCHAR(100) NOT NULL,
+    histascam_monedaconvertida VARCHAR(100) NOT NULL,
+    histascam_fecha DATE NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS PAGO(
+    pag_id INT,
+    pag_monto FLOAT NOT NULL,
+    pag_fecha DATE NOT NULL,
+    fk_com_id INT,
+    fk_metpag_id INT,
+    PRIMARY KEY(pag_id,fk_com_id, fk_metpag_id),
+    Foreign Key (fk_com_id) REFERENCES COMPRA(com_id),
+    Foreign Key (fk_metpag_id) REFERENCES METODO_PAGO(metpag_id)
+)
+
+CREATE TABLE IF NOT EXISTS DETALLE_COMPRA(
+    detcom_cantidad INT NOT NULL,
+    fk_com_id INT,
+    fk_pro_id INT,
+    fk_alm_id INT,
+    Foreign Key (fk_com_id) REFERENCES COMPRA(com_id),
+    FOREIGN KEY (fk_pro_id, fk_alm_id) REFERENCES INVENTARIO(fk_pro_id, fk_alm_id)
+)
+
+
+CREATE TABLE IF NOT EXISTS MEMBRESIA(
+    mem_id SERIAL PRIMARY KEY,
+    mem_nombre VARCHAR(100) NOT NULL,
+    mem_descuento FLOAT NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS HISTORICO_MEMBRESIA(
+    hismem_fechaini DATE NOT NULL,
+    hismem_fechafin DATE,
+    fk_mem_id INT,
+    fk_cli_id INT,
+    PRIMARY KEY(fk_mem_id, fk_cli_id),
+    Foreign Key (fk_mem_id) REFERENCES MEMBRESIA(mem_id),
+    FOREIGN KEY (fk_cli_id) REFERENCES CLIENTE(cli_id)
+)
