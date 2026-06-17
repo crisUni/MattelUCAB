@@ -183,8 +183,10 @@ CREATE TABLE IF NOT EXISTS INSPECCION_CALIDAD (
     inscal_fecha DATE NOT NULL,
     inscal_resultado VARCHAR(50) NOT NULL,  -- CORREGIDO: obligatorio (*) según el ER
     fk_lotpro_id INT,
-    FOREIGN KEY (fk_lotpro_id) REFERENCES LOTE_PRODUCCION (lotpro_id)
-);
+    fk_emp_ip INT NOT NULL,
+    FOREIGN KEY (fk_lotpro_id) REFERENCES LOTE_PRODUCCION(lotpro_id),
+    Foreign Key (fk_emp_id) REFERENCES EMPLEADO(emp_id)
+)
 
 CREATE TABLE IF NOT EXISTS DEFECTO (
     def_id SERIAL PRIMARY KEY,
@@ -494,7 +496,7 @@ CREATE TABLE IF NOT EXISTS COMPRA (
     com_subtotal FLOAT NOT NULL,
     com_total FLOAT NOT NULL,
     fk_tra_id INT NOT NULL,
-    fk_acucom_id INT NOT NULL,
+    fk_acucom_id INT,
     fk_usu_id INT NOT NULL,
     fk_lug_id INT NOT NULL,
     FOREIGN KEY (fk_tra_id) REFERENCES TRANSPORTISTA (tra_id),
