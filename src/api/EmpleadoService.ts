@@ -42,7 +42,7 @@ class RolService{
 
         // TODO - return every employee and their role in the given department
         "/api/departamento/:id": {
-            GET: async (_: Bun.BunRequest<"/api/form/departamento">) => {
+            GET: async (req: Bun.BunRequest<"/api/form/departamento">) => {
                 let found: []
 
                 if (!Number.isInteger(Number(req.params.id)))
@@ -67,7 +67,7 @@ class RolService{
         //NOTE - change so that you can see what department and role the employee has
         "/api/empleado/:id": {
             GET: async (req: Bun.BunRequest<"/api/persona/:id">) => {
-                let found: Permiso_Rol[]
+                let found: []
 
                 if (!Number.isInteger(Number(req.params.id)))
                     return new Response("Id of rol must be valid integer", { status: 400 })
@@ -115,12 +115,12 @@ class RolService{
                     return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
                 return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
             }
-        }
+        },
 
         //TODO - make this work
         "/api/empleado/:id/turnos": {
-            GET: async (req: Bun.BunRequest<"/api/persona/:id">) => {
-                let found: Permiso_Rol[]
+            GET: async (req: Bun.BunRequest<"/api/persona/:id/turnos">) => {
+                let found: []
 
                 if (!Number.isInteger(Number(req.params.id)))
                     return new Response("Id of rol must be valid integer", { status: 400 })
