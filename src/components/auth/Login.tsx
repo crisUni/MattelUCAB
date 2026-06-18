@@ -64,6 +64,7 @@ export function Login() {
   ): Promise<void> => {
     event.preventDefault();
     await loginUser({ email, password });
+    navigateWithTransition("/app");
   };
 
   return (

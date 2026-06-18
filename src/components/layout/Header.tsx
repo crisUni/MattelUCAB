@@ -60,14 +60,6 @@ export function Header({
           <button
             className="app-header__nav-button"
             type="button"
-            onClick={onShopClick}
-            disabled={shopDisabled}
-          >
-            Shop Barbie
-          </button>
-          <button
-            className="app-header__nav-button"
-            type="button"
             onClick={onDesignClick}
             disabled={designDisabled}
           >
