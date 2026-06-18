@@ -1,4 +1,4 @@
-import type { ReglaCompatibilidad, Dreamhouse, Pack } from "../types";
+import type { ReglaCompatibilidad, Pack } from "../types";
 
 /** Reglas de "fits" — la lógica crítica de compatibilidad. */
 export const reglasCompatibilidad: ReglaCompatibilidad[] = [
@@ -36,37 +36,6 @@ export const reglasCompatibilidad: ReglaCompatibilidad[] = [
     id: "fit-7", nombre: "Cocina interactiva → Dreamhouse 2020",
     origen: "Set Cocina Interactiva (baterías)", destino: "Dreamhouse 2020",
     resultado: "COMPATIBLE", motivo: "Mobiliario interactivo con compartimento de baterías compatible.",
-  },
-];
-
-export const dreamhouses: Dreamhouse[] = [
-  {
-    id: "dh-2020", nombre: "Dreamhouse 2020", anio: 2020,
-    vehiculosCompatibles: ["Convertible Rosa 2020"],
-    ambientes: [
-      { id: "amb-cocina", nombre: "Cocina", mobiliario: [
-        { id: "mob-1", nombre: "Isla de cocina", usaBaterias: false },
-        { id: "mob-2", nombre: "Horno con luz", usaBaterias: true },
-      ]},
-      { id: "amb-dorm", nombre: "Dormitorio", mobiliario: [
-        { id: "mob-3", nombre: "Cama litera", usaBaterias: false },
-      ]},
-      { id: "amb-piscina", nombre: "Piscina", mobiliario: [
-        { id: "mob-4", nombre: "Tobogán con luces", usaBaterias: true },
-      ]},
-    ],
-  },
-  {
-    id: "dh-1990", nombre: "Magical Mansion 1990", anio: 1990,
-    vehiculosCompatibles: ["Magical Motorhome Camper"],
-    ambientes: [
-      { id: "amb-salon", nombre: "Salón", mobiliario: [
-        { id: "mob-5", nombre: "Sofá clásico", usaBaterias: false },
-      ]},
-      { id: "amb-garaje", nombre: "Garaje", mobiliario: [
-        { id: "mob-6", nombre: "Elevador manual", usaBaterias: false },
-      ]},
-    ],
   },
 ];
 

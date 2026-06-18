@@ -28,7 +28,7 @@ export function Footer() {
           </div>
 
           <FooterCol title="Plataforma" icon={<IconShield className="h-4 w-4" />} items={["Usuarios & Roles", "Privilegios", "Matriz de permisos", "Simulador de sesión"]} />
-          <FooterCol title="Genoma Barbie" icon={<IconDna className="h-4 w-4" />} items={["Catálogo ADN", "Reglas de fits", "Multiverso laboral", "Dreamhouses"]} />
+          <FooterCol title="Genoma Barbie" icon={<IconDna className="h-4 w-4" />} items={["Catálogo ADN", "Reglas de fits", "Multiverso laboral", "Packs"]} />
           <FooterCol title="Inteligencia" icon={<IconReport className="h-4 w-4" />} items={["Rentabilidad por ADN", "Índice de diversidad", "Monitor de scalpers", "Documentos"]} />
         </div>
       </div>

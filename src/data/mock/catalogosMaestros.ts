@@ -1,8 +1,7 @@
 import type {
   MoldeRostro,
   TipoCuerpo,
-  TonoPiel,
-  ColorMaestro,
+  Color,
   Material,
   Era,
   Exclusividad,
@@ -27,25 +26,29 @@ export const tiposCuerpo: TipoCuerpo[] = [
   { id: "body-mtm", nombre: "Made-to-Move", descripcion: "22 puntos de articulación, pie plano deportivo.", formaPie: "PLANO", articulado: true },
 ];
 
-export const tonosPiel: TonoPiel[] = [
-  { id: "skin-claro", nombre: "Claro", hex: "#f7d9c4" },
-  { id: "skin-medio", nombre: "Medio", hex: "#e0ac90" },
-  { id: "skin-bronceado", nombre: "Bronceado", hex: "#c68a63" },
-  { id: "skin-oscuro", nombre: "Oscuro", hex: "#8d5524" },
-  { id: "skin-fantasia", nombre: "Fantasía", hex: "#b388eb" },
-];
-
-export const coloresMaestros: ColorMaestro[] = [
-  { id: "col-azul", nombre: "Azul Zafiro", hex: "#2a6ad4", zona: "Ojos" },
-  { id: "col-verde", nombre: "Verde Esmeralda", hex: "#1f9e6a", zona: "Ojos" },
-  { id: "col-marron", nombre: "Marrón Avellana", hex: "#7a4b1e", zona: "Ojos" },
-  { id: "col-violeta", nombre: "Violeta Fantasía", hex: "#8b1a9b", zona: "Ojos" },
-  { id: "col-rubio", nombre: "Rubio Platino", hex: "#e9d8a6", zona: "Cabello" },
-  { id: "col-castano", nombre: "Castaño", hex: "#5a3825", zona: "Cabello" },
-  { id: "col-negro", nombre: "Negro Azabache", hex: "#1c1c1c", zona: "Cabello" },
-  { id: "col-rojo", nombre: "Rojo Carmesí", hex: "#c1272d", zona: "Labios" },
-  { id: "col-rosa", nombre: "Rosa Malibú", hex: "#ff6fae", zona: "Vestuario" },
-  { id: "col-fucsia", nombre: "Fucsia Dream", hex: "#e2237c", zona: "Vestuario" },
+/**
+ * Catálogo único de colores (entidad `Color` del ER). La zona de aplicación NO es
+ * intrínseca al color: se decide al aplicarlo a un producto (ver `Producto.colores`).
+ * Los antiguos "tonos de piel" ahora son simplemente colores que se aplican en zona PIEL.
+ */
+export const colores: Color[] = [
+  // Tonos usados típicamente en piel
+  { id: "col-piel-claro", nombre: "Piel Clara", hex: "#f7d9c4" },
+  { id: "col-piel-medio", nombre: "Piel Media", hex: "#e0ac90" },
+  { id: "col-piel-bronceado", nombre: "Piel Bronceada", hex: "#c68a63" },
+  { id: "col-piel-oscuro", nombre: "Piel Oscura", hex: "#8d5524" },
+  { id: "col-piel-fantasia", nombre: "Piel Fantasía", hex: "#b388eb" },
+  // Ojos / cabello / labios / vestuario
+  { id: "col-azul", nombre: "Azul Zafiro", hex: "#2a6ad4" },
+  { id: "col-verde", nombre: "Verde Esmeralda", hex: "#1f9e6a" },
+  { id: "col-marron", nombre: "Marrón Avellana", hex: "#7a4b1e" },
+  { id: "col-violeta", nombre: "Violeta Fantasía", hex: "#8b1a9b" },
+  { id: "col-rubio", nombre: "Rubio Platino", hex: "#e9d8a6" },
+  { id: "col-castano", nombre: "Castaño", hex: "#5a3825" },
+  { id: "col-negro", nombre: "Negro Azabache", hex: "#1c1c1c" },
+  { id: "col-rojo", nombre: "Rojo Carmesí", hex: "#c1272d" },
+  { id: "col-rosa", nombre: "Rosa Malibú", hex: "#ff6fae" },
+  { id: "col-fucsia", nombre: "Fucsia Dream", hex: "#e2237c" },
 ];
 
 export const materiales: Material[] = [
@@ -61,17 +64,17 @@ export const materiales: Material[] = [
 ];
 
 export const eras: Era[] = [
-  { id: "era-vintage", codigo: "VINTAGE", nombre: "Vintage", rango: "1959–1966", descripcion: "Los orígenes: ponytail, swirl y bubblecut." },
-  { id: "era-mod", codigo: "MOD", nombre: "Mod Era", rango: "1967–1972", descripcion: "Twist 'N Turn, estética mod y colores vivos." },
-  { id: "era-superstar", codigo: "SUPERSTAR", nombre: "Superstar Era", rango: "1977–1994", descripcion: "Glamour disco, la sonrisa Superstar y el rosa como firma." },
-  { id: "era-modern", codigo: "MODERN", nombre: "Modern Era", rango: "1995–hoy", descripcion: "Articulación, diversidad y líneas de colección." },
+  { id: "era-vintage", nombre: "Vintage", fechaInicio: 1959, fechaFin: 1966, descripcion: "Los orígenes: ponytail, swirl y bubblecut." },
+  { id: "era-mod", nombre: "Mod Era", fechaInicio: 1967, fechaFin: 1972, descripcion: "Twist 'N Turn, estética mod y colores vivos." },
+  { id: "era-superstar", nombre: "Superstar Era", fechaInicio: 1977, fechaFin: 1994, descripcion: "Glamour disco, la sonrisa Superstar y el rosa como firma." },
+  { id: "era-modern", nombre: "Modern Era", fechaInicio: 1995, fechaFin: null, descripcion: "Articulación, diversidad y líneas de colección." },
 ];
 
 export const exclusividades: Exclusividad[] = [
-  { id: "exc-pink", codigo: "PINK", nombre: "Pink Label", tiradaMax: null, descripcion: "Línea masiva de distribución general." },
-  { id: "exc-black", codigo: "BLACK", nombre: "Black Label", tiradaMax: 50000, descripcion: "Coleccionista, sin restricción numérica estricta." },
-  { id: "exc-gold", codigo: "GOLD", nombre: "Gold Label", tiradaMax: 25000, descripcion: "Edición limitada a menos de 25.000 unidades." },
-  { id: "exc-platinum", codigo: "PLATINUM", nombre: "Platinum Label", tiradaMax: 1000, descripcion: "Ultra exclusiva, menos de 1.000 unidades. Acceso a subastas." },
+  { id: "exc-pink", codigo: "PINK", nombre: "Pink Label", tiradaMax: null },
+  { id: "exc-black", codigo: "BLACK", nombre: "Black Label", tiradaMax: 50000 },
+  { id: "exc-gold", codigo: "GOLD", nombre: "Gold Label", tiradaMax: 25000 },
+  { id: "exc-platinum", codigo: "PLATINUM", nombre: "Platinum Label", tiradaMax: 1000 },
 ];
 
 export const monedas: Moneda[] = [

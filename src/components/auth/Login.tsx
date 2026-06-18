@@ -9,7 +9,7 @@ import "../../styles/auth/Login.css";
  * @returns Estructura JSX con el formulario de inicio de sesión.
  */
 export function Login() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [transitionState, setTransitionState] = useState<
     "enter" | "entered" | "exit"
@@ -63,7 +63,7 @@ export function Login() {
     event: FormEvent<HTMLFormElement>
   ): Promise<void> => {
     event.preventDefault();
-    await loginUser({ email, password });
+    await loginUser({ username, password });
     navigateWithTransition("/app");
   };
 
@@ -83,21 +83,21 @@ export function Login() {
             <div className="auth-form-header">
               <h2 className="auth-form__title">Inicia sesión</h2>
               <p className="auth-form__subtitle">
-                Usa tu correo y contraseña para continuar.
+                Usa tu usuario y contraseña para continuar.
               </p>
             </div>
             <form className="auth-form" onSubmit={handleSubmit}>
               <div className="auth-field">
-                <label className="auth-label" htmlFor="login-email">
-                  Correo Electronico
+                <label className="auth-label" htmlFor="login-username">
+                  Usuario
                 </label>
                 <input
                   className="auth-input"
-                  id="login-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  id="login-username"
+                  type="text"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
                   required
                 />
               </div>
@@ -121,16 +121,6 @@ export function Login() {
                 <button className="auth-button" type="submit">
                   Iniciar Sesion
                 </button>
-                <p className="auth-helper">
-                  <span>No eres parte de la familia Mattel?</span>
-                  <button
-                    className="auth-link"
-                    type="button"
-                    onClick={() => navigateWithTransition("/register")}
-                  >
-                    Crea tu cuenta!
-                  </button>
-                </p>
               </div>
             </form>
           </div>

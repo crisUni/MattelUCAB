@@ -1,9 +1,9 @@
 import { useState } from "react";
 import type {
-  MoldeRostro, TipoCuerpo, TonoPiel, ColorMaestro, Material, Era, Exclusividad,
+  MoldeRostro, TipoCuerpo, Color, Material, Era, Exclusividad,
 } from "../../../data/types";
 import {
-  getMoldesRostro, getTiposCuerpo, getTonosPiel, getColores, getMateriales, getEras, getExclusividades,
+  getMoldesRostro, getTiposCuerpo, getColores, getMateriales, getEras, getExclusividades,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { MasterCrud, type FieldDef } from "./MasterCrud";
@@ -13,7 +13,6 @@ import { IconLayers } from "../../ui/icons";
 const SUBS = [
   { id: "moldes", label: "Moldes de rostro" },
   { id: "cuerpos", label: "Tipos de cuerpo" },
-  { id: "tonos", label: "Tonos de piel" },
   { id: "colores", label: "Colores" },
   { id: "materiales", label: "Materiales (BOM)" },
   { id: "eras", label: "Eras" },
@@ -36,7 +35,6 @@ export function MaestrosTab() {
 
       {sub === "moldes" && <Moldes />}
       {sub === "cuerpos" && <Cuerpos />}
-      {sub === "tonos" && <Tonos />}
       {sub === "colores" && <Colores />}
       {sub === "materiales" && <Materiales />}
       {sub === "eras" && <Eras />}
@@ -77,26 +75,15 @@ function Cuerpos() {
     ]} />;
 }
 
-function Tonos() {
-  const { data, setData, loading } = useAsyncData<TonoPiel[]>(getTonosPiel);
-  const fields: FieldDef[] = [{ key: "nombre", label: "Nombre" }, { key: "hex", label: "Color", type: "color" }];
-  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Tono de piel" idPrefix="skin" blank={() => ({ id: "", nombre: "", hex: "#e0ac90" })} fields={fields}
-    columns={[
-      { key: "nombre", header: "Tono", sortValue: (t) => t.nombre, searchValue: (t) => t.nombre, cell: (t) => <span className="font-semibold text-navy-700">{t.nombre}</span> },
-      { key: "hex", header: "Muestra", cell: (t) => <span className="flex items-center gap-2"><span className="h-6 w-6 rounded-full ring-1 ring-slate-200" style={{ background: t.hex }} /><span className="font-mono text-xs text-slate-400">{t.hex}</span></span> },
-    ]} />;
-}
-
 function Colores() {
-  const { data, setData, loading } = useAsyncData<ColorMaestro[]>(getColores);
+  const { data, setData, loading } = useAsyncData<Color[]>(getColores);
+  // La zona de aplicación NO vive en el color: se asigna al producto (Producto.colores).
   const fields: FieldDef[] = [
     { key: "nombre", label: "Nombre" }, { key: "hex", label: "Color", type: "color" },
-    { key: "zona", label: "Zona de aplicación", type: "select", options: ["Ojos", "Cabello", "Labios", "Vestuario"].map((z) => ({ value: z, label: z })) },
   ];
-  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Color" idPrefix="col" blank={() => ({ id: "", nombre: "", hex: "#e2237c", zona: "Vestuario" })} fields={fields}
+  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Color" idPrefix="col" blank={() => ({ id: "", nombre: "", hex: "#e2237c" })} fields={fields}
     columns={[
-      { key: "nombre", header: "Color", sortValue: (c) => c.nombre, searchValue: (c) => `${c.nombre} ${c.zona}`, cell: (c) => <span className="flex items-center gap-2"><span className="h-6 w-6 rounded-full ring-1 ring-slate-200" style={{ background: c.hex }} /><span className="font-semibold text-navy-700">{c.nombre}</span></span> },
-      { key: "zona", header: "Zona", sortValue: (c) => c.zona, cell: (c) => <Badge tone="slate">{c.zona}</Badge> },
+      { key: "nombre", header: "Color", sortValue: (c) => c.nombre, searchValue: (c) => c.nombre, cell: (c) => <span className="flex items-center gap-2"><span className="h-6 w-6 rounded-full ring-1 ring-slate-200" style={{ background: c.hex }} /><span className="font-semibold text-navy-700">{c.nombre}</span></span> },
       { key: "hex", header: "Hex", align: "right", cell: (c) => <span className="font-mono text-xs text-slate-400">{c.hex}</span> },
     ]} />;
 }
@@ -121,12 +108,15 @@ function Materiales() {
 function Eras() {
   const { data, setData, loading } = useAsyncData<Era[]>(getEras);
   const fields: FieldDef[] = [
-    { key: "nombre", label: "Nombre" }, { key: "rango", label: "Rango de años" }, { key: "descripcion", label: "Descripción" },
+    { key: "nombre", label: "Nombre" },
+    { key: "fechaInicio", label: "Año de inicio", type: "number" },
+    { key: "fechaFin", label: "Año de fin (vacío = en curso)", type: "number" },
+    { key: "descripcion", label: "Descripción" },
   ];
-  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Era" idPrefix="era" blank={(): Era => ({ id: "", codigo: "MODERN", nombre: "", rango: "", descripcion: "" })} fields={fields}
+  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Era" idPrefix="era" blank={(): Era => ({ id: "", nombre: "", fechaInicio: new Date().getFullYear(), fechaFin: null, descripcion: "" })} fields={fields}
     columns={[
       { key: "nombre", header: "Era", sortValue: (e) => e.nombre, searchValue: (e) => e.nombre, cell: (e) => <span className="font-semibold text-navy-700">{e.nombre}</span> },
-      { key: "rango", header: "Rango", align: "center", cell: (e) => <Badge tone="navy">{e.rango}</Badge> },
+      { key: "rango", header: "Rango", align: "center", sortValue: (e) => e.fechaInicio, cell: (e) => <Badge tone="navy">{e.fechaInicio}–{e.fechaFin ?? "hoy"}</Badge> },
       { key: "desc", header: "Descripción", cell: (e) => <span className="text-sm text-slate-500">{e.descripcion}</span> },
     ]} />;
 }
@@ -134,12 +124,11 @@ function Eras() {
 function Exclusividades() {
   const { data, setData, loading } = useAsyncData<Exclusividad[]>(getExclusividades);
   const fields: FieldDef[] = [
-    { key: "nombre", label: "Nombre" }, { key: "tiradaMax", label: "Tirada máxima (vacío = masiva)", type: "number" }, { key: "descripcion", label: "Descripción" },
+    { key: "nombre", label: "Nombre" }, { key: "tiradaMax", label: "Tirada máxima (vacío = masiva)", type: "number" },
   ];
-  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Exclusividad" idPrefix="exc" blank={(): Exclusividad => ({ id: "", codigo: "PINK", nombre: "", tiradaMax: null, descripcion: "" })} fields={fields}
+  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Exclusividad" idPrefix="exc" blank={(): Exclusividad => ({ id: "", codigo: "PINK", nombre: "", tiradaMax: null })} fields={fields}
     columns={[
       { key: "label", header: "Label", sortValue: (e) => e.codigo, searchValue: (e) => e.nombre, cell: (e) => <LabelChip codigo={e.codigo} /> },
       { key: "tirada", header: "Tirada máx.", align: "right", sortValue: (e) => e.tiradaMax ?? Infinity, cell: (e) => e.tiradaMax ? <span className="font-semibold text-navy-700">{e.tiradaMax.toLocaleString()}</span> : <Badge tone="green">Masiva</Badge> },
-      { key: "desc", header: "Descripción", cell: (e) => <span className="text-sm text-slate-500">{e.descripcion}</span> },
     ]} />;
 }

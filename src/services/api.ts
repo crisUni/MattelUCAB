@@ -14,17 +14,17 @@
  */
 import type {
   Usuario, Rol, Permiso,
-  Producto, MoldeRostro, TipoCuerpo, TonoPiel, ColorMaestro, Material, Era, Exclusividad,
-  ReglaCompatibilidad, Dreamhouse, Pack, Personaje, Profesion, Moneda,
+  Producto, MoldeRostro, TipoCuerpo, Color, Material, Era, Exclusividad,
+  ReglaCompatibilidad, Pack, Personaje, Profesion, Moneda,
   RentabilidadADN, DiversidadFila, ActividadSospechosa,
 } from "../data/types";
 
 import { usuarios, roles, permisos } from "../data/mock/seguridad";
 import {
-  moldesRostro, tiposCuerpo, tonosPiel, coloresMaestros, materiales, eras, exclusividades, monedas,
+  moldesRostro, tiposCuerpo, colores, materiales, eras, exclusividades, monedas,
 } from "../data/mock/catalogosMaestros";
 import { productos } from "../data/mock/productos";
-import { reglasCompatibilidad, dreamhouses, packs } from "../data/mock/catalogoExtra";
+import { reglasCompatibilidad, packs } from "../data/mock/catalogoExtra";
 import { personajes, profesiones } from "../data/mock/personajes";
 import { rentabilidadADN, diversidad, actividadSospechosa } from "../data/mock/reportes";
 
@@ -50,8 +50,7 @@ export const getPermisos = () => delay(permisos);
 export const getProductos = () => delay(productos);
 export const getMoldesRostro = () => delay(moldesRostro);
 export const getTiposCuerpo = () => delay(tiposCuerpo);
-export const getTonosPiel = () => delay(tonosPiel);
-export const getColores = () => delay(coloresMaestros);
+export const getColores = () => delay(colores);
 export const getMateriales = () => delay(materiales);
 export const getEras = () => delay(eras);
 export const getExclusividades = () => delay(exclusividades);
@@ -59,7 +58,6 @@ export const getMonedas = () => delay(monedas);
 
 /* --------------------------- Catálogo extra -------------------------- */
 export const getReglasCompatibilidad = () => delay(reglasCompatibilidad);
-export const getDreamhouses = () => delay(dreamhouses);
 export const getPacks = () => delay(packs);
 export const getPersonajes = () => delay(personajes);
 export const getProfesiones = () => delay(profesiones);
@@ -76,8 +74,8 @@ export const getActividadSospechosa = () => delay(actividadSospechosa);
  * --------------------------------------------------------------------- */
 export type Entidad =
   | Usuario | Rol | Permiso | Producto | MoldeRostro | TipoCuerpo
-  | TonoPiel | ColorMaestro | Material | Era | Exclusividad
-  | ReglaCompatibilidad | Dreamhouse | Pack | Personaje | Profesion
+  | Color | Material | Era | Exclusividad
+  | ReglaCompatibilidad | Pack | Personaje | Profesion
   | RentabilidadADN | DiversidadFila | ActividadSospechosa;
 
 export function nuevoId(prefijo: string): string {

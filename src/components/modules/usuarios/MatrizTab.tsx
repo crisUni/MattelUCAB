@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Rol, Permiso } from "../../../data/types";
 import { getRoles, getPermisos } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
-import { Card, Badge, SectionHeader, TableSkeleton } from "../../ui/primitives";
+import { Card, SectionHeader, TableSkeleton } from "../../ui/primitives";
 import { IconGrid, IconCheck, IconClose } from "../../ui/icons";
 
 export function MatrizTab() {
@@ -32,7 +32,7 @@ export function MatrizTab() {
       <SectionHeader
         icon={<IconGrid className="h-5 w-5" />}
         title="Matriz de Permisos"
-        subtitle="Asigna permisos a cada rol con un toque. Las columnas se tiñen por ámbito: Back-Office (navy) vs Front-Office (magenta)."
+        subtitle="Asigna permisos a cada rol con un toque."
       />
 
       <Card className="overflow-hidden">
@@ -42,9 +42,9 @@ export function MatrizTab() {
               <tr>
                 <th className="sticky left-0 z-10 bg-white px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Permiso \ Rol</th>
                 {current.map((r) => (
-                  <th key={r.id} className={`min-w-[92px] px-2 py-3 text-center ${r.ambito === "BACK_OFFICE" ? "bg-navy-50" : "bg-brand-50"}`}>
+                  <th key={r.id} className="min-w-[92px] bg-slate-50 px-2 py-3 text-center">
                     <div className="mx-auto flex w-20 flex-col items-center gap-1">
-                      <span className={`grid h-7 w-7 place-items-center rounded-lg text-[10px] font-bold text-white ${r.ambito === "BACK_OFFICE" ? "bg-navy-600" : "bg-brand-500"}`}>{r.nombre.slice(0, 2).toUpperCase()}</span>
+                      <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-500 text-[10px] font-bold text-white">{r.nombre.slice(0, 2).toUpperCase()}</span>
                       <span className="line-clamp-2 text-[10px] font-semibold leading-tight text-navy-700">{r.nombre}</span>
                     </div>
                   </th>
@@ -56,14 +56,14 @@ export function MatrizTab() {
                 <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50/60">
                   <td className="sticky left-0 z-10 bg-white px-4 py-2.5">
                     <div className="leading-tight">
-                      <p className="flex items-center gap-1.5 text-sm font-semibold text-navy-700">{p.nombre}{p.sensible && <Badge tone="red">sensible</Badge>}</p>
+                      <p className="text-sm font-semibold text-navy-700">{p.nombre}</p>
                       <p className="text-[11px] text-slate-400">{p.modulo}</p>
                     </div>
                   </td>
                   {current.map((r) => {
                     const on = r.permisosIds.includes(p.id);
                     return (
-                      <td key={r.id} className={`px-2 py-2.5 text-center ${r.ambito === "BACK_OFFICE" ? "bg-navy-50/40" : "bg-brand-50/40"}`}>
+                      <td key={r.id} className="px-2 py-2.5 text-center">
                         <button
                           onClick={() => toggle(r.id, p.id)}
                           aria-pressed={on}
@@ -81,10 +81,8 @@ export function MatrizTab() {
         </div>
       </Card>
 
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-navy-600" /> Back-Office (interno)</span>
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-brand-500" /> Front-Office (externo)</span>
-        <span className="flex items-center gap-1.5"><Badge tone="red">sensible</Badge> Costos / márgenes — segregación estricta</span>
+      <div className="mt-4 text-xs text-slate-500">
+        El acceso al módulo <b>Costos</b> habilita ver los costos de producción.
       </div>
     </div>
   );

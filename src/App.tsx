@@ -1,5 +1,4 @@
 import { Login } from "./components/auth/Login";
-import { Register } from "./components/auth/Register";
 import { Header } from "./components/layout/Header";
 import { Dashboard } from "./pages/Dashboard";
 import { SessionProvider } from "./context/SessionContext";
@@ -20,7 +19,7 @@ function Shell() {
       <main className="app-page" role="main">
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* Registro oculto por ahora: el alta de usuarios se hace desde el módulo de Usuarios. */}
           <Route path="/app" element={<Dashboard />} />
         </Routes>
       </main>

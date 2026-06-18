@@ -1,13 +1,13 @@
 import { useState } from "react";
-import type { Rol, Permiso, Ambito } from "../../../data/types";
+import type { Rol, Permiso } from "../../../data/types";
 import { getRoles, getPermisos, guardar, eliminar, nuevoId } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
-import { Badge, Button, Field, TextInput, Select, Toggle, SectionHeader } from "../../ui/primitives";
+import { Badge, Button, Field, TextInput, Toggle, SectionHeader } from "../../ui/primitives";
 import { IconPlus, IconEdit, IconTrash, IconShield } from "../../ui/icons";
 
-const formVacio: Rol = { id: "", nombre: "", descripcion: "", ambito: "BACK_OFFICE", permisosIds: [] };
+const formVacio: Rol = { id: "", nombre: "", permisosIds: [] };
 
 export function RolesTab() {
   const { data: roles, setData, loading } = useAsyncData<Rol[]>(getRoles);
@@ -32,15 +32,11 @@ export function RolesTab() {
 
   const columns: Column<Rol>[] = [
     {
-      key: "nombre", header: "Rol", sortValue: (r) => r.nombre, searchValue: (r) => `${r.nombre} ${r.descripcion}`,
+      key: "nombre", header: "Rol", sortValue: (r) => r.nombre, searchValue: (r) => r.nombre,
       cell: (r) => (
-        <div className="leading-tight">
-          <p className="flex items-center gap-2 font-semibold text-navy-700">{r.nombre}{r.esSistema && <Badge tone="amber">sistema</Badge>}</p>
-          <p className="max-w-md truncate text-xs text-slate-400">{r.descripcion}</p>
-        </div>
+        <p className="flex items-center gap-2 font-semibold text-navy-700">{r.nombre}{r.esSistema && <Badge tone="amber">sistema</Badge>}</p>
       ),
     },
-    { key: "ambito", header: "Ámbito", sortValue: (r) => r.ambito, cell: (r) => <Badge tone={r.ambito === "BACK_OFFICE" ? "navy" : "brand"}>{r.ambito === "BACK_OFFICE" ? "Back-Office" : "Front-Office"}</Badge> },
     { key: "permisos", header: "Permisos", align: "center", sortValue: (r) => r.permisosIds.length, cell: (r) => <span className="font-bold text-navy-700">{r.permisosIds.length}</span> },
     {
       key: "acc", header: "", align: "right",
@@ -58,7 +54,7 @@ export function RolesTab() {
       <SectionHeader
         icon={<IconShield className="h-5 w-5" />}
         title="Roles"
-        subtitle="Define perfiles internos (Back-Office) y externos (Front-Office) y los permisos que concede cada uno."
+        subtitle="Define los perfiles del sistema y los permisos que concede cada uno."
         action={<Button onClick={() => setEditing({ ...formVacio })}><IconPlus className="h-4 w-4" />Nuevo rol</Button>}
       />
       <DataTable columns={columns} rows={roles ?? []} rowKey={(r) => r.id} loading={loading} onRowClick={(r) => setEditing(r)} searchPlaceholder="Buscar rol…" emptyTitle="No hay roles" />
@@ -82,18 +78,11 @@ function RolForm({ rol, permisos, onCancel, onSave }: { rol: Rol; permisos: Perm
   return (
     <Modal open onClose={onCancel} size="lg"
       title={rol.id ? "Editar rol" : "Nuevo rol"}
-      subtitle="Activa los permisos por módulo. Los permisos sensibles aparecen marcados."
+      subtitle="Activa los permisos por módulo. El acceso al módulo de Costos habilita ver costos de producción."
       footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={() => onSave(form)}>Guardar rol</Button></>}
     >
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4">
         <Field label="Nombre del rol"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} /></Field>
-        <Field label="Ámbito">
-          <Select value={form.ambito} onChange={(e) => set({ ambito: e.target.value as Ambito })}>
-            <option value="BACK_OFFICE">Back-Office (Interno)</option>
-            <option value="FRONT_OFFICE">Front-Office (Externo)</option>
-          </Select>
-        </Field>
-        <Field label="Descripción"><TextInput value={form.descripcion} onChange={(e) => set({ descripcion: e.target.value })} /></Field>
       </div>
 
       <div className="mt-5 space-y-3">
@@ -104,7 +93,7 @@ function RolForm({ rol, permisos, onCancel, onSave }: { rol: Rol; permisos: Perm
               {lista.map((p) => (
                 <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
                   <div className="leading-tight">
-                    <p className="flex items-center gap-1.5 text-sm font-medium text-navy-700">{p.nombre}{p.sensible && <Badge tone="red">sensible</Badge>}</p>
+                    <p className="text-sm font-medium text-navy-700">{p.nombre}</p>
                     <p className="text-[11px] text-slate-400">{p.descripcion}</p>
                   </div>
                   <Toggle checked={form.permisosIds.includes(p.id)} onChange={() => toggle(p.id)} label={p.nombre} />

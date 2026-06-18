@@ -3,7 +3,7 @@ import { useSession } from "../context/SessionContext";
 import { Sidebar, type NavItem } from "../components/layout/Sidebar";
 import { RoleSelector } from "../components/layout/RoleSelector";
 import { Footer } from "../components/layout/Footer";
-import { Badge, Card, EmptyState } from "../components/ui/primitives";
+import { Card, EmptyState } from "../components/ui/primitives";
 import { IconUsers, IconDna, IconReport, IconHome, IconLock, IconMenu } from "../components/ui/icons";
 import { UsuariosModule } from "../components/modules/usuarios/UsuariosModule";
 import { ProductosModule } from "../components/modules/productos/ProductosModule";
@@ -26,7 +26,7 @@ const MODULES: ModuleDef[] = [
 ];
 
 export function Dashboard() {
-  const { can, rolActual, isBackOffice } = useSession();
+  const { can, rolActual } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const [active, setActive] = useState("inicio");
 
@@ -66,7 +66,6 @@ export function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Badge tone={isBackOffice ? "navy" : "brand"}>{isBackOffice ? "Back-Office" : "Front-Office"}</Badge>
             <RoleSelector />
           </div>
         </div>

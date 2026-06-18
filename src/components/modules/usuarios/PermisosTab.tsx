@@ -4,10 +4,10 @@ import { getPermisos, guardar, eliminar, nuevoId } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
-import { Badge, Button, Field, TextInput, Toggle, SectionHeader } from "../../ui/primitives";
+import { Badge, Button, Field, TextInput, SectionHeader } from "../../ui/primitives";
 import { IconPlus, IconEdit, IconTrash, IconKey } from "../../ui/icons";
 
-const formVacio: Permiso = { id: "", nombre: "", modulo: "", descripcion: "", sensible: false };
+const formVacio: Permiso = { id: "", nombre: "", modulo: "", descripcion: "" };
 
 export function PermisosTab() {
   const { data: permisos, setData, loading } = useAsyncData<Permiso[]>(getPermisos);
@@ -33,7 +33,6 @@ export function PermisosTab() {
     { key: "nombre", header: "Permiso", sortValue: (p) => p.nombre, searchValue: (p) => `${p.nombre} ${p.modulo} ${p.descripcion}`, cell: (p) => <span className="font-semibold text-navy-700">{p.nombre}</span> },
     { key: "modulo", header: "Módulo de acceso", sortValue: (p) => p.modulo, cell: (p) => <Badge tone="navy">{p.modulo}</Badge> },
     { key: "desc", header: "Descripción", cell: (p) => <span className="text-sm text-slate-500">{p.descripcion}</span> },
-    { key: "sensible", header: "Sensible", align: "center", sortValue: (p) => (p.sensible ? 1 : 0), cell: (p) => (p.sensible ? <Badge tone="red">Sí</Badge> : <span className="text-slate-300">—</span>) },
     {
       key: "acc", header: "", align: "right",
       cell: (p) => (
@@ -73,13 +72,6 @@ function PermisoForm({ permiso, onCancel, onSave }: { permiso: Permiso; onCancel
         <Field label="Nombre"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} /></Field>
         <Field label="Módulo de acceso"><TextInput value={form.modulo} onChange={(e) => set({ modulo: e.target.value })} placeholder="Inventario, Ventas…" /></Field>
         <div className="sm:col-span-2"><Field label="Descripción"><TextInput value={form.descripcion} onChange={(e) => set({ descripcion: e.target.value })} /></Field></div>
-      </div>
-      <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-        <div className="leading-tight">
-          <p className="text-sm font-semibold text-navy-700">Dato sensible</p>
-          <p className="text-xs text-slate-400">Oculta costos/márgenes a roles sin este permiso.</p>
-        </div>
-        <Toggle checked={!!form.sensible} onChange={(v) => set({ sensible: v })} label="Sensible" />
       </div>
     </Modal>
   );

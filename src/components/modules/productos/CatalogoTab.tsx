@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import type {
-  Producto, MoldeRostro, TipoCuerpo, TonoPiel, ColorMaestro, Era, Exclusividad, Material, Personaje, TipoProducto,
+  Producto, MoldeRostro, TipoCuerpo, Color, ZonaColor, Era, Exclusividad, Material, Personaje, TipoProducto,
 } from "../../../data/types";
 import {
-  getProductos, getMoldesRostro, getTiposCuerpo, getTonosPiel, getColores,
+  getProductos, getMoldesRostro, getTiposCuerpo, getColores,
   getEras, getExclusividades, getMateriales, getPersonajes, guardar, eliminar, nuevoId,
 } from "../../../services/api";
+import { costoVigente } from "../../../data/costing";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { useSession } from "../../../context/SessionContext";
 import { DataTable, type Column } from "../../ui/DataTable";
@@ -21,12 +22,11 @@ const tipoLabel: Record<TipoProducto, string> = {
 };
 
 export function CatalogoTab() {
-  const { puedeVerSensible } = useSession();
+  const { puedeVerCostos } = useSession();
   const { data: productos, setData, loading } = useAsyncData<Producto[]>(getProductos);
   const { data: moldes } = useAsyncData<MoldeRostro[]>(getMoldesRostro);
   const { data: cuerpos } = useAsyncData<TipoCuerpo[]>(getTiposCuerpo);
-  const { data: tonos } = useAsyncData<TonoPiel[]>(getTonosPiel);
-  const { data: colores } = useAsyncData<ColorMaestro[]>(getColores);
+  const { data: colores } = useAsyncData<Color[]>(getColores);
   const { data: eras } = useAsyncData<Era[]>(getEras);
   const { data: excl } = useAsyncData<Exclusividad[]>(getExclusividades);
   const { data: materiales } = useAsyncData<Material[]>(getMateriales);
@@ -39,13 +39,12 @@ export function CatalogoTab() {
   const lookups = useMemo(() => ({
     molde: (id?: string) => moldes?.find((m) => m.id === id),
     cuerpo: (id?: string) => cuerpos?.find((c) => c.id === id),
-    tono: (id?: string) => tonos?.find((t) => t.id === id),
     color: (id?: string) => colores?.find((c) => c.id === id),
     era: (id?: string) => eras?.find((e) => e.id === id),
     excl: (id?: string) => excl?.find((e) => e.id === id),
     material: (id?: string) => materiales?.find((m) => m.id === id),
     personaje: (id?: string) => personajes?.find((p) => p.id === id),
-  }), [moldes, cuerpos, tonos, colores, eras, excl, materiales, personajes]);
+  }), [moldes, cuerpos, colores, eras, excl, materiales, personajes]);
 
   async function handleSave(p: Producto) {
     const isNew = !p.id;
@@ -73,7 +72,8 @@ export function CatalogoTab() {
     { key: "label", header: "Label", sortValue: (p) => lookups.excl(p.exclusividadId)?.codigo ?? "", cell: (p) => lookups.excl(p.exclusividadId) ? <LabelChip codigo={lookups.excl(p.exclusividadId)!.codigo} /> : <span className="text-slate-300">—</span> },
     { key: "precio", header: "Precio", align: "right", sortValue: (p) => p.precioBaseUsd, cell: (p) => <span className="font-semibold text-navy-700">{fmtUsd(p.precioBaseUsd)}</span> },
     {
-      key: "costo", header: "Costo prod.", align: "right", hidden: !puedeVerSensible, sortValue: (p) => p.costoProduccionUsd,
+      key: "costo", header: "Costo prod.", align: "right", hidden: !puedeVerCostos,
+      sortValue: (p) => p.costoProduccionUsd,
       cell: (p) => <span className="font-mono text-sm text-rose-600">{fmtUsd(p.costoProduccionUsd)}</span>,
     },
     { key: "stock", header: "Stock", align: "right", sortValue: (p) => p.stock, cell: (p) => <span className={p.stock < 10 ? "font-bold text-amber-600" : "text-slate-500"}>{p.stock}</span> },
@@ -96,15 +96,15 @@ export function CatalogoTab() {
         subtitle="Cada SKU es la variante mínima e indivisible. Haz clic en una fila para ver su ficha de ADN completa."
         action={<Button onClick={() => setEditing(blankProducto())}><IconPlus className="h-4 w-4" />Nuevo producto</Button>}
       />
-      {!puedeVerSensible && (
+      {!puedeVerCostos && (
         <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-700">
-          <IconLock className="h-4 w-4" /> El costo de producción está oculto para tu rol actual (dato sensible).
+          <IconLock className="h-4 w-4" /> El costo de producción está oculto para tu rol actual (requiere acceso al módulo de Costos).
         </div>
       )}
       <DataTable columns={columns} rows={productos ?? []} rowKey={(p) => p.id} loading={loading} onRowClick={(p) => setDetail(p)} searchPlaceholder="Buscar por SKU o nombre…" emptyTitle="No hay productos" pageSize={8} />
 
-      {detail && <FichaADN producto={detail} lookups={lookups} puedeVerSensible={puedeVerSensible} onClose={() => setDetail(null)} onEdit={() => { setEditing(detail); setDetail(null); }} />}
-      {editing && <ProductoForm producto={editing} moldes={moldes ?? []} cuerpos={cuerpos ?? []} tonos={tonos ?? []} colores={colores ?? []} eras={eras ?? []} excl={excl ?? []} personajes={personajes ?? []} onCancel={() => setEditing(null)} onSave={handleSave} />}
+      {detail && <FichaADN producto={detail} lookups={lookups} materiales={materiales ?? []} puedeVerCostos={puedeVerCostos} onClose={() => setDetail(null)} onEdit={() => { setEditing(detail); setDetail(null); }} />}
+      {editing && <ProductoForm producto={editing} moldes={moldes ?? []} cuerpos={cuerpos ?? []} colores={colores ?? []} eras={eras ?? []} excl={excl ?? []} personajes={personajes ?? []} onCancel={() => setEditing(null)} onSave={handleSave} />}
       <ConfirmDialog open={!!confirm} title="Eliminar producto" message={`¿Eliminar ${confirm?.nombre} (${confirm?.sku})?`} onCancel={() => setConfirm(null)} onConfirm={() => confirm && handleDelete(confirm)} />
     </div>
   );
@@ -113,21 +113,27 @@ export function CatalogoTab() {
 function blankProducto(): Producto {
   return {
     id: "", sku: "", nombre: "", precioBaseUsd: 0, costoProduccionUsd: 0,
-    fechaLanzamiento: new Date().toISOString(), tipo: "MUNECA", bom: [], stock: 0,
+    fechaLanzamiento: new Date().toISOString(), tipo: "MUNECA", colores: [], bom: [], stock: 0,
   };
 }
 
 /* ------------------------------ Ficha ADN ------------------------------ */
-function FichaADN({ producto, lookups, puedeVerSensible, onClose, onEdit }: {
-  producto: Producto; lookups: any; puedeVerSensible: boolean; onClose: () => void; onEdit: () => void;
+function FichaADN({ producto, lookups, materiales, puedeVerCostos, onClose, onEdit }: {
+  producto: Producto; lookups: any; materiales: Material[]; puedeVerCostos: boolean; onClose: () => void; onEdit: () => void;
 }) {
+  const colorEnZona = (z: ZonaColor) => {
+    const aplicado = producto.colores.find((c) => c.zona === z);
+    return aplicado ? lookups.color(aplicado.colorId) : undefined;
+  };
   const molde = lookups.molde(producto.moldeRostroId);
   const cuerpo = lookups.cuerpo(producto.tipoCuerpoId);
-  const tono = lookups.tono(producto.tonoPielId);
-  const ojos = lookups.color(producto.colorOjosId);
+  const tono = colorEnZona("PIEL");
+  const ojos = colorEnZona("OJOS");
   const era = lookups.era(producto.eraId);
   const exclusividad = lookups.excl(producto.exclusividadId);
   const personaje = lookups.personaje(producto.personajeId);
+  const costoVigenteUsd = costoVigente(producto, materiales);
+  const deriva = costoVigenteUsd - producto.costoProduccionUsd;
 
   return (
     <Modal open onClose={onClose} size="lg"
@@ -160,8 +166,8 @@ function FichaADN({ producto, lookups, puedeVerSensible, onClose, onEdit }: {
         <Chromo label="Tipo de Cuerpo" value={cuerpo ? cuerpo.nombre : "—"} hint={cuerpo ? `Pie ${cuerpo.formaPie.toLowerCase()}${cuerpo.articulado ? " · articulado" : ""}` : undefined} />
         <Chromo label="Tono de Piel" value={tono?.nombre ?? "—"} swatch={tono?.hex} />
         <Chromo label="Color de Ojos" value={ojos?.nombre ?? "—"} swatch={ojos?.hex} />
-        <Chromo label="Era Histórica" value={era ? `${era.nombre} (${era.rango})` : "—"} hint={era?.descripcion} />
-        <Chromo label="Exclusividad / Label" value={exclusividad ? exclusividad.nombre : "—"} hint={exclusividad?.descripcion} />
+        <Chromo label="Era Histórica" value={era ? `${era.nombre} (${era.fechaInicio}–${era.fechaFin ?? "hoy"})` : "—"} hint={era?.descripcion} />
+        <Chromo label="Exclusividad / Label" value={exclusividad ? exclusividad.nombre : "—"} />
       </div>
 
       {/* BOM / receta */}
@@ -179,7 +185,7 @@ function FichaADN({ producto, lookups, puedeVerSensible, onClose, onEdit }: {
                   <span className="text-navy-700">{m?.nombre ?? b.materialId}</span>
                   <span className="flex items-center gap-3 text-slate-500">
                     <span>{b.cantidad} {m?.unidad}</span>
-                    {puedeVerSensible && <span className="font-mono text-xs text-rose-600">{fmtUsd(costo)}</span>}
+                    {puedeVerCostos && <span className="font-mono text-xs text-rose-600">{fmtUsd(costo)}</span>}
                   </span>
                 </div>
               );
@@ -190,11 +196,22 @@ function FichaADN({ producto, lookups, puedeVerSensible, onClose, onEdit }: {
           <span className="font-semibold text-navy-700">Stock disponible</span>
           <span className="font-bold text-navy-700">{producto.stock} u.</span>
         </div>
-        {puedeVerSensible ? (
-          <div className="mt-2 flex items-center justify-between text-sm">
-            <span className="font-semibold text-navy-700">Costo de producción</span>
-            <span className="font-mono font-bold text-rose-600">{fmtUsd(producto.costoProduccionUsd)}</span>
-          </div>
+        {puedeVerCostos ? (
+          <>
+            <div className="mt-2 flex items-center justify-between text-sm">
+              <span className="font-semibold text-navy-700">Costo de producción <span className="font-normal text-slate-400">(snapshot histórico)</span></span>
+              <span className="font-mono font-bold text-rose-600">{fmtUsd(producto.costoProduccionUsd)}</span>
+            </div>
+            <div className="mt-1 flex items-center justify-between text-xs">
+              <span className="text-slate-400">Recalculado a hoy (materiales actuales)</span>
+              <span className="font-mono text-slate-500">
+                {fmtUsd(costoVigenteUsd)}
+                {Math.abs(deriva) > 0.005 && (
+                  <span className="ml-1 text-amber-600">· deriva {deriva > 0 ? "+" : ""}{fmtUsd(deriva)}</span>
+                )}
+              </span>
+            </div>
+          </>
         ) : (
           <div className="mt-2 flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600"><IconLock className="h-3.5 w-3.5" />Costo de producción oculto para tu rol.</div>
         )}
@@ -217,13 +234,22 @@ function Chromo({ label, value, hint, swatch }: { label: string; value: string; 
 }
 
 /* ----------------------------- Formulario ------------------------------ */
-function ProductoForm({ producto, moldes, cuerpos, tonos, colores, eras, excl, personajes, onCancel, onSave }: {
-  producto: Producto; moldes: MoldeRostro[]; cuerpos: TipoCuerpo[]; tonos: TonoPiel[]; colores: ColorMaestro[];
+function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personajes, onCancel, onSave }: {
+  producto: Producto; moldes: MoldeRostro[]; cuerpos: TipoCuerpo[]; colores: Color[];
   eras: Era[]; excl: Exclusividad[]; personajes: Personaje[]; onCancel: () => void; onSave: (p: Producto) => void;
 }) {
   const [form, setForm] = useState<Producto>(producto);
   const set = (p: Partial<Producto>) => setForm((f) => ({ ...f, ...p }));
   const opt = (id?: string) => id ?? "";
+
+  // El color se aplica por zona (junction Color_Producto). Estos helpers leen/escriben
+  // la entrada de `colores` correspondiente a una zona, dejando el resto intacto.
+  const colorEnZona = (z: ZonaColor) => form.colores.find((c) => c.zona === z)?.colorId ?? "";
+  const setColorZona = (z: ZonaColor, colorId: string) =>
+    setForm((f) => {
+      const resto = f.colores.filter((c) => c.zona !== z);
+      return { ...f, colores: colorId ? [...resto, { colorId, zona: z }] : resto };
+    });
 
   return (
     <Modal open onClose={onCancel} size="lg"
@@ -235,7 +261,7 @@ function ProductoForm({ producto, moldes, cuerpos, tonos, colores, eras, excl, p
         <Field label="SKU"><TextInput value={form.sku} onChange={(e) => set({ sku: e.target.value })} placeholder="BRB-AAAA-XXX" /></Field>
         <Field label="Nombre comercial"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} /></Field>
         <Field label="Precio base (USD)"><TextInput type="number" value={form.precioBaseUsd} onChange={(e) => set({ precioBaseUsd: +e.target.value })} /></Field>
-        <Field label="Costo de producción (USD)" hint="Dato sensible"><TextInput type="number" value={form.costoProduccionUsd} onChange={(e) => set({ costoProduccionUsd: +e.target.value })} /></Field>
+        <Field label="Costo de producción" hint="Snapshot congelado en producción (USD)"><TextInput type="number" value={form.costoProduccionUsd} onChange={(e) => set({ costoProduccionUsd: +e.target.value })} /></Field>
         <Field label="Fecha de lanzamiento"><TextInput type="date" value={form.fechaLanzamiento.slice(0, 10)} onChange={(e) => set({ fechaLanzamiento: new Date(e.target.value).toISOString() })} /></Field>
         <Field label="Tipo">
           <Select value={form.tipo} onChange={(e) => set({ tipo: e.target.value as TipoProducto })}>
@@ -263,14 +289,14 @@ function ProductoForm({ producto, moldes, cuerpos, tonos, colores, eras, excl, p
             <option value="">—</option>{cuerpos.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </Select>
         </Field>
-        <Field label="Tono de piel">
-          <Select value={opt(form.tonoPielId)} onChange={(e) => set({ tonoPielId: e.target.value || undefined })}>
-            <option value="">—</option>{tonos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+        <Field label="Color de piel" hint="Zona PIEL">
+          <Select value={colorEnZona("PIEL")} onChange={(e) => setColorZona("PIEL", e.target.value)}>
+            <option value="">—</option>{colores.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </Select>
         </Field>
-        <Field label="Color de ojos">
-          <Select value={opt(form.colorOjosId)} onChange={(e) => set({ colorOjosId: e.target.value || undefined })}>
-            <option value="">—</option>{colores.filter((c) => c.zona === "Ojos").map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        <Field label="Color de ojos" hint="Zona OJOS">
+          <Select value={colorEnZona("OJOS")} onChange={(e) => setColorZona("OJOS", e.target.value)}>
+            <option value="">—</option>{colores.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </Select>
         </Field>
         <Field label="Era histórica">

@@ -8,34 +8,32 @@ export const permisos: Permiso[] = [
   { id: "perm-prod-edit", nombre: "Diseñar Productos", modulo: "Productos", descripcion: "Crear y editar el genoma de productos." },
   { id: "perm-ventas-ver", nombre: "Ver Ventas", modulo: "Ventas", descripcion: "Precios de lista y disponibilidad." },
   { id: "perm-ventas-edit", nombre: "Registrar Ventas", modulo: "Ventas", descripcion: "Emitir órdenes y facturas." },
-  { id: "perm-costos-ver", nombre: "Ver Costos y Márgenes", modulo: "Costos", descripcion: "Costos de producción y márgenes.", sensible: true },
+  { id: "perm-costos-ver", nombre: "Ver Costos y Márgenes", modulo: "Costos", descripcion: "Costos de producción y márgenes." },
   { id: "perm-subastas-ver", nombre: "Acceder a Subastas", modulo: "Subastas", descripcion: "Participar en subastas exclusivas Platinum." },
   { id: "perm-reportes-ver", nombre: "Ver Reportes", modulo: "Reportes", descripcion: "Generar y exportar reportes." },
   { id: "perm-usuarios-admin", nombre: "Administrar Usuarios", modulo: "Usuarios", descripcion: "Gestión de usuarios, roles y permisos." },
 ];
 
 export const roles: Rol[] = [
-  // ---- Back-Office (internos) ----
-  { id: "rol-admin", nombre: "Administrador", descripcion: "Control total del sistema.", ambito: "BACK_OFFICE", esSistema: true,
+  { id: "rol-admin", nombre: "Administrador", esSistema: true,
     permisosIds: permisos.map((p) => p.id) },
-  { id: "rol-gerente-inv", nombre: "Gerente de Inventario", descripcion: "Ve costos de producción y modifica stock.", ambito: "BACK_OFFICE",
+  { id: "rol-gerente-inv", nombre: "Gerente de Inventario",
     permisosIds: ["perm-inv-ver", "perm-inv-edit", "perm-prod-ver", "perm-costos-ver", "perm-reportes-ver"] },
-  { id: "rol-vendedor", nombre: "Vendedor", descripcion: "Sólo precios de lista y disponibilidad. NO ve costos.", ambito: "BACK_OFFICE",
+  { id: "rol-vendedor", nombre: "Vendedor",
     permisosIds: ["perm-prod-ver", "perm-ventas-ver", "perm-ventas-edit", "perm-inv-ver"] },
-  { id: "rol-disenador", nombre: "Diseñador / Escultor I+D", descripcion: "Diseña el genoma de los productos.", ambito: "BACK_OFFICE",
+  { id: "rol-disenador", nombre: "Diseñador / Escultor I+D",
     permisosIds: ["perm-prod-ver", "perm-prod-edit"] },
-  { id: "rol-manufactura", nombre: "Operador de Manufactura", descripcion: "Ejecuta órdenes de producción.", ambito: "BACK_OFFICE",
+  { id: "rol-manufactura", nombre: "Operador de Manufactura",
     permisosIds: ["perm-prod-ver", "perm-inv-ver"] },
-  { id: "rol-almacen", nombre: "Personal de Almacén / Logística", descripcion: "Gestiona entradas y salidas físicas.", ambito: "BACK_OFFICE",
+  { id: "rol-almacen", nombre: "Personal de Almacén / Logística",
     permisosIds: ["perm-inv-ver", "perm-inv-edit"] },
-  { id: "rol-ejecutivo", nombre: "Ejecutivo de Cuenta Corporativa", descripcion: "Atiende clientes mayoristas B2B.", ambito: "BACK_OFFICE",
+  { id: "rol-ejecutivo", nombre: "Ejecutivo de Cuenta Corporativa",
     permisosIds: ["perm-prod-ver", "perm-ventas-ver", "perm-ventas-edit", "perm-reportes-ver"] },
-  // ---- Front-Office (externos) ----
-  { id: "rol-b2c", nombre: "Cliente B2C", descripcion: "Comprador minorista del portal.", ambito: "FRONT_OFFICE",
+  { id: "rol-b2c", nombre: "Cliente B2C",
     permisosIds: ["perm-prod-ver", "perm-ventas-ver"] },
-  { id: "rol-gold", nombre: "Coleccionista Gold", descripcion: "Acceso a líneas Gold Label.", ambito: "FRONT_OFFICE",
+  { id: "rol-gold", nombre: "Coleccionista Gold",
     permisosIds: ["perm-prod-ver", "perm-ventas-ver"] },
-  { id: "rol-platinum", nombre: "Coleccionista Platinum", descripcion: "Subastas exclusivas e historial propio. Nunca ve márgenes ni datos de otros clientes.", ambito: "FRONT_OFFICE",
+  { id: "rol-platinum", nombre: "Coleccionista Platinum",
     permisosIds: ["perm-prod-ver", "perm-ventas-ver", "perm-subastas-ver"] },
 ];
 
@@ -61,7 +59,6 @@ function slug(nombre: string): string {
 }
 
 export const usuarios: Usuario[] = nombres.map((nombre, i) => {
-  const estado: Usuario["estado"] = i % 9 === 4 ? "BLOQUEADO" : i % 11 === 7 ? "INACTIVO" : "ACTIVO";
   const rol = rolPool[i % rolPool.length]!;
   return {
     id: `user-${i + 1}`,
@@ -69,9 +66,7 @@ export const usuarios: Usuario[] = nombres.map((nombre, i) => {
     username: slug(nombre),
     email: `${slug(nombre)}@mattelucab.com`,
     passwordHash: "$2b$10$" + "x".repeat(22) + (i * 7).toString(36).padEnd(8, "0"),
-    estado,
     rolesIds: i === 0 ? ["rol-admin"] : [rol],
     fechaRegistro: new Date(2021, i % 12, ((i * 3) % 27) + 1).toISOString(),
-    bloqueadoHasta: estado === "BLOQUEADO" ? new Date(2026, 8, 1).toISOString() : null,
   };
 });

@@ -1,20 +1,17 @@
 import { useState } from "react";
-import type { Usuario, Rol, EstadoUsuario } from "../../../data/types";
+import type { Usuario, Rol } from "../../../data/types";
 import { getUsuarios, getRoles, guardar, eliminar, nuevoId } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
 import {
-  Badge, Button, Field, TextInput, Select, Toggle, SectionHeader, fmtFecha,
+  Badge, Button, Field, TextInput, Toggle, SectionHeader, fmtFecha,
 } from "../../ui/primitives";
-import { IconPlus, IconEdit, IconTrash, IconBan, IconUsers, IconLock } from "../../ui/icons";
-
-const estadoTone: Record<EstadoUsuario, string> = { ACTIVO: "green", BLOQUEADO: "red", INACTIVO: "slate" };
-const estadoLabel: Record<EstadoUsuario, string> = { ACTIVO: "Activo", BLOQUEADO: "Bloqueado", INACTIVO: "Inactivo" };
+import { IconPlus, IconEdit, IconTrash, IconUsers, IconLock } from "../../ui/icons";
 
 const formVacio: Usuario = {
   id: "", nombre: "", username: "", email: "", passwordHash: "$2b$10$••••••••••••••••",
-  estado: "ACTIVO", rolesIds: [], fechaRegistro: new Date().toISOString(), bloqueadoHasta: null,
+  rolesIds: [], fechaRegistro: new Date().toISOString(),
 };
 
 export function UsuariosTab() {
@@ -39,13 +36,6 @@ export function UsuariosTab() {
     await eliminar(u.id);
     setData((prev) => (prev ?? []).filter((x) => x.id !== u.id));
     setConfirm(null);
-  }
-
-  function toggleBloqueo(u: Usuario) {
-    const nuevo: Usuario = u.estado === "BLOQUEADO"
-      ? { ...u, estado: "ACTIVO", bloqueadoHasta: null }
-      : { ...u, estado: "BLOQUEADO", bloqueadoHasta: new Date(Date.now() + 7 * 864e5).toISOString() };
-    setData((prev) => (prev ?? []).map((x) => (x.id === u.id ? nuevo : x)));
   }
 
   const columns: Column<Usuario>[] = [
@@ -77,13 +67,11 @@ export function UsuariosTab() {
         </div>
       ),
     },
-    { key: "estado", header: "Estado", sortValue: (u) => u.estado, cell: (u) => <Badge tone={estadoTone[u.estado]}>{estadoLabel[u.estado]}</Badge> },
     { key: "fecha", header: "Registro", align: "right", sortValue: (u) => u.fechaRegistro, cell: (u) => <span className="text-xs text-slate-400">{fmtFecha(u.fechaRegistro)}</span> },
     {
       key: "acc", header: "", align: "right",
       cell: (u) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <IconBtn title={u.estado === "BLOQUEADO" ? "Desbloquear" : "Bloquear temporalmente"} onClick={() => toggleBloqueo(u)} tone={u.estado === "BLOQUEADO" ? "amber" : "slate"}><IconBan className="h-4 w-4" /></IconBtn>
           <IconBtn title="Editar" onClick={() => setEditing(u)}><IconEdit className="h-4 w-4" /></IconBtn>
           <IconBtn title="Eliminar" onClick={() => setConfirm(u)} tone="red"><IconTrash className="h-4 w-4" /></IconBtn>
         </div>
@@ -131,9 +119,6 @@ function UsuarioForm({ usuario, roles, onCancel, onSave }: { usuario: Usuario; r
   const toggleRol = (id: string) =>
     set({ rolesIds: form.rolesIds.includes(id) ? form.rolesIds.filter((r) => r !== id) : [...form.rolesIds, id] });
 
-  const back = roles.filter((r) => r.ambito === "BACK_OFFICE");
-  const front = roles.filter((r) => r.ambito === "FRONT_OFFICE");
-
   return (
     <Modal
       open onClose={onCancel}
@@ -145,13 +130,6 @@ function UsuarioForm({ usuario, roles, onCancel, onSave }: { usuario: Usuario; r
         <Field label="Nombre completo"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} placeholder="Nombre y apellido" /></Field>
         <Field label="Username"><TextInput value={form.username} onChange={(e) => set({ username: e.target.value })} placeholder="usuario.demo" /></Field>
         <Field label="Email"><TextInput type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder="correo@mattelucab.com" /></Field>
-        <Field label="Estado">
-          <Select value={form.estado} onChange={(e) => set({ estado: e.target.value as EstadoUsuario })}>
-            <option value="ACTIVO">Activo</option>
-            <option value="BLOQUEADO">Bloqueado</option>
-            <option value="INACTIVO">Inactivo</option>
-          </Select>
-        </Field>
         <Field label="Hash de contraseña" hint="Sólo lectura · gestionado por el backend">
           <TextInput value="$2b$10$••••••••••••••••••••••" disabled className="font-mono opacity-70" />
         </Field>
@@ -159,10 +137,7 @@ function UsuarioForm({ usuario, roles, onCancel, onSave }: { usuario: Usuario; r
 
       <div className="mt-5">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Roles asignados</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <RolGroup title="Back-Office" roles={back} selected={form.rolesIds} onToggle={toggleRol} />
-          <RolGroup title="Front-Office" roles={front} selected={form.rolesIds} onToggle={toggleRol} />
-        </div>
+        <RolGroup title="Roles disponibles" roles={roles} selected={form.rolesIds} onToggle={toggleRol} />
       </div>
     </Modal>
   );

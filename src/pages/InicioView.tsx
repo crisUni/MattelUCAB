@@ -7,14 +7,14 @@ import { IconDna, IconUsers, IconBox, IconScale, IconSpark } from "../components
 import { BarbieConfetti } from "../components/ui/Decor";
 
 export function InicioView() {
-  const { rolActual, isBackOffice, puedeVerSensible, can } = useSession();
+  const { rolActual, puedeVerCostos, can } = useSession();
   const { data: productos } = useAsyncData<Producto[]>(getProductos);
   const { data: usuarios } = useAsyncData<Usuario[]>(getUsuarios);
 
   const total = productos?.length ?? 0;
   const platinum = (productos ?? []).filter((p) => p.exclusividadId === "exc-platinum").length;
   const valorInventario = (productos ?? []).reduce((s, p) => s + p.precioBaseUsd * p.stock, 0);
-  const activos = (usuarios ?? []).filter((u) => u.estado === "ACTIVO").length;
+  const totalUsuarios = usuarios?.length ?? 0;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -27,9 +27,8 @@ export function InicioView() {
           <Badge tone="platinum"><IconSpark className="h-3 w-3" />Sistema PLM · Dream Legacy</Badge>
           <h2 className="mt-3 text-2xl font-extrabold sm:text-3xl">Bienvenido a MattelUCAB</h2>
           <p className="mt-1 max-w-2xl text-sm text-white/80">
-            Plataforma unificada de gestión del ciclo de vida del producto: ERP corporativo (Back-Office)
-            y portal de e-commerce (Front-Office). Estás operando como <b>{rolActual.nombre}</b> en el ámbito{" "}
-            <b>{isBackOffice ? "Back-Office" : "Front-Office"}</b>.
+            Plataforma unificada de gestión del ciclo de vida del producto: ERP corporativo
+            y portal de e-commerce. Estás operando como <b>{rolActual.nombre}</b>.
           </p>
         </div>
       </Card>
@@ -38,11 +37,11 @@ export function InicioView() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Productos en catálogo" value={total} hint="SKUs activos" tone="brand" icon={<IconDna className="h-5 w-5" />} />
         <StatCard label="Ediciones Platinum" value={platinum} hint="< 1.000 unidades" tone="navy" icon={<IconBox className="h-5 w-5" />} />
-        <StatCard label="Usuarios activos" value={activos} hint={`de ${usuarios?.length ?? 0} registrados`} tone="green" icon={<IconUsers className="h-5 w-5" />} />
+        <StatCard label="Usuarios registrados" value={totalUsuarios} hint="cuentas del sistema" tone="green" icon={<IconUsers className="h-5 w-5" />} />
         <StatCard
           label="Valor de inventario"
-          value={puedeVerSensible ? fmtUsd(valorInventario) : "•••••"}
-          hint={puedeVerSensible ? "precio × stock" : "oculto para tu rol"}
+          value={puedeVerCostos ? fmtUsd(valorInventario) : "•••••"}
+          hint={puedeVerCostos ? "precio × stock" : "oculto para tu rol"}
           tone="amber"
           icon={<IconScale className="h-5 w-5" />}
         />
@@ -53,7 +52,7 @@ export function InicioView() {
         <p className="mb-3 text-sm font-bold text-navy-700">Tus accesos</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <AccesoCard show={can("perm-usuarios-admin")} icon={<IconUsers className="h-5 w-5" />} title="Usuarios & Seguridad" desc="Roles, permisos, matriz y simulador de sesión." />
-          <AccesoCard show={can("perm-prod-ver")} icon={<IconDna className="h-5 w-5" />} title="Genoma Barbie" desc="Catálogo ADN, compatibilidad, multiverso y dreamhouses." />
+          <AccesoCard show={can("perm-prod-ver")} icon={<IconDna className="h-5 w-5" />} title="Genoma Barbie" desc="Catálogo ADN, compatibilidad, multiverso y packs." />
           <AccesoCard show={can("perm-reportes-ver")} icon={<IconScale className="h-5 w-5" />} title="Reportes" desc="Rentabilidad, diversidad, scalpers y documentos." />
         </div>
       </div>

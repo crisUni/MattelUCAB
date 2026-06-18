@@ -9,7 +9,7 @@ import {
   createContext, useContext, useMemo, useState, type ReactNode,
 } from "react";
 import { roles as rolesMock, permisos as permisosMock } from "../data/mock/seguridad";
-import type { Rol, Permiso, Ambito } from "../data/types";
+import type { Rol, Permiso } from "../data/types";
 
 interface SessionValue {
   roles: Rol[];
@@ -20,10 +20,8 @@ interface SessionValue {
   can: (permisoId: string) => boolean;
   /** ¿Tiene algún permiso del módulo indicado? */
   canModulo: (modulo: string) => boolean;
-  /** ¿Puede ver datos sensibles (costos / márgenes)? */
-  puedeVerSensible: boolean;
-  isBackOffice: boolean;
-  ambito: Ambito;
+  /** ¿Puede ver costos de producción / márgenes? Reservado al módulo "Costos". */
+  puedeVerCostos: boolean;
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -41,9 +39,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       permisosMock.some(
         (p) => p.modulo === modulo && permisosSet.has(p.id)
       );
-    const puedeVerSensible = permisosMock.some(
-      (p) => p.sensible && permisosSet.has(p.id)
-    );
+    // Ver costos de producción = tener acceso al módulo "Costos" (ER: Permiso_ModuloAcceso).
+    // En la práctica sólo lo poseen ciertos roles de back-office (Admin, Gerente de Inv.).
+    const puedeVerCostos = canModulo("Costos");
     return {
       roles: rolesMock,
       permisos: permisosMock,
@@ -51,9 +49,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setRolActualId,
       can,
       canModulo,
-      puedeVerSensible,
-      isBackOffice: rolActual.ambito === "BACK_OFFICE",
-      ambito: rolActual.ambito,
+      puedeVerCostos,
     };
   }, [rolActualId]);
 
