@@ -32,6 +32,8 @@ declare module "*.jpeg" {
   export = path;
 }
 
+declare module "*.css";
+
 declare module "*.module.css" {
   /**
    * A record of class names to their corresponding CSS module classes
