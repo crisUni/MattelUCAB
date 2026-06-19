@@ -8,7 +8,7 @@ services:
       POSTGRES_DB: fundana
       POSTGRES_PASSWORD: admin
     volumes:
-      - /var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     ports:
       - 5432:5432
 
@@ -36,13 +36,6 @@ services:
     command: bun run dev       # 4. Run dev script in /home/bun/app
     ports:
       - 3000:3000
-    develop:
-      watch:
-        - action: sync
-          path: ./
-          target: /home/bun/app
-          ignore:
-            - node_modules/
-            - dist/
-            - .git/
-            - .DS_Store
+
+volumes:
+  pgdata:

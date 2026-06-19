@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS } from "./CorsHeaders";
+import { CORS_HEADERS, insertOne } from "./CorsHeaders";
 
 type Rol = {
     id: number
@@ -19,7 +19,7 @@ type Permiso_Rol = {
 class RolService{
     routes = {
         "/api/rol": {
-            GET: async (_: Bun.BunRequest<"/api/form/rol">) => {
+            GET: async (_: Bun.BunRequest<"/api/rol">) => {
                 let found: Rol[]
 
                 try {
@@ -31,11 +31,17 @@ class RolService{
                 if (!found.length)
                     return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
                 return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
+            },
+            POST: async (req: Bun.BunRequest<"/api/rol">) => {
+                const body = await req.json();
+                if (!body.rol_nombre)
+                    return new Response('rol_nombre is required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("rol", body)
             }
         },
 
         "/api/rol/:id": {
-			GET: async (req: Bun.BunRequest<"/api/persona/:id/donations">) => {
+			GET: async (req: Bun.BunRequest<"/api/rol/:id">) => {
 				let found: Permiso_Rol[]
 
 				if (!Number.isInteger(Number(req.params.id)))
@@ -55,7 +61,7 @@ class RolService{
         },
 
         "/api/permiso": {
-            GET: async (_: Bun.BunRequest<"/api/form/permiso">) => {
+            GET: async (_: Bun.BunRequest<"/api/permiso">) => {
                 let found: Rol[]
 
                 try {
@@ -67,6 +73,12 @@ class RolService{
                 if (!found.length)
                     return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
                 return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
+            },
+            POST: async (req: Bun.BunRequest<"/api/permiso">) => {
+                const body = await req.json();
+                if (!body.per_moduloacceso)
+                    return new Response('per_moduloacceso is required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("permiso", body)
             }
         }
     }

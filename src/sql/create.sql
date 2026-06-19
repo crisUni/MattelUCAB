@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS INSPECCION_CALIDAD (
     inscal_fecha DATE NOT NULL,
     inscal_resultado VARCHAR(50) NOT NULL,  -- CORREGIDO: obligatorio (*) según el ER
     fk_lotpro_id INT,
-    fk_emp_ip INT NOT NULL,
+    fk_emp_id INT NOT NULL,
     FOREIGN KEY (fk_lotpro_id) REFERENCES LOTE_PRODUCCION(lotpro_id),
     Foreign Key (fk_emp_id) REFERENCES EMPLEADO(emp_id)
 )
