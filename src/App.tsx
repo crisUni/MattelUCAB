@@ -1,23 +1,39 @@
-import { APITester } from "./APITester";
+import { Login } from "./components/auth/Login";
+import { Header } from "./components/layout/Header";
+import { Dashboard } from "./pages/Dashboard";
+import { SessionProvider } from "./context/SessionContext";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import "./index.css";
 
-import logo from "./logo.svg";
-import reactLogo from "./react.svg";
+/** Cascarón con el Header global (intacto) + rutas. */
+function Shell() {
+  const navigate = useNavigate();
+  return (
+    <>
+      <Header
+        logoTo="/"
+        onDesignClick={() => navigate("/app")}
+        onAccountClick={() => navigate("/")}
+        designDisabled={false}
+      />
+      <main className="app-page" role="main">
+        <Routes>
+          <Route path="/" element={<Login />} />
+          {/* Registro oculto por ahora: el alta de usuarios se hace desde el módulo de Usuarios. */}
+          <Route path="/app" element={<Dashboard />} />
+        </Routes>
+      </main>
+    </>
+  );
+}
 
 export function App() {
   return (
-    <div className="app">
-      <div className="logo-container">
-        <img src={logo} alt="Bun Logo" className="logo bun-logo" />
-        <img src={reactLogo} alt="React Logo" className="logo react-logo" />
-      </div>
-
-      <h1>Bun + React</h1>
-      <p>
-        Edit <code>src/App.tsx</code> and save to test HMR
-      </p>
-      <APITester />
-    </div>
+    <SessionProvider>
+      <BrowserRouter>
+        <Shell />
+      </BrowserRouter>
+    </SessionProvider>
   );
 }
 

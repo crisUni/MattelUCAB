@@ -1,10 +1,101 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="./logo.svg" />
-    <title>Bun + React</title>
+    <link rel="icon" type="image/png" href="./assets/account logo.png" />
+    <title>Dream Legacy · MattelUCAB</title>
+
+    <!--
+      Tailwind CSS — Play CDN.
+      Se usa el CDN para que el front funcione sin tocar el pipeline de build
+      de Bun/Docker. Para producción, migrar a `bun-plugin-tailwind` (ver README).
+      La paleta de marca (magenta / navy / rosa) se define aquí como tokens.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                DEFAULT: "#e2237c",
+                50: "#fff0f7",
+                100: "#ffe0ef",
+                200: "#ffb6dc",
+                300: "#ff8fc9",
+                400: "#f85fa8",
+                500: "#e2237c",
+                600: "#c0146a",
+                700: "#990f55",
+                800: "#7a0c44",
+                900: "#5c0a34",
+              },
+              navy: {
+                DEFAULT: "#16223d",
+                50: "#eef1f7",
+                100: "#d6dcea",
+                200: "#aab5d1",
+                300: "#7787b0",
+                400: "#4d6090",
+                500: "#27395f",
+                600: "#1f2e4d",
+                700: "#16223d",
+                800: "#0f192d",
+                900: "#0a111f",
+              },
+              grape: {
+                DEFAULT: "#8b1a6b",
+                300: "#c44b9e",
+                400: "#a82f83",
+                500: "#8b1a6b",
+                600: "#6f1556",
+              },
+            },
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+              display: ["Pacifico", "cursive"],
+            },
+            boxShadow: {
+              brand: "0 18px 40px -12px rgba(226,35,124,0.45)",
+              soft: "0 12px 30px -10px rgba(22,34,61,0.18)",
+            },
+            keyframes: {
+              "fade-in": {
+                "0%": { opacity: "0", transform: "translateY(8px)" },
+                "100%": { opacity: "1", transform: "translateY(0)" },
+              },
+              "fade-in-fast": {
+                "0%": { opacity: "0" },
+                "100%": { opacity: "1" },
+              },
+              "slide-in-right": {
+                "0%": { opacity: "0", transform: "translateX(24px)" },
+                "100%": { opacity: "1", transform: "translateX(0)" },
+              },
+              "scale-in": {
+                "0%": { opacity: "0", transform: "scale(.96)" },
+                "100%": { opacity: "1", transform: "scale(1)" },
+              },
+              shimmer: {
+                "100%": { transform: "translateX(100%)" },
+              },
+              "pulse-soft": {
+                "0%,100%": { opacity: "1" },
+                "50%": { opacity: ".55" },
+              },
+            },
+            animation: {
+              "fade-in": "fade-in .45s cubic-bezier(.21,1,.21,1) both",
+              "fade-in-fast": "fade-in-fast .3s ease both",
+              "slide-in-right": "slide-in-right .4s cubic-bezier(.21,1,.21,1) both",
+              "scale-in": "scale-in .25s cubic-bezier(.21,1,.21,1) both",
+              "pulse-soft": "pulse-soft 1.6s ease-in-out infinite",
+            },
+          },
+        },
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>
