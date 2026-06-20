@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type CondicionSubasta = {
     consub_id: number
@@ -27,7 +26,7 @@ type PujaSubasta = {
 class SubastaService{
     routes = {
         "/api/condicion_subasta": {
-            GET: async (_: Bun.BunRequest<"/api/condicion_subasta">) => fetchAll<CondicionSubasta>("condicion_subasta"),
+            GET: async (_: Bun.BunRequest<"/api/condicion_subasta">) => listAll<CondicionSubasta>("listCondicionSubasta"),
             POST: async (req: Bun.BunRequest<"/api/condicion_subasta">) => {
                 const body = await req.json();
                 if (!body.consub_nombre)
@@ -36,7 +35,7 @@ class SubastaService{
             }
         },
         "/api/subasta": {
-            GET: async (_: Bun.BunRequest<"/api/subasta">) => fetchAll<Subasta>("subasta"),
+            GET: async (_: Bun.BunRequest<"/api/subasta">) => listAll<Subasta>("listSubasta"),
             POST: async (req: Bun.BunRequest<"/api/subasta">) => {
                 const body = await req.json();
                 if (!body.sub_fechaini || !body.sub_fechafin || !body.sub_estado || body.sub_montoini === undefined || body.fk_pro_id === undefined || body.fk_consub_id === undefined)
@@ -45,7 +44,7 @@ class SubastaService{
             }
         },
         "/api/puja_subasta": {
-            GET: async (_: Bun.BunRequest<"/api/puja_subasta">) => fetchAll<PujaSubasta>("puja_subasta"),
+            GET: async (_: Bun.BunRequest<"/api/puja_subasta">) => listAll<PujaSubasta>("listPujaSubasta"),
             POST: async (req: Bun.BunRequest<"/api/puja_subasta">) => {
                 const body = await req.json();
                 if (body.pujsub_monto === undefined || !body.pujsub_fechahor || body.fk_usu_id === undefined || body.fk_sub_id === undefined)

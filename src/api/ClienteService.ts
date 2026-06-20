@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type Cliente = {
     cli_id: number
@@ -41,7 +40,7 @@ type HistoricoMembresia = {
 class ClienteService{
     routes = {
         "/api/cliente": {
-            GET: async (_: Bun.BunRequest<"/api/cliente">) => fetchAll<Cliente>("cliente"),
+            GET: async (_: Bun.BunRequest<"/api/cliente">) => listAll<Cliente>("listCliente"),
             POST: async (req: Bun.BunRequest<"/api/cliente">) => {
                 const body = await req.json();
                 if (!body.cli_fecharegis || body.fk_lug_id === undefined)
@@ -50,7 +49,7 @@ class ClienteService{
             }
         },
         "/api/persona_natural": {
-            GET: async (_: Bun.BunRequest<"/api/persona_natural">) => fetchAll<PersonaNatural>("persona_natural"),
+            GET: async (_: Bun.BunRequest<"/api/persona_natural">) => listAll<PersonaNatural>("listPersonaNatural"),
             POST: async (req: Bun.BunRequest<"/api/persona_natural">) => {
                 const body = await req.json();
                 if (!body.pernat_cedula || !body.pernat_pnombre || !body.pernat_papellido || !body.pernat_sapellido || !body.pernat_fechanac || !body.pernat_direccion)
@@ -59,7 +58,7 @@ class ClienteService{
             }
         },
         "/api/persona_juridica": {
-            GET: async (_: Bun.BunRequest<"/api/persona_juridica">) => fetchAll<PersonaJuridica>("persona_juridica"),
+            GET: async (_: Bun.BunRequest<"/api/persona_juridica">) => listAll<PersonaJuridica>("listPersonaJuridica"),
             POST: async (req: Bun.BunRequest<"/api/persona_juridica">) => {
                 const body = await req.json();
                 if (!body.perjur_rif || !body.perjur_razonsocial || !body.perjur_reprelegal)
@@ -68,7 +67,7 @@ class ClienteService{
             }
         },
         "/api/membresia": {
-            GET: async (_: Bun.BunRequest<"/api/membresia">) => fetchAll<Membresia>("membresia"),
+            GET: async (_: Bun.BunRequest<"/api/membresia">) => listAll<Membresia>("listMembresia"),
             POST: async (req: Bun.BunRequest<"/api/membresia">) => {
                 const body = await req.json();
                 if (!body.mem_nombre || body.mem_descuento === undefined)
@@ -77,7 +76,7 @@ class ClienteService{
             }
         },
         "/api/historico_membresia": {
-            GET: async (_: Bun.BunRequest<"/api/historico_membresia">) => fetchAll<HistoricoMembresia>("historico_membresia"),
+            GET: async (_: Bun.BunRequest<"/api/historico_membresia">) => listAll<HistoricoMembresia>("listHistoricoMembresia"),
             POST: async (req: Bun.BunRequest<"/api/historico_membresia">) => {
                 const body = await req.json();
                 if (!body.hismem_fechaini)

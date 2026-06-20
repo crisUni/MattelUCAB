@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type AcuerdoComercial = {
     acucom_id: number
@@ -68,7 +67,7 @@ type DetalleCompra = {
 class CompraService{
     routes = {
         "/api/acuerdo_comercial": {
-            GET: async (_: Bun.BunRequest<"/api/acuerdo_comercial">) => fetchAll<AcuerdoComercial>("acuerdo_comercial"),
+            GET: async (_: Bun.BunRequest<"/api/acuerdo_comercial">) => listAll<AcuerdoComercial>("listAcuerdoComercial"),
             POST: async (req: Bun.BunRequest<"/api/acuerdo_comercial">) => {
                 const body = await req.json();
                 if (body.acucom_limitecredito === undefined || body.acucom_plazopago === undefined || body.acucom_descuentomayorista === undefined || body.fk_perjur_id === undefined)
@@ -77,7 +76,7 @@ class CompraService{
             }
         },
         "/api/transportista": {
-            GET: async (_: Bun.BunRequest<"/api/transportista">) => fetchAll<Transportista>("transportista"),
+            GET: async (_: Bun.BunRequest<"/api/transportista">) => listAll<Transportista>("listTransportista"),
             POST: async (req: Bun.BunRequest<"/api/transportista">) => {
                 const body = await req.json();
                 if (!body.tra_empresa)
@@ -86,7 +85,7 @@ class CompraService{
             }
         },
         "/api/compra": {
-            GET: async (_: Bun.BunRequest<"/api/compra">) => fetchAll<Compra>("compra"),
+            GET: async (_: Bun.BunRequest<"/api/compra">) => listAll<Compra>("listCompra"),
             POST: async (req: Bun.BunRequest<"/api/compra">) => {
                 const body = await req.json();
                 if (!body.com_fechahor || body.com_numfactura === undefined || body.com_subtotal === undefined || body.com_total === undefined || body.fk_tra_id === undefined || body.fk_usu_id === undefined || body.fk_lug_id === undefined)
@@ -95,7 +94,7 @@ class CompraService{
             }
         },
         "/api/estatus_compra": {
-            GET: async (_: Bun.BunRequest<"/api/estatus_compra">) => fetchAll<EstatusCompra>("estatus_compra"),
+            GET: async (_: Bun.BunRequest<"/api/estatus_compra">) => listAll<EstatusCompra>("listEstatusCompra"),
             POST: async (req: Bun.BunRequest<"/api/estatus_compra">) => {
                 const body = await req.json();
                 if (!body.estcom_nom || !body.estcom_fechahoracierre)
@@ -104,7 +103,7 @@ class CompraService{
             }
         },
         "/api/historico_estatus": {
-            GET: async (_: Bun.BunRequest<"/api/historico_estatus">) => fetchAll<HistoricoEstatus>("historico_estatus"),
+            GET: async (_: Bun.BunRequest<"/api/historico_estatus">) => listAll<HistoricoEstatus>("listHistoricoEstatus"),
             POST: async (req: Bun.BunRequest<"/api/historico_estatus">) => {
                 const body = await req.json();
                 if (!body.hisest_fechahora)
@@ -113,14 +112,14 @@ class CompraService{
             }
         },
         "/api/descuento_compra": {
-            GET: async (_: Bun.BunRequest<"/api/descuento_compra">) => fetchAll<DescuentoCompra>("descuento_compra"),
+            GET: async (_: Bun.BunRequest<"/api/descuento_compra">) => listAll<DescuentoCompra>("listDescuentoCompra"),
             POST: async (req: Bun.BunRequest<"/api/descuento_compra">) => {
                 const body = await req.json();
                 return callProcedure("createDescuentoCompra", [body.fk_des_id, body.fk_com_id]);
             }
         },
         "/api/historico_tasa_cambio": {
-            GET: async (_: Bun.BunRequest<"/api/historico_tasa_cambio">) => fetchAll<HistoricoTasaCambio>("historico_tasa_cambio"),
+            GET: async (_: Bun.BunRequest<"/api/historico_tasa_cambio">) => listAll<HistoricoTasaCambio>("listHistoricoTasaCambio"),
             POST: async (req: Bun.BunRequest<"/api/historico_tasa_cambio">) => {
                 const body = await req.json();
                 if (!body.histascam_monedaoriginal || !body.histascam_monedaconvertida || !body.histascam_fecha)
@@ -129,7 +128,7 @@ class CompraService{
             }
         },
         "/api/pago": {
-            GET: async (_: Bun.BunRequest<"/api/pago">) => fetchAll<Pago>("pago"),
+            GET: async (_: Bun.BunRequest<"/api/pago">) => listAll<Pago>("listPago"),
             POST: async (req: Bun.BunRequest<"/api/pago">) => {
                 const body = await req.json();
                 if (body.pag_id === undefined || body.pag_monto === undefined || !body.pag_fecha)
@@ -138,7 +137,7 @@ class CompraService{
             }
         },
         "/api/detalle_compra": {
-            GET: async (_: Bun.BunRequest<"/api/detalle_compra">) => fetchAll<DetalleCompra>("detalle_compra"),
+            GET: async (_: Bun.BunRequest<"/api/detalle_compra">) => listAll<DetalleCompra>("listDetalleCompra"),
             POST: async (req: Bun.BunRequest<"/api/detalle_compra">) => {
                 const body = await req.json();
                 if (body.detcom_cantidad === undefined)

@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, callProcedure } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type Rol = {
     id: number
@@ -13,25 +13,13 @@ type Permiso = {
 
 type Permiso_Rol = {
     rol_id: number
-    per_id: number
+    perm_id: number
 }
 
 class RolService{
     routes = {
         "/api/rol": {
-            GET: async (_: Bun.BunRequest<"/api/rol">) => {
-                let found: Rol[]
-
-                try {
-                    found = await sql`SELECT * FROM rol`;
-                } catch (e) {
-                    return new Response(String(e), { status: 500, headers: CORS_HEADERS  });
-                }
-
-                if (!found.length)
-                    return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
-                return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
-            },
+            GET: async (_: Bun.BunRequest<"/api/rol">) => listAll<Rol>("listRol"),
             POST: async (req: Bun.BunRequest<"/api/rol">) => {
                 const body = await req.json();
                 if (!body.rol_nombre)
@@ -61,24 +49,12 @@ class RolService{
         },
 
         "/api/permiso": {
-            GET: async (_: Bun.BunRequest<"/api/permiso">) => {
-                let found: Rol[]
-
-                try {
-                    found = await sql`SELECT * FROM permiso`;
-                } catch (e) {
-                    return new Response(String(e), { status: 500, headers: CORS_HEADERS  });
-                }
-
-                if (!found.length)
-                    return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
-                return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
-            },
+            GET: async (_: Bun.BunRequest<"/api/permiso">) => listAll<Rol>("listPermiso"),
             POST: async (req: Bun.BunRequest<"/api/permiso">) => {
                 const body = await req.json();
-                if (!body.per_moduloacceso)
-                    return new Response('per_moduloacceso is required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createPermiso", [body.per_moduloacceso])
+                if (!body.perm_moduloacceso)
+                    return new Response('perm_moduloacceso is required', { status: 400, headers: CORS_HEADERS })
+                return callProcedure("createPermiso", [body.perm_moduloacceso])
             }
         }
     }

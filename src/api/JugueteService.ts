@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type Color = {
     col_id: number
@@ -78,7 +77,7 @@ type MaterialProducto = {
 class JugueteService{
     routes = {
         "/api/color": {
-            GET: async (_: Bun.BunRequest<"/api/color">) => fetchAll<Color>("color"),
+            GET: async (_: Bun.BunRequest<"/api/color">) => listAll<Color>("listColor"),
             POST: async (req: Bun.BunRequest<"/api/color">) => {
                 const body = await req.json();
                 if (!body.col_nombre)
@@ -87,7 +86,7 @@ class JugueteService{
             }
         },
         "/api/tipo_cuerpo": {
-            GET: async (_: Bun.BunRequest<"/api/tipo_cuerpo">) => fetchAll<TipoCuerpo>("tipo_cuerpo"),
+            GET: async (_: Bun.BunRequest<"/api/tipo_cuerpo">) => listAll<TipoCuerpo>("listTipoCuerpo"),
             POST: async (req: Bun.BunRequest<"/api/tipo_cuerpo">) => {
                 const body = await req.json();
                 if (!body.tipcue_nombre)
@@ -96,16 +95,16 @@ class JugueteService{
             }
         },
         "/api/material": {
-            GET: async (_: Bun.BunRequest<"/api/material">) => fetchAll<Material>("material"),
+            GET: async (_: Bun.BunRequest<"/api/material">) => listAll<Material>("listMaterial"),
             POST: async (req: Bun.BunRequest<"/api/material">) => {
                 const body = await req.json();
-                if (!body.mat_nombre || !body.mat_tipo || !body.mat_unidad)
-                    return new Response('mat_nombre, mat_tipo, mat_unidad are required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createMaterial", [body.mat_nombre, body.mat_tipo, body.mat_unidad])
+                if (!body.mat_nombre || !body.mat_tipo || !body.mat_unidad || body.mat_costo === undefined)
+                    return new Response('mat_nombre, mat_tipo, mat_unidad, mat_costo are required', { status: 400, headers: CORS_HEADERS })
+                return callProcedure("createMaterial", [body.mat_nombre, body.mat_tipo, body.mat_unidad, body.mat_costo])
             }
         },
         "/api/era_historico": {
-            GET: async (_: Bun.BunRequest<"/api/era_historico">) => fetchAll<EraHistorico>("era_historico"),
+            GET: async (_: Bun.BunRequest<"/api/era_historico">) => listAll<EraHistorico>("listEraHistorico"),
             POST: async (req: Bun.BunRequest<"/api/era_historico">) => {
                 const body = await req.json();
                 if (!body.erahis_nombre || !body.erahis_fechaini || !body.erahis_fechafin)
@@ -114,7 +113,7 @@ class JugueteService{
             }
         },
         "/api/diseno": {
-            GET: async (_: Bun.BunRequest<"/api/diseno">) => fetchAll<Diseno>("diseno"),
+            GET: async (_: Bun.BunRequest<"/api/diseno">) => listAll<Diseno>("listDiseno"),
             POST: async (req: Bun.BunRequest<"/api/diseno">) => {
                 const body = await req.json();
                 if (!body.dis_patentecod)
@@ -123,7 +122,7 @@ class JugueteService{
             }
         },
         "/api/personaje": {
-            GET: async (_: Bun.BunRequest<"/api/personaje">) => fetchAll<Personaje>("personaje"),
+            GET: async (_: Bun.BunRequest<"/api/personaje">) => listAll<Personaje>("listPersonaje"),
             POST: async (req: Bun.BunRequest<"/api/personaje">) => {
                 const body = await req.json();
                 if (!body.per_nombre)
@@ -132,7 +131,7 @@ class JugueteService{
             }
         },
         "/api/molde_rostro": {
-            GET: async (_: Bun.BunRequest<"/api/molde_rostro">) => fetchAll<MoldeRostro>("molde_rostro"),
+            GET: async (_: Bun.BunRequest<"/api/molde_rostro">) => listAll<MoldeRostro>("listMoldeRostro"),
             POST: async (req: Bun.BunRequest<"/api/molde_rostro">) => {
                 const body = await req.json();
                 if (!body.molros_nombre || !body.molros_patente || body.fk_per_id === undefined)
@@ -141,7 +140,7 @@ class JugueteService{
             }
         },
         "/api/juguete": {
-            GET: async (_: Bun.BunRequest<"/api/juguete">) => fetchAll<Juguete>("juguete"),
+            GET: async (_: Bun.BunRequest<"/api/juguete">) => listAll<Juguete>("listJuguete"),
             POST: async (req: Bun.BunRequest<"/api/juguete">) => {
                 const body = await req.json();
                 if (!body.jug_adn)
@@ -150,7 +149,7 @@ class JugueteService{
             }
         },
         "/api/vinculo_personaje": {
-            GET: async (_: Bun.BunRequest<"/api/vinculo_personaje">) => fetchAll<VinculoPersonaje>("vinculo_personaje"),
+            GET: async (_: Bun.BunRequest<"/api/vinculo_personaje">) => listAll<VinculoPersonaje>("listVinculoPersonaje"),
             POST: async (req: Bun.BunRequest<"/api/vinculo_personaje">) => {
                 const body = await req.json();
                 if (body.fk_personaje1 === undefined || body.fk_personaje2 === undefined || !body.vinper_tipo_relacion)
@@ -159,7 +158,7 @@ class JugueteService{
             }
         },
         "/api/compatibilidad_juguete": {
-            GET: async (_: Bun.BunRequest<"/api/compatibilidad_juguete">) => fetchAll<CompatibilidadJuguete>("compatibilidad_juguete"),
+            GET: async (_: Bun.BunRequest<"/api/compatibilidad_juguete">) => listAll<CompatibilidadJuguete>("listCompatibilidadJuguete"),
             POST: async (req: Bun.BunRequest<"/api/compatibilidad_juguete">) => {
                 const body = await req.json();
                 if (body.fk_juguete1 === undefined || body.fk_juguete2 === undefined)
@@ -168,7 +167,7 @@ class JugueteService{
             }
         },
         "/api/color_producto": {
-            GET: async (_: Bun.BunRequest<"/api/color_producto">) => fetchAll<ColorProducto>("color_producto"),
+            GET: async (_: Bun.BunRequest<"/api/color_producto">) => listAll<ColorProducto>("listColorProducto"),
             POST: async (req: Bun.BunRequest<"/api/color_producto">) => {
                 const body = await req.json();
                 if (!body.colpro_zonaaplicacion)
@@ -177,7 +176,7 @@ class JugueteService{
             }
         },
         "/api/material_producto": {
-            GET: async (_: Bun.BunRequest<"/api/material_producto">) => fetchAll<MaterialProducto>("material_producto"),
+            GET: async (_: Bun.BunRequest<"/api/material_producto">) => listAll<MaterialProducto>("listMaterialProducto"),
             POST: async (req: Bun.BunRequest<"/api/material_producto">) => {
                 const body = await req.json();
                 if (body.matpro_cantidad === undefined)

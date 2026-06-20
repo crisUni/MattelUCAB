@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type Usuario = {
     usu_id: number
@@ -19,7 +18,7 @@ type PermisoRol = {
 class UsuarioService{
     routes = {
         "/api/usuario": {
-            GET: async (_: Bun.BunRequest<"/api/usuario">) => fetchAll<Usuario>("usuario"),
+            GET: async (_: Bun.BunRequest<"/api/usuario">) => listAll<Usuario>("listUsuario"),
             POST: async (req: Bun.BunRequest<"/api/usuario">) => {
                 const body = await req.json();
                 if (!body.usu_nombre || !body.usu_clave || !body.usu_correo || body.fk_rol_id === undefined)
@@ -28,7 +27,7 @@ class UsuarioService{
             }
         },
         "/api/permiso_rol": {
-            GET: async (_: Bun.BunRequest<"/api/permiso_rol">) => fetchAll<PermisoRol>("permiso_rol"),
+            GET: async (_: Bun.BunRequest<"/api/permiso_rol">) => listAll<PermisoRol>("listPermisoRol"),
             POST: async (req: Bun.BunRequest<"/api/permiso_rol">) => {
                 const body = await req.json();
                 return callProcedure("createPermisoRol", [body.fk_rol_id, body.fk_per_id]);

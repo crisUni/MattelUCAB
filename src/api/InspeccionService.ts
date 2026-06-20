@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type LoteProduccion = {
     lotpro_id: number
@@ -29,7 +28,7 @@ type DefectoLote = {
 class InspeccionService{
     routes = {
         "/api/lote_produccion": {
-            GET: async (_: Bun.BunRequest<"/api/lote_produccion">) => fetchAll<LoteProduccion>("lote_produccion"),
+            GET: async (_: Bun.BunRequest<"/api/lote_produccion">) => listAll<LoteProduccion>("listLoteProduccion"),
             POST: async (req: Bun.BunRequest<"/api/lote_produccion">) => {
                 const body = await req.json();
                 if (!body.lotpro_fechaini)
@@ -38,16 +37,16 @@ class InspeccionService{
             }
         },
         "/api/inspeccion_calidad": {
-            GET: async (_: Bun.BunRequest<"/api/inspeccion_calidad">) => fetchAll<InspeccionCalidad>("inspeccion_calidad"),
+            GET: async (_: Bun.BunRequest<"/api/inspeccion_calidad">) => listAll<InspeccionCalidad>("listInspeccionCalidad"),
             POST: async (req: Bun.BunRequest<"/api/inspeccion_calidad">) => {
                 const body = await req.json();
-                if (!body.inscal_fecha || body.fk_emp_id === undefined)
-                    return new Response('inscal_fecha, fk_emp_id are required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createInspeccionCalidad", [body.inscal_fecha, body.inscal_resultado, body.fk_lotpro_id])
+                if (!body.inscal_fecha || !body.inscal_resultado || body.fk_lotpro_id === undefined || body.fk_emp_id === undefined)
+                    return new Response('inscal_fecha, inscal_resultado, fk_lotpro_id, fk_emp_id are required', { status: 400, headers: CORS_HEADERS })
+                return callProcedure("createInspeccionCalidad", [body.inscal_fecha, body.inscal_resultado, body.fk_lotpro_id, body.fk_emp_id])
             }
         },
         "/api/defecto": {
-            GET: async (_: Bun.BunRequest<"/api/defecto">) => fetchAll<Defecto>("defecto"),
+            GET: async (_: Bun.BunRequest<"/api/defecto">) => listAll<Defecto>("listDefecto"),
             POST: async (req: Bun.BunRequest<"/api/defecto">) => {
                 const body = await req.json();
                 if (!body.def_nombre)
@@ -56,7 +55,7 @@ class InspeccionService{
             }
         },
         "/api/defecto_lote": {
-            GET: async (_: Bun.BunRequest<"/api/defecto_lote">) => fetchAll<DefectoLote>("defecto_lote"),
+            GET: async (_: Bun.BunRequest<"/api/defecto_lote">) => listAll<DefectoLote>("listDefectoLote"),
             POST: async (req: Bun.BunRequest<"/api/defecto_lote">) => {
                 const body = await req.json();
                 if (body.deflot_cantidadafectada === undefined)

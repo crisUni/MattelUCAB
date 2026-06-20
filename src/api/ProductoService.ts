@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type CategoriaProducto = {
     catpro_id: number
@@ -51,7 +50,7 @@ type HistoricoProfesion = {
 class ProductoService{
     routes = {
         "/api/categoria_producto": {
-            GET: async (_: Bun.BunRequest<"/api/categoria_producto">) => fetchAll<CategoriaProducto>("categoria_producto"),
+            GET: async (_: Bun.BunRequest<"/api/categoria_producto">) => listAll<CategoriaProducto>("listCategoriaProducto"),
             POST: async (req: Bun.BunRequest<"/api/categoria_producto">) => {
                 const body = await req.json();
                 if (!body.catpro_descripcion)
@@ -60,7 +59,7 @@ class ProductoService{
             }
         },
         "/api/edicion": {
-            GET: async (_: Bun.BunRequest<"/api/edicion">) => fetchAll<Edicion>("edicion"),
+            GET: async (_: Bun.BunRequest<"/api/edicion">) => listAll<Edicion>("listEdicion"),
             POST: async (req: Bun.BunRequest<"/api/edicion">) => {
                 const body = await req.json();
                 if (!body.edi_nombre)
@@ -69,7 +68,7 @@ class ProductoService{
             }
         },
         "/api/profesion": {
-            GET: async (_: Bun.BunRequest<"/api/profesion">) => fetchAll<Profesion>("profesion"),
+            GET: async (_: Bun.BunRequest<"/api/profesion">) => listAll<Profesion>("listProfesion"),
             POST: async (req: Bun.BunRequest<"/api/profesion">) => {
                 const body = await req.json();
                 if (!body.prof_nombre)
@@ -78,14 +77,14 @@ class ProductoService{
             }
         },
         "/api/exclusividad": {
-            GET: async (_: Bun.BunRequest<"/api/exclusividad">) => fetchAll<Exclusividad>("exclusividad"),
+            GET: async (_: Bun.BunRequest<"/api/exclusividad">) => listAll<Exclusividad>("listExclusividad"),
             POST: async (req: Bun.BunRequest<"/api/exclusividad">) => {
                 const body = await req.json();
                 return callProcedure("createExclusividad", [body.exc_nombre, body.exc_limiteproducto]);
             }
         },
         "/api/producto": {
-            GET: async (_: Bun.BunRequest<"/api/producto">) => fetchAll<Producto>("producto"),
+            GET: async (_: Bun.BunRequest<"/api/producto">) => listAll<Producto>("listProducto"),
             POST: async (req: Bun.BunRequest<"/api/producto">) => {
                 const body = await req.json();
                 if (!body.pro_nombre || body.pro_preciobase === undefined || !body.pro_lanzamientofecha || !body.pro_tipo || body.fk_jug_id === undefined || body.fk_catpro_id === undefined || body.fk_lotpro_id === undefined || body.fk_edi_id === undefined || body.fk_exc_id === undefined)
@@ -94,7 +93,7 @@ class ProductoService{
             }
         },
         "/api/detalle_set": {
-            GET: async (_: Bun.BunRequest<"/api/detalle_set">) => fetchAll<DetalleSet>("detalle_set"),
+            GET: async (_: Bun.BunRequest<"/api/detalle_set">) => listAll<DetalleSet>("listDetalleSet"),
             POST: async (req: Bun.BunRequest<"/api/detalle_set">) => {
                 const body = await req.json();
                 if (!body.detset_nombre)
@@ -103,7 +102,7 @@ class ProductoService{
             }
         },
         "/api/historico_profesion": {
-            GET: async (_: Bun.BunRequest<"/api/historico_profesion">) => fetchAll<HistoricoProfesion>("historico_profesion"),
+            GET: async (_: Bun.BunRequest<"/api/historico_profesion">) => listAll<HistoricoProfesion>("listHistoricoProfesion"),
             POST: async (req: Bun.BunRequest<"/api/historico_profesion">) => {
                 const body = await req.json();
                 if (!body.hispro_anoasignacion)

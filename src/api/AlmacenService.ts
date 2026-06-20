@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type HubRegional = {
     hubreg_id: number
@@ -25,7 +24,7 @@ type Inventario = {
 class AlmacenService{
     routes = {
         "/api/hub_regional": {
-            GET: async (_: Bun.BunRequest<"/api/hub_regional">) => fetchAll<HubRegional>("hub_regional"),
+            GET: async (_: Bun.BunRequest<"/api/hub_regional">) => listAll<HubRegional>("listHubRegional"),
             POST: async (req: Bun.BunRequest<"/api/hub_regional">) => {
                 const body = await req.json();
                 if (!body.hubreg_nombre || body.fk_lug_id === undefined)
@@ -34,7 +33,7 @@ class AlmacenService{
             }
         },
         "/api/almacen": {
-            GET: async (_: Bun.BunRequest<"/api/almacen">) => fetchAll<Almacen>("almacen"),
+            GET: async (_: Bun.BunRequest<"/api/almacen">) => listAll<Almacen>("listAlmacen"),
             POST: async (req: Bun.BunRequest<"/api/almacen">) => {
                 const body = await req.json();
                 if (!body.alm_tipoinstalacion || body.fk_hubreg_id === undefined || body.fk_lug_id === undefined)
@@ -43,7 +42,7 @@ class AlmacenService{
             }
         },
         "/api/inventario": {
-            GET: async (_: Bun.BunRequest<"/api/inventario">) => fetchAll<Inventario>("inventario"),
+            GET: async (_: Bun.BunRequest<"/api/inventario">) => listAll<Inventario>("listInventario"),
             POST: async (req: Bun.BunRequest<"/api/inventario">) => {
                 const body = await req.json();
                 if (body.fk_pro_id === undefined || body.fk_alm_id === undefined || body.inv_stockdisponible === undefined || body.inv_cantidad === undefined || !body.inv_fecha_actualizacion)

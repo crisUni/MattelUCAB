@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type Departamento = {
     id: number
@@ -36,19 +36,7 @@ type EmpTurno = {
 class RolService{
     routes = {
         "/api/departamento": {
-            GET: async (_: Bun.BunRequest<"/api/departamento">) => {
-                let found: Departamento[]
-
-                try {
-                    found = await sql`SELECT * FROM departamento`;
-                } catch (e) {
-                    return new Response(String(e), { status: 500, headers: CORS_HEADERS  });
-                }
-
-                if (!found.length)
-                    return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
-                return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
-            },
+            GET: async (_: Bun.BunRequest<"/api/departamento">) => listAll<Departamento>("listDepartamento"),
             POST: async (req: Bun.BunRequest<"/api/departamento">) => {
                 const body = await req.json();
                 if (!body.dep_nombre)
@@ -103,19 +91,7 @@ class RolService{
         },
 
         "/api/cargo": {
-            GET: async (_: Bun.BunRequest<"/api/cargo">) => {
-                let found: Cargo[]
-
-                try {
-                    found = await sql`SELECT * FROM cargo`;
-                } catch (e) {
-                    return new Response(String(e), { status: 500, headers: CORS_HEADERS  });
-                }
-
-                if (!found.length)
-                    return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
-                return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
-            },
+            GET: async (_: Bun.BunRequest<"/api/cargo">) => listAll<Cargo>("listCargo"),
             POST: async (req: Bun.BunRequest<"/api/cargo">) => {
                 const body = await req.json();
                 if (!body.car_nombre || body.car_sueldobase === undefined)
@@ -125,19 +101,7 @@ class RolService{
         },
 
         "/api/empleado": {
-            GET: async (_: Bun.BunRequest<"/api/empleado">) => {
-                let found: Cargo[]
-
-                try {
-                    found = await sql`SELECT * FROM empleado`;
-                } catch (e) {
-                    return new Response(String(e), { status: 500, headers: CORS_HEADERS  });
-                }
-
-                if (!found.length)
-                    return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
-                return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
-            },
+            GET: async (_: Bun.BunRequest<"/api/empleado">) => listAll<Cargo>("listEmpleado"),
             POST: async (req: Bun.BunRequest<"/api/empleado">) => {
                 const body = await req.json();
                 if (!body.emp_pnombre || !body.emp_papellido || !body.emp_sapellido || !body.emp_direccion)
@@ -167,19 +131,7 @@ class RolService{
             }
         },
         "/api/turno": {
-            GET: async (_: Bun.BunRequest<"/api/turno">) => {
-                let found: Cargo[]
-
-                try {
-                    found = await sql`SELECT * FROM turno`;
-                } catch (e) {
-                    return new Response(String(e), { status: 500, headers: CORS_HEADERS  });
-                }
-
-                if (!found.length)
-                    return new Response('No resources found', { status: 404, headers: CORS_HEADERS  })
-                return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
-            },
+            GET: async (_: Bun.BunRequest<"/api/turno">) => listAll<Cargo>("listTurno"),
             POST: async (req: Bun.BunRequest<"/api/turno">) => {
                 const body = await req.json();
                 if (!body.tur_fecha || body.tur_horaini === undefined || body.tur_horafin === undefined)
@@ -188,7 +140,7 @@ class RolService{
             }
         },
         "/api/dep_emp": {
-            GET: async (_: Bun.BunRequest<"/api/dep_emp">) => fetchAll<DepEmp>("dep_emp"),
+            GET: async (_: Bun.BunRequest<"/api/dep_emp">) => listAll<DepEmp>("listDepEmp"),
             POST: async (req: Bun.BunRequest<"/api/dep_emp">) => {
                 const body = await req.json();
                 if (!body.depemp_fechaini || body.fk_dep_id === undefined || body.fk_emp_id === undefined || body.fk_car_id === undefined)
@@ -197,7 +149,7 @@ class RolService{
             }
         },
         "/api/emp_turno": {
-            GET: async (_: Bun.BunRequest<"/api/emp_turno">) => fetchAll<EmpTurno>("emp_turno"),
+            GET: async (_: Bun.BunRequest<"/api/emp_turno">) => listAll<EmpTurno>("listEmpTurno"),
             POST: async (req: Bun.BunRequest<"/api/emp_turno">) => {
                 const body = await req.json();
                 if (body.fk_emp_id === undefined || body.fk_tur_id === undefined)
