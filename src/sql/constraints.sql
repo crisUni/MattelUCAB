@@ -90,9 +90,6 @@ ALTER TABLE SUBASTA ADD CONSTRAINT chk_sub_fechas CHECK (sub_fechafin >= sub_fec
 -- DEP_EMP
 ALTER TABLE DEP_EMP ADD CONSTRAINT chk_depemp_fechas CHECK (depemp_fechafin >= depemp_fechaini);
 
--- CAR_EMP
-ALTER TABLE CAR_EMP ADD CONSTRAINT chk_caremp_fechas CHECK (caremp_fechafin >= caremp_fechaini);
-
 -- HISTORICO_MEMBRESIA
 ALTER TABLE HISTORICO_MEMBRESIA ADD CONSTRAINT chk_hismem_fechas CHECK (hismem_fechafin >= hismem_fechaini);
 
