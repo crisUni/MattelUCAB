@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, fetchAll, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure } from "./CorsHeaders";
 
 type Descuento = {
     id: number
@@ -27,7 +27,7 @@ class DescuentoService{
                 const body = await req.json();
                 if (!body.des_nombre || body.des_porcentaje === undefined)
                     return new Response('des_nombre and des_porcentaje are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("descuento", body)
+                return callProcedure("createDescuento", [body.des_nombre, body.des_porcentaje, body.des_fechaven])
             }
         }
     }

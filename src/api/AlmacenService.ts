@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, fetchAll, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
 
 type HubRegional = {
     hubreg_id: number
@@ -30,7 +30,7 @@ class AlmacenService{
                 const body = await req.json();
                 if (!body.hubreg_nombre || body.fk_lug_id === undefined)
                     return new Response('hubreg_nombre, fk_lug_id are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("hub_regional", body)
+                return callProcedure("createHubRegional", [body.hubreg_nombre, body.fk_lug_id])
             }
         },
         "/api/almacen": {
@@ -39,7 +39,7 @@ class AlmacenService{
                 const body = await req.json();
                 if (!body.alm_tipoinstalacion || body.fk_hubreg_id === undefined || body.fk_lug_id === undefined)
                     return new Response('alm_tipoinstalacion, fk_hubreg_id, fk_lug_id are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("almacen", body)
+                return callProcedure("createAlmacen", [body.alm_tipoinstalacion, body.fk_hubreg_id, body.fk_lug_id])
             }
         },
         "/api/inventario": {
@@ -48,7 +48,7 @@ class AlmacenService{
                 const body = await req.json();
                 if (body.fk_pro_id === undefined || body.fk_alm_id === undefined || body.inv_stockdisponible === undefined || body.inv_cantidad === undefined || !body.inv_fecha_actualizacion)
                     return new Response('fk_pro_id, fk_alm_id, inv_stockdisponible, inv_cantidad, inv_fecha_actualizacion are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("inventario", body)
+                return callProcedure("createInventario", [body.fk_pro_id, body.fk_alm_id, body.inv_stockdisponible, body.inv_cantidad, body.inv_fecha_actualizacion])
             }
         }
     }

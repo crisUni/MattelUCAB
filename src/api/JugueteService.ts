@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, fetchAll, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
 
 type Color = {
     col_id: number
@@ -83,7 +83,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.col_nombre)
                     return new Response('col_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("color", body)
+                return callProcedure("createColor", [body.col_nombre, body.col_codhex])
             }
         },
         "/api/tipo_cuerpo": {
@@ -92,7 +92,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.tipcue_nombre)
                     return new Response('tipcue_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("tipo_cuerpo", body)
+                return callProcedure("createTipoCuerpo", [body.tipcue_nombre])
             }
         },
         "/api/material": {
@@ -101,7 +101,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.mat_nombre || !body.mat_tipo || !body.mat_unidad)
                     return new Response('mat_nombre, mat_tipo, mat_unidad are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("material", body)
+                return callProcedure("createMaterial", [body.mat_nombre, body.mat_tipo, body.mat_unidad])
             }
         },
         "/api/era_historico": {
@@ -110,7 +110,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.erahis_nombre || !body.erahis_fechaini || !body.erahis_fechafin)
                     return new Response('erahis_nombre, erahis_fechaini, erahis_fechafin are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("era_historico", body)
+                return callProcedure("createEraHistorico", [body.erahis_nombre, body.erahis_fechaini, body.erahis_fechafin])
             }
         },
         "/api/diseno": {
@@ -119,7 +119,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.dis_patentecod)
                     return new Response('dis_patentecod is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("diseno", body)
+                return callProcedure("createDiseno", [body.dis_patentecod])
             }
         },
         "/api/personaje": {
@@ -128,7 +128,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.per_nombre)
                     return new Response('per_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("personaje", body)
+                return callProcedure("createPersonaje", [body.per_nombre])
             }
         },
         "/api/molde_rostro": {
@@ -137,7 +137,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.molros_nombre || !body.molros_patente || body.fk_per_id === undefined)
                     return new Response('molros_nombre, molros_patente, fk_per_id are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("molde_rostro", body)
+                return callProcedure("createMoldeRostro", [body.molros_nombre, body.molros_patente, body.fk_per_id])
             }
         },
         "/api/juguete": {
@@ -146,7 +146,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.jug_adn)
                     return new Response('jug_adn is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("juguete", body)
+                return callProcedure("createJuguete", [body.jug_adn, body.fk_molros_id, body.fk_tipcue_id, body.fk_erahis_id, body.fk_dis_id])
             }
         },
         "/api/vinculo_personaje": {
@@ -155,7 +155,7 @@ class JugueteService{
                 const body = await req.json();
                 if (body.fk_personaje1 === undefined || body.fk_personaje2 === undefined || !body.vinper_tipo_relacion)
                     return new Response('fk_personaje1, fk_personaje2, vinper_tipo_relacion are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("vinculo_personaje", body)
+                return callProcedure("createVinculoPersonaje", [body.fk_personaje1, body.fk_personaje2, body.vinper_tipo_relacion])
             }
         },
         "/api/compatibilidad_juguete": {
@@ -164,7 +164,7 @@ class JugueteService{
                 const body = await req.json();
                 if (body.fk_juguete1 === undefined || body.fk_juguete2 === undefined)
                     return new Response('fk_juguete1, fk_juguete2 are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("compatibilidad_juguete", body)
+                return callProcedure("createCompatibilidadJuguete", [body.fk_juguete1, body.fk_juguete2])
             }
         },
         "/api/color_producto": {
@@ -173,7 +173,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.colpro_zonaaplicacion)
                     return new Response('colpro_zonaaplicacion is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("color_producto", body)
+                return callProcedure("createColorProducto", [body.fk_col_id, body.fk_jug_id, body.colpro_zonaaplicacion])
             }
         },
         "/api/material_producto": {
@@ -182,7 +182,7 @@ class JugueteService{
                 const body = await req.json();
                 if (body.matpro_cantidad === undefined)
                     return new Response('matpro_cantidad is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("material_producto", body)
+                return callProcedure("createMaterialProducto", [body.fk_mat_id, body.fk_jug_id, body.matpro_cantidad])
             }
         }
     }

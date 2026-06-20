@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, fetchAll, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
 
 type Cliente = {
     cli_id: number
@@ -46,7 +46,7 @@ class ClienteService{
                 const body = await req.json();
                 if (!body.cli_fecharegis || body.fk_lug_id === undefined)
                     return new Response('cli_fecharegis, fk_lug_id are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("cliente", body)
+                return callProcedure("createCliente", [body.cli_fecharegis, body.fk_lug_id])
             }
         },
         "/api/persona_natural": {
@@ -55,7 +55,7 @@ class ClienteService{
                 const body = await req.json();
                 if (!body.pernat_cedula || !body.pernat_pnombre || !body.pernat_papellido || !body.pernat_sapellido || !body.pernat_fechanac || !body.pernat_direccion)
                     return new Response('pernat_cedula, pernat_pnombre, pernat_papellido, pernat_sapellido, pernat_fechanac, pernat_direccion are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("persona_natural", body)
+                return callProcedure("createPersonaNatural", [body.fk_cli_id, body.pernat_cedula, body.pernat_pnombre, body.pernat_snombre, body.pernat_papellido, body.pernat_sapellido, body.pernat_fechanac, body.pernat_direccion])
             }
         },
         "/api/persona_juridica": {
@@ -64,7 +64,7 @@ class ClienteService{
                 const body = await req.json();
                 if (!body.perjur_rif || !body.perjur_razonsocial || !body.perjur_reprelegal)
                     return new Response('perjur_rif, perjur_razonsocial, perjur_reprelegal are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("persona_juridica", body)
+                return callProcedure("createPersonaJuridica", [body.fk_cli_id, body.perjur_rif, body.perjur_razonsocial, body.perjur_reprelegal])
             }
         },
         "/api/membresia": {
@@ -73,7 +73,7 @@ class ClienteService{
                 const body = await req.json();
                 if (!body.mem_nombre || body.mem_descuento === undefined)
                     return new Response('mem_nombre, mem_descuento are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("membresia", body)
+                return callProcedure("createMembresia", [body.mem_nombre, body.mem_descuento])
             }
         },
         "/api/historico_membresia": {
@@ -82,7 +82,7 @@ class ClienteService{
                 const body = await req.json();
                 if (!body.hismem_fechaini)
                     return new Response('hismem_fechaini is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("historico_membresia", body)
+                return callProcedure("createHistoricoMembresia", [body.hismem_fechaini, body.hismem_fechafin, body.fk_mem_id, body.fk_cli_id])
             }
         }
     }

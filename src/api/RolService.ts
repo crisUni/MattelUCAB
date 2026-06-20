@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure } from "./CorsHeaders";
 
 type Rol = {
     id: number
@@ -36,7 +36,7 @@ class RolService{
                 const body = await req.json();
                 if (!body.rol_nombre)
                     return new Response('rol_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("rol", body)
+                return callProcedure("createRol", [body.rol_nombre])
             }
         },
 
@@ -49,7 +49,7 @@ class RolService{
 
                 // TODO - TEST THIS!!!
 				try {
-					found = await sql`SELECT * FROM Permiso p, Permiso_Rol pr WHERE pr.fk_rol_id = ${req.params.id} AND pr.fk_per_id = p.per_id`
+					found = await sql`SELECT * FROM Permiso p, Permiso_Rol pr WHERE pr.fk_rol_id = ${req.params.id} AND pr.fk_perm_id = p.perm_id`
 				} catch (e) {
 					return new Response(String(e), { status: 500 });
 				}
@@ -78,7 +78,7 @@ class RolService{
                 const body = await req.json();
                 if (!body.per_moduloacceso)
                     return new Response('per_moduloacceso is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("permiso", body)
+                return callProcedure("createPermiso", [body.per_moduloacceso])
             }
         }
     }

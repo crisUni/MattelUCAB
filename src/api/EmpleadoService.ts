@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, fetchAll, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
 
 type Departamento = {
     id: number
@@ -53,7 +53,7 @@ class RolService{
                 const body = await req.json();
                 if (!body.dep_nombre)
                     return new Response('dep_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("departamento", body)
+                return callProcedure("createDepartamento", [body.dep_nombre, body.dep_descripcion])
             }
         },
 
@@ -120,7 +120,7 @@ class RolService{
                 const body = await req.json();
                 if (!body.car_nombre || body.car_sueldobase === undefined)
                     return new Response('car_nombre and car_sueldobase are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("cargo", body)
+                return callProcedure("createCargo", [body.car_nombre, body.car_sueldobase])
             }
         },
 
@@ -142,7 +142,7 @@ class RolService{
                 const body = await req.json();
                 if (!body.emp_pnombre || !body.emp_papellido || !body.emp_sapellido || !body.emp_direccion)
                     return new Response('emp_pnombre, emp_papellido, emp_sapellido, emp_direccion are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("empleado", body)
+                return callProcedure("createEmpleado", [body.emp_pnombre, body.emp_snombre, body.emp_papellido, body.emp_sapellido, body.emp_direccion])
             }
         },
 
@@ -184,7 +184,7 @@ class RolService{
                 const body = await req.json();
                 if (!body.tur_fecha || body.tur_horaini === undefined || body.tur_horafin === undefined)
                     return new Response('tur_fecha, tur_horaini, tur_horafin are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("turno", body)
+                return callProcedure("createTurno", [body.tur_fecha, body.tur_horaini, body.tur_horafin])
             }
         },
         "/api/dep_emp": {
@@ -193,7 +193,7 @@ class RolService{
                 const body = await req.json();
                 if (!body.depemp_fechaini || body.fk_dep_id === undefined || body.fk_emp_id === undefined || body.fk_car_id === undefined)
                     return new Response('depemp_fechaini, fk_dep_id, fk_emp_id, fk_car_id are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("dep_emp", body)
+                return callProcedure("createDepEmp", [body.depemp_fechaini, body.depemp_fechafin, body.fk_dep_id, body.fk_emp_id, body.fk_car_id])
             }
         },
         "/api/emp_turno": {
@@ -202,7 +202,7 @@ class RolService{
                 const body = await req.json();
                 if (body.fk_emp_id === undefined || body.fk_tur_id === undefined)
                     return new Response('fk_emp_id, fk_tur_id are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("emp_turno", body)
+                return callProcedure("createEmpTurno", [body.fk_emp_id, body.fk_tur_id])
             }
         }
 

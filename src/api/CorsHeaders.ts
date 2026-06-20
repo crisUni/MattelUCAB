@@ -30,3 +30,13 @@ export async function insertOne(table: string, data: Record<string, unknown>): P
         return new Response(String(e), { status: 500, headers: CORS_HEADERS });
     }
 }
+
+export async function callProcedure(procName: string, params: unknown[]): Promise<Response> {
+    try {
+        const placeholders = params.map((_, i) => `$${i + 1}`).join(", ");
+        await sql.unsafe(`CALL ${procName}(${placeholders})`, params);
+        return new Response('Created', { status: 201, headers: CORS_HEADERS })
+    } catch (e) {
+        return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+    }
+}

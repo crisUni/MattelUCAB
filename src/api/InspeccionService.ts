@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, fetchAll, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, fetchAll } from "./CorsHeaders";
 
 type LoteProduccion = {
     lotpro_id: number
@@ -34,7 +34,7 @@ class InspeccionService{
                 const body = await req.json();
                 if (!body.lotpro_fechaini)
                     return new Response('lotpro_fechaini is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("lote_produccion", body)
+                return callProcedure("createLoteProduccion", [body.lotpro_fechaini, body.lotpro_fechafin])
             }
         },
         "/api/inspeccion_calidad": {
@@ -43,7 +43,7 @@ class InspeccionService{
                 const body = await req.json();
                 if (!body.inscal_fecha || body.fk_emp_id === undefined)
                     return new Response('inscal_fecha, fk_emp_id are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("inspeccion_calidad", body)
+                return callProcedure("createInspeccionCalidad", [body.inscal_fecha, body.inscal_resultado, body.fk_lotpro_id])
             }
         },
         "/api/defecto": {
@@ -52,7 +52,7 @@ class InspeccionService{
                 const body = await req.json();
                 if (!body.def_nombre)
                     return new Response('def_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("defecto", body)
+                return callProcedure("createDefecto", [body.def_nombre])
             }
         },
         "/api/defecto_lote": {
@@ -61,7 +61,7 @@ class InspeccionService{
                 const body = await req.json();
                 if (body.deflot_cantidadafectada === undefined)
                     return new Response('deflot_cantidadafectada is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("defecto_lote", body)
+                return callProcedure("createDefectoLote", [body.deflot_cantidadafectada, body.fk_def_id, body.fk_lotpro_id])
             }
         }
     }
