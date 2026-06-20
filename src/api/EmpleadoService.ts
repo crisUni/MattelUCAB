@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
 
 type Departamento = {
     id: number
@@ -44,7 +44,6 @@ class RolService{
                 return callProcedure("createDepartamento", [body.dep_nombre, body.dep_descripcion])
             }
         },
-
         // TODO - return every employee and their role in the given department
         "/api/departamento/:id": {
             GET: async (req: Bun.BunRequest<"/api/departamento/:id">) => {
@@ -66,6 +65,13 @@ class RolService{
                 if (!found.length)
                     return new Response('No resources found', { status: 404 })
                 return Response.json(found, { status: 200 , headers: { ...CORS_HEADERS, "Content-Type": "application/json"}})
+            },
+            PUT: async (req: Bun.BunRequest<"/api/departamento/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateDepartamento", [id, body.dep_nombre, body.dep_descripcion])
             }
         },
 
@@ -99,6 +105,15 @@ class RolService{
                 return callProcedure("createCargo", [body.car_nombre, body.car_sueldobase])
             }
         },
+        "/api/cargo/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/cargo/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateCargo", [id, body.car_nombre, body.car_sueldobase])
+            }
+        },
 
         "/api/empleado": {
             GET: async (_: Bun.BunRequest<"/api/empleado">) => listAll<Cargo>("listEmpleado"),
@@ -107,6 +122,15 @@ class RolService{
                 if (!body.emp_pnombre || !body.emp_papellido || !body.emp_sapellido || !body.emp_direccion)
                     return new Response('emp_pnombre, emp_papellido, emp_sapellido, emp_direccion are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createEmpleado", [body.emp_pnombre, body.emp_snombre, body.emp_papellido, body.emp_sapellido, body.emp_direccion])
+            }
+        },
+        "/api/empleado/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/empleado/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateEmpleado", [id, body.emp_pnombre, body.emp_snombre, body.emp_papellido, body.emp_sapellido, body.emp_direccion])
             }
         },
 
@@ -139,6 +163,15 @@ class RolService{
                 return callProcedure("createTurno", [body.tur_fecha, body.tur_horaini, body.tur_horafin])
             }
         },
+        "/api/turno/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/turno/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateTurno", [id, body.tur_fecha, body.tur_horaini, body.tur_horafin])
+            }
+        },
         "/api/dep_emp": {
             GET: async (_: Bun.BunRequest<"/api/dep_emp">) => listAll<DepEmp>("listDepEmp"),
             POST: async (req: Bun.BunRequest<"/api/dep_emp">) => {
@@ -146,6 +179,10 @@ class RolService{
                 if (!body.depemp_fechaini || body.fk_dep_id === undefined || body.fk_emp_id === undefined || body.fk_car_id === undefined)
                     return new Response('depemp_fechaini, fk_dep_id, fk_emp_id, fk_car_id are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createDepEmp", [body.depemp_fechaini, body.depemp_fechafin, body.fk_dep_id, body.fk_emp_id, body.fk_car_id])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/dep_emp">) => {
+                const body = await req.json();
+                return callUpdate("updateDepEmp", [body.fk_dep_id, body.fk_emp_id, body.depemp_fechaini, body.depemp_fechafin])
             }
         },
         "/api/emp_turno": {

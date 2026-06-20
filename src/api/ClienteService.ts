@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
 
 type Cliente = {
     cli_id: number
@@ -48,6 +48,15 @@ class ClienteService{
                 return callProcedure("createCliente", [body.cli_fecharegis, body.fk_lug_id])
             }
         },
+        "/api/cliente/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/cliente/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateCliente", [id, body.cli_fecharegis, body.fk_lug_id])
+            }
+        },
         "/api/persona_natural": {
             GET: async (_: Bun.BunRequest<"/api/persona_natural">) => listAll<PersonaNatural>("listPersonaNatural"),
             POST: async (req: Bun.BunRequest<"/api/persona_natural">) => {
@@ -55,6 +64,10 @@ class ClienteService{
                 if (!body.pernat_cedula || !body.pernat_pnombre || !body.pernat_papellido || !body.pernat_sapellido || !body.pernat_fechanac || !body.pernat_direccion)
                     return new Response('pernat_cedula, pernat_pnombre, pernat_papellido, pernat_sapellido, pernat_fechanac, pernat_direccion are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createPersonaNatural", [body.fk_cli_id, body.pernat_cedula, body.pernat_pnombre, body.pernat_snombre, body.pernat_papellido, body.pernat_sapellido, body.pernat_fechanac, body.pernat_direccion])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/persona_natural">) => {
+                const body = await req.json();
+                return callUpdate("updatePersonaNatural", [body.fk_cli_id, body.pernat_cedula, body.pernat_pnombre, body.pernat_snombre, body.pernat_papellido, body.pernat_sapellido, body.pernat_fechanac, body.pernat_direccion])
             }
         },
         "/api/persona_juridica": {
@@ -64,6 +77,10 @@ class ClienteService{
                 if (!body.perjur_rif || !body.perjur_razonsocial || !body.perjur_reprelegal)
                     return new Response('perjur_rif, perjur_razonsocial, perjur_reprelegal are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createPersonaJuridica", [body.fk_cli_id, body.perjur_rif, body.perjur_razonsocial, body.perjur_reprelegal])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/persona_juridica">) => {
+                const body = await req.json();
+                return callUpdate("updatePersonaJuridica", [body.fk_cli_id, body.perjur_rif, body.perjur_razonsocial, body.perjur_reprelegal])
             }
         },
         "/api/membresia": {
@@ -75,6 +92,15 @@ class ClienteService{
                 return callProcedure("createMembresia", [body.mem_nombre, body.mem_descuento])
             }
         },
+        "/api/membresia/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/membresia/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateMembresia", [id, body.mem_nombre, body.mem_descuento])
+            }
+        },
         "/api/historico_membresia": {
             GET: async (_: Bun.BunRequest<"/api/historico_membresia">) => listAll<HistoricoMembresia>("listHistoricoMembresia"),
             POST: async (req: Bun.BunRequest<"/api/historico_membresia">) => {
@@ -82,6 +108,10 @@ class ClienteService{
                 if (!body.hismem_fechaini)
                     return new Response('hismem_fechaini is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createHistoricoMembresia", [body.hismem_fechaini, body.hismem_fechafin, body.fk_mem_id, body.fk_cli_id])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/historico_membresia">) => {
+                const body = await req.json();
+                return callUpdate("updateHistoricoMembresia", [body.fk_mem_id, body.fk_cli_id, body.hismem_fechaini, body.hismem_fechafin])
             }
         }
     }

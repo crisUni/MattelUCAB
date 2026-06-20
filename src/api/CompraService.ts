@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
 
 type AcuerdoComercial = {
     acucom_id: number
@@ -75,6 +75,15 @@ class CompraService{
                 return callProcedure("createAcuerdoComercial", [body.acucom_limitecredito, body.acucom_plazopago, body.acucom_descuentomayorista, body.fk_perjur_id])
             }
         },
+        "/api/acuerdo_comercial/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/acuerdo_comercial/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateAcuerdoComercial", [id, body.acucom_limitecredito, body.acucom_plazopago, body.acucom_descuentomayorista, body.fk_perjur_id])
+            }
+        },
         "/api/transportista": {
             GET: async (_: Bun.BunRequest<"/api/transportista">) => listAll<Transportista>("listTransportista"),
             POST: async (req: Bun.BunRequest<"/api/transportista">) => {
@@ -82,6 +91,15 @@ class CompraService{
                 if (!body.tra_empresa)
                     return new Response('tra_empresa is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createTransportista", [body.tra_empresa])
+            }
+        },
+        "/api/transportista/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/transportista/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateTransportista", [id, body.tra_empresa])
             }
         },
         "/api/compra": {
@@ -93,6 +111,15 @@ class CompraService{
                 return callProcedure("createCompra", [body.com_fechahor, body.com_numfactura, body.com_subtotal, body.com_total, body.fk_tra_id, body.fk_acucom_id, body.fk_usu_id, body.fk_lug_id])
             }
         },
+        "/api/compra/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/compra/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateCompra", [id, body.com_fechahor, body.com_numfactura, body.com_subtotal, body.com_total, body.fk_tra_id, body.fk_acucom_id, body.fk_usu_id, body.fk_lug_id])
+            }
+        },
         "/api/estatus_compra": {
             GET: async (_: Bun.BunRequest<"/api/estatus_compra">) => listAll<EstatusCompra>("listEstatusCompra"),
             POST: async (req: Bun.BunRequest<"/api/estatus_compra">) => {
@@ -102,6 +129,15 @@ class CompraService{
                 return callProcedure("createEstatusCompra", [body.estcom_nom, body.estcom_fechahoracierre])
             }
         },
+        "/api/estatus_compra/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/estatus_compra/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateEstatusCompra", [id, body.estcom_nom, body.estcom_fechahoracierre])
+            }
+        },
         "/api/historico_estatus": {
             GET: async (_: Bun.BunRequest<"/api/historico_estatus">) => listAll<HistoricoEstatus>("listHistoricoEstatus"),
             POST: async (req: Bun.BunRequest<"/api/historico_estatus">) => {
@@ -109,6 +145,10 @@ class CompraService{
                 if (!body.hisest_fechahora)
                     return new Response('hisest_fechahora is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createHistorioEstatus", [body.hisest_fechahora, body.fk_estcom_id, body.fk_com_id])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/historico_estatus">) => {
+                const body = await req.json();
+                return callUpdate("updateHistoricoEstatus", [body.fk_estcom_id, body.fk_com_id, body.hisest_fechahora])
             }
         },
         "/api/descuento_compra": {
@@ -127,6 +167,15 @@ class CompraService{
                 return callProcedure("createHistoricoTasaCambio", [body.histascam_monedaoriginal, body.histascam_monedaconvertida, body.histascam_fecha])
             }
         },
+        "/api/historico_tasa_cambio/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/historico_tasa_cambio/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateHistoricoTasaCambio", [id, body.histascam_monedaoriginal, body.histascam_monedaconvertida, body.histascam_tasa, body.histascam_fecha])
+            }
+        },
         "/api/pago": {
             GET: async (_: Bun.BunRequest<"/api/pago">) => listAll<Pago>("listPago"),
             POST: async (req: Bun.BunRequest<"/api/pago">) => {
@@ -134,6 +183,10 @@ class CompraService{
                 if (body.pag_id === undefined || body.pag_monto === undefined || !body.pag_fecha)
                     return new Response('pag_id, pag_monto, pag_fecha are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createPago", [body.pag_id, body.pag_monto, body.pag_fecha, body.fk_com_id, body.fk_metpag_id])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/pago">) => {
+                const body = await req.json();
+                return callUpdate("updatePago", [body.pag_id, body.fk_com_id, body.fk_metpag_id, body.pag_monto, body.pag_fecha])
             }
         },
         "/api/detalle_compra": {
@@ -143,6 +196,10 @@ class CompraService{
                 if (body.detcom_cantidad === undefined)
                     return new Response('detcom_cantidad is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createDetalleCompra", [body.detcom_cantidad, body.fk_com_id, body.fk_pro_id, body.fk_alm_id])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/detalle_compra">) => {
+                const body = await req.json();
+                return callUpdate("updateDetalleCompra", [body.fk_com_id, body.fk_pro_id, body.fk_alm_id, body.detcom_cantidad])
             }
         }
     }

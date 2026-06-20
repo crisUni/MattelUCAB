@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
 
 type CategoriaProducto = {
     catpro_id: number
@@ -58,6 +58,15 @@ class ProductoService{
                 return callProcedure("createCategoriaProducto", [body.catpro_descripcion])
             }
         },
+        "/api/categoria_producto/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/categoria_producto/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateCategoriaProducto", [id, body.catpro_descripcion])
+            }
+        },
         "/api/edicion": {
             GET: async (_: Bun.BunRequest<"/api/edicion">) => listAll<Edicion>("listEdicion"),
             POST: async (req: Bun.BunRequest<"/api/edicion">) => {
@@ -65,6 +74,15 @@ class ProductoService{
                 if (!body.edi_nombre)
                     return new Response('edi_nombre is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createEdicion", [body.edi_nombre])
+            }
+        },
+        "/api/edicion/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/edicion/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateEdicion", [id, body.edi_nombre])
             }
         },
         "/api/profesion": {
@@ -76,11 +94,29 @@ class ProductoService{
                 return callProcedure("createProfesion", [body.prof_nombre])
             }
         },
+        "/api/profesion/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/profesion/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateProfesion", [id, body.prof_nombre])
+            }
+        },
         "/api/exclusividad": {
             GET: async (_: Bun.BunRequest<"/api/exclusividad">) => listAll<Exclusividad>("listExclusividad"),
             POST: async (req: Bun.BunRequest<"/api/exclusividad">) => {
                 const body = await req.json();
                 return callProcedure("createExclusividad", [body.exc_nombre, body.exc_limiteproducto]);
+            }
+        },
+        "/api/exclusividad/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/exclusividad/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateExclusividad", [id, body.exc_nombre, body.exc_limiteproducto])
             }
         },
         "/api/producto": {
@@ -92,6 +128,15 @@ class ProductoService{
                 return callProcedure("createProducto", [body.fk_jug_id, body.pro_id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
             }
         },
+        "/api/producto/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/producto/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateProducto", [id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_jug_id, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
+            }
+        },
         "/api/detalle_set": {
             GET: async (_: Bun.BunRequest<"/api/detalle_set">) => listAll<DetalleSet>("listDetalleSet"),
             POST: async (req: Bun.BunRequest<"/api/detalle_set">) => {
@@ -99,6 +144,10 @@ class ProductoService{
                 if (!body.detset_nombre)
                     return new Response('detset_nombre is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createDetalleSet", [body.fk_pro1, body.fk_pro2, body.detset_nombre])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/detalle_set">) => {
+                const body = await req.json();
+                return callUpdate("updateDetalleSet", [body.fk_pro1, body.fk_pro2, body.detset_nombre])
             }
         },
         "/api/historico_profesion": {
@@ -108,6 +157,10 @@ class ProductoService{
                 if (!body.hispro_anoasignacion)
                     return new Response('hispro_anoasignacion is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createHistoricoProfesion", [body.hispro_anoasignacion, body.fk_prof_id, body.fk_pro_id])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/historico_profesion">) => {
+                const body = await req.json();
+                return callUpdate("updateHistoricoProfesion", [body.fk_pro_id, body.fk_prof_id, body.hispro_anoasignacion])
             }
         }
     }
