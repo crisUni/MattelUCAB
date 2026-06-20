@@ -2973,13 +2973,14 @@ $$;
 CREATE OR REPLACE PROCEDURE createMaterial (
     nombreMaterial VARCHAR(100),
     tipoMaterial VARCHAR(100),
-    unidadMaterial VARCHAR(10)
+    unidadMaterial VARCHAR(10),
+    costoMaterial FLOAT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO MATERIAL (mat_nombre, mat_tipo, mat_unidad)
-    VALUES (nombreMaterial, tipoMaterial, unidadMaterial);
+    INSERT INTO MATERIAL (mat_nombre, mat_tipo, mat_unidad, mat_costo)
+    VALUES (nombreMaterial, tipoMaterial, unidadMaterial, costoMaterial);
 END
 $$;
 
@@ -3141,13 +3142,14 @@ $$;
 CREATE OR REPLACE PROCEDURE createInspeccionCalidad (
     fechaInspeccion DATE,
     resultadoInspeccion VARCHAR(50),
-    fkLotproId INT
+    fkLotproId INT,
+    fkEmpId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO INSPECCION_CALIDAD (inscal_fecha, inscal_resultado, fk_lotpro_id)
-    VALUES (fechaInspeccion, resultadoInspeccion, fkLotproId);
+    INSERT INTO INSPECCION_CALIDAD (inscal_fecha, inscal_resultado, fk_lotpro_id, fk_emp_id)
+    VALUES (fechaInspeccion, resultadoInspeccion, fkLotproId, fkEmpId);
 END
 $$;
 
@@ -3515,7 +3517,7 @@ CREATE OR REPLACE PROCEDURE createPermiso (
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO PERMISO (per_moduloacceso)
+    INSERT INTO PERMISO (perm_moduloacceso)
     VALUES (moduloAcceso);
 END
 $$;

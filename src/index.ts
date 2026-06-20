@@ -1,13 +1,12 @@
 import { serve } from "bun";
 import index from "./index.html";
 
+import RolService from "./api/RolService";
 import DescuentoService from "./api/DescuentoService";
 import JugueteService from "./api/JugueteService";
 import PagoService from "./api/PagoService";
 import ProductoService from "./api/ProductoService";
 import EmpleadoService from "./api/EmpleadoService";
-import RolService from "./api/RolService";
-import LugarService from "./api/LugarService";
 import InspeccionService from "./api/InspeccionService";
 import AlmacenService from "./api/AlmacenService";
 import ClienteService from "./api/ClienteService";
@@ -25,7 +24,6 @@ const server = serve({
     ...ProductoService.routes,
     ...EmpleadoService.routes,
     ...RolService.routes,
-    ...LugarService.routes,
     ...InspeccionService.routes,
     ...AlmacenService.routes,
     ...ClienteService.routes,

@@ -1,5 +1,4 @@
-import {sql} from "bun";
-import { CORS_HEADERS, fetchAll, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
 
 type CategoriaProducto = {
     catpro_id: number
@@ -51,61 +50,64 @@ type HistoricoProfesion = {
 class ProductoService{
     routes = {
         "/api/categoria_producto": {
-            GET: async (_: Bun.BunRequest<"/api/categoria_producto">) => fetchAll<CategoriaProducto>("categoria_producto"),
+            GET: async (_: Bun.BunRequest<"/api/categoria_producto">) => listAll<CategoriaProducto>("listCategoriaProducto"),
             POST: async (req: Bun.BunRequest<"/api/categoria_producto">) => {
                 const body = await req.json();
                 if (!body.catpro_descripcion)
                     return new Response('catpro_descripcion is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("categoria_producto", body)
+                return callProcedure("createCategoriaProducto", [body.catpro_descripcion])
             }
         },
         "/api/edicion": {
-            GET: async (_: Bun.BunRequest<"/api/edicion">) => fetchAll<Edicion>("edicion"),
+            GET: async (_: Bun.BunRequest<"/api/edicion">) => listAll<Edicion>("listEdicion"),
             POST: async (req: Bun.BunRequest<"/api/edicion">) => {
                 const body = await req.json();
                 if (!body.edi_nombre)
                     return new Response('edi_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("edicion", body)
+                return callProcedure("createEdicion", [body.edi_nombre])
             }
         },
         "/api/profesion": {
-            GET: async (_: Bun.BunRequest<"/api/profesion">) => fetchAll<Profesion>("profesion"),
+            GET: async (_: Bun.BunRequest<"/api/profesion">) => listAll<Profesion>("listProfesion"),
             POST: async (req: Bun.BunRequest<"/api/profesion">) => {
                 const body = await req.json();
                 if (!body.prof_nombre)
                     return new Response('prof_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("profesion", body)
+                return callProcedure("createProfesion", [body.prof_nombre])
             }
         },
         "/api/exclusividad": {
-            GET: async (_: Bun.BunRequest<"/api/exclusividad">) => fetchAll<Exclusividad>("exclusividad"),
-            POST: async (req: Bun.BunRequest<"/api/exclusividad">) => insertOne("exclusividad", await req.json())
+            GET: async (_: Bun.BunRequest<"/api/exclusividad">) => listAll<Exclusividad>("listExclusividad"),
+            POST: async (req: Bun.BunRequest<"/api/exclusividad">) => {
+                const body = await req.json();
+                return callProcedure("createExclusividad", [body.exc_nombre, body.exc_limiteproducto]);
+            }
         },
         "/api/producto": {
-            GET: async (_: Bun.BunRequest<"/api/producto">) => fetchAll<Producto>("producto"),
+            GET: async (_: Bun.BunRequest<"/api/producto">) => listAll<Producto>("listProducto"),
             POST: async (req: Bun.BunRequest<"/api/producto">) => {
                 const body = await req.json();
                 if (!body.pro_nombre || body.pro_preciobase === undefined || !body.pro_lanzamientofecha || !body.pro_tipo || body.fk_jug_id === undefined || body.fk_catpro_id === undefined || body.fk_lotpro_id === undefined || body.fk_edi_id === undefined || body.fk_exc_id === undefined)
                     return new Response('pro_nombre, pro_preciobase, pro_lanzamientofecha, pro_tipo, fk_jug_id, fk_catpro_id, fk_lotpro_id, fk_edi_id, fk_exc_id are required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("producto", body)
+                return callProcedure("createProducto", [body.fk_jug_id, body.pro_id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
             }
         },
         "/api/detalle_set": {
-            GET: async (_: Bun.BunRequest<"/api/detalle_set">) => fetchAll<DetalleSet>("detalle_set"),
+            GET: async (_: Bun.BunRequest<"/api/detalle_set">) => listAll<DetalleSet>("listDetalleSet"),
             POST: async (req: Bun.BunRequest<"/api/detalle_set">) => {
                 const body = await req.json();
                 if (!body.detset_nombre)
                     return new Response('detset_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("detalle_set", body)
+                return callProcedure("createDetalleSet", [body.fk_pro1, body.fk_pro2, body.detset_nombre])
             }
         },
         "/api/historico_profesion": {
-            GET: async (_: Bun.BunRequest<"/api/historico_profesion">) => fetchAll<HistoricoProfesion>("historico_profesion"),
+            GET: async (_: Bun.BunRequest<"/api/historico_profesion">) => listAll<HistoricoProfesion>("listHistoricoProfesion"),
             POST: async (req: Bun.BunRequest<"/api/historico_profesion">) => {
                 const body = await req.json();
                 if (!body.hispro_anoasignacion)
                     return new Response('hispro_anoasignacion is required', { status: 400, headers: CORS_HEADERS })
-                return insertOne("historico_profesion", body)
+                return callProcedure("createHistoricoProfesion", [body.hispro_anoasignacion, body.fk_prof_id, body.fk_pro_id])
             }
         }
     }
