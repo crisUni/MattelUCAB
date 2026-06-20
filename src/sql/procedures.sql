@@ -3515,7 +3515,7 @@ CREATE OR REPLACE PROCEDURE createPermiso (
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO PERMISO (per_moduloacceso)
+    INSERT INTO PERMISO (perm_moduloacceso)
     VALUES (moduloAcceso);
 END
 $$;
