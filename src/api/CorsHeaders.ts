@@ -2,7 +2,7 @@ import {sql} from "bun";
 
 export const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Max-Age": "86400"
 };
@@ -47,6 +47,16 @@ export async function callProcedure(procName: string, params: unknown[]): Promis
         const placeholders = params.map((_, i) => `$${i + 1}`).join(", ");
         await sql.unsafe(`CALL ${procName}(${placeholders})`, params);
         return new Response('Created', { status: 201, headers: CORS_HEADERS })
+    } catch (e) {
+        return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+    }
+}
+
+export async function callUpdate(procName: string, params: unknown[]): Promise<Response> {
+    try {
+        const placeholders = params.map((_, i) => `$${i + 1}`).join(", ");
+        await sql.unsafe(`CALL ${procName}(${placeholders})`, params);
+        return new Response('Updated', { status: 200, headers: CORS_HEADERS })
     } catch (e) {
         return new Response(String(e), { status: 500, headers: CORS_HEADERS });
     }

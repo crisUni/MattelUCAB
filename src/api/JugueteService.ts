@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
 
 type Color = {
     col_id: number
@@ -85,6 +85,15 @@ class JugueteService{
                 return callProcedure("createColor", [body.col_nombre, body.col_codhex])
             }
         },
+        "/api/color/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/color/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateColor", [id, body.col_nombre, body.col_codhex])
+            }
+        },
         "/api/tipo_cuerpo": {
             GET: async (_: Bun.BunRequest<"/api/tipo_cuerpo">) => listAll<TipoCuerpo>("listTipoCuerpo"),
             POST: async (req: Bun.BunRequest<"/api/tipo_cuerpo">) => {
@@ -92,6 +101,15 @@ class JugueteService{
                 if (!body.tipcue_nombre)
                     return new Response('tipcue_nombre is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createTipoCuerpo", [body.tipcue_nombre])
+            }
+        },
+        "/api/tipo_cuerpo/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/tipo_cuerpo/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateTipoCuerpo", [id, body.tipcue_nombre])
             }
         },
         "/api/material": {
@@ -103,6 +121,15 @@ class JugueteService{
                 return callProcedure("createMaterial", [body.mat_nombre, body.mat_tipo, body.mat_unidad, body.mat_costo])
             }
         },
+        "/api/material/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/material/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateMaterial", [id, body.mat_nombre, body.mat_tipo, body.mat_unidad, body.mat_costo])
+            }
+        },
         "/api/era_historico": {
             GET: async (_: Bun.BunRequest<"/api/era_historico">) => listAll<EraHistorico>("listEraHistorico"),
             POST: async (req: Bun.BunRequest<"/api/era_historico">) => {
@@ -110,6 +137,15 @@ class JugueteService{
                 if (!body.erahis_nombre || !body.erahis_fechaini || !body.erahis_fechafin)
                     return new Response('erahis_nombre, erahis_fechaini, erahis_fechafin are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createEraHistorico", [body.erahis_nombre, body.erahis_fechaini, body.erahis_fechafin])
+            }
+        },
+        "/api/era_historico/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/era_historico/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateEraHistorico", [id, body.erahis_nombre, body.erahis_fechaini, body.erahis_fechafin])
             }
         },
         "/api/diseno": {
@@ -121,6 +157,15 @@ class JugueteService{
                 return callProcedure("createDiseno", [body.dis_patentecod])
             }
         },
+        "/api/diseno/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/diseno/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateDiseno", [id, body.dis_patentecod])
+            }
+        },
         "/api/personaje": {
             GET: async (_: Bun.BunRequest<"/api/personaje">) => listAll<Personaje>("listPersonaje"),
             POST: async (req: Bun.BunRequest<"/api/personaje">) => {
@@ -128,6 +173,15 @@ class JugueteService{
                 if (!body.per_nombre)
                     return new Response('per_nombre is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createPersonaje", [body.per_nombre])
+            }
+        },
+        "/api/personaje/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/personaje/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updatePersonaje", [id, body.per_nombre])
             }
         },
         "/api/molde_rostro": {
@@ -139,6 +193,15 @@ class JugueteService{
                 return callProcedure("createMoldeRostro", [body.molros_nombre, body.molros_patente, body.fk_per_id])
             }
         },
+        "/api/molde_rostro/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/molde_rostro/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateMoldeRostro", [id, body.molros_nombre, body.molros_patente, body.fk_per_id])
+            }
+        },
         "/api/juguete": {
             GET: async (_: Bun.BunRequest<"/api/juguete">) => listAll<Juguete>("listJuguete"),
             POST: async (req: Bun.BunRequest<"/api/juguete">) => {
@@ -148,6 +211,15 @@ class JugueteService{
                 return callProcedure("createJuguete", [body.jug_adn, body.fk_molros_id, body.fk_tipcue_id, body.fk_erahis_id, body.fk_dis_id])
             }
         },
+        "/api/juguete/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/juguete/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateJuguete", [id, body.jug_adn, body.fk_molros_id, body.fk_tipcue_id, body.fk_erahis_id, body.fk_dis_id])
+            }
+        },
         "/api/vinculo_personaje": {
             GET: async (_: Bun.BunRequest<"/api/vinculo_personaje">) => listAll<VinculoPersonaje>("listVinculoPersonaje"),
             POST: async (req: Bun.BunRequest<"/api/vinculo_personaje">) => {
@@ -155,6 +227,10 @@ class JugueteService{
                 if (body.fk_personaje1 === undefined || body.fk_personaje2 === undefined || !body.vinper_tipo_relacion)
                     return new Response('fk_personaje1, fk_personaje2, vinper_tipo_relacion are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createVinculoPersonaje", [body.fk_personaje1, body.fk_personaje2, body.vinper_tipo_relacion])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/vinculo_personaje">) => {
+                const body = await req.json();
+                return callUpdate("updateVinculoPersonaje", [body.fk_personaje1, body.fk_personaje2, body.vinper_tipo_relacion])
             }
         },
         "/api/compatibilidad_juguete": {
@@ -173,6 +249,10 @@ class JugueteService{
                 if (!body.colpro_zonaaplicacion)
                     return new Response('colpro_zonaaplicacion is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createColorProducto", [body.fk_col_id, body.fk_jug_id, body.colpro_zonaaplicacion])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/color_producto">) => {
+                const body = await req.json();
+                return callUpdate("updateColorProducto", [body.fk_col_id, body.fk_jug_id, body.colpro_zonaaplicacion])
             }
         },
         "/api/material_producto": {
@@ -182,6 +262,10 @@ class JugueteService{
                 if (body.matpro_cantidad === undefined)
                     return new Response('matpro_cantidad is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createMaterialProducto", [body.fk_mat_id, body.fk_jug_id, body.matpro_cantidad])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/material_producto">) => {
+                const body = await req.json();
+                return callUpdate("updateMaterialProducto", [body.fk_mat_id, body.fk_jug_id, body.matpro_cantidad])
             }
         }
     }

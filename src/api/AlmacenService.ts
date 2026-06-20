@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
 
 type HubRegional = {
     hubreg_id: number
@@ -32,6 +32,15 @@ class AlmacenService{
                 return callProcedure("createHubRegional", [body.hubreg_nombre, body.fk_lug_id])
             }
         },
+        "/api/hub_regional/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/hub_regional/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateHubRegional", [id, body.hubreg_nombre, body.fk_lug_id])
+            }
+        },
         "/api/almacen": {
             GET: async (_: Bun.BunRequest<"/api/almacen">) => listAll<Almacen>("listAlmacen"),
             POST: async (req: Bun.BunRequest<"/api/almacen">) => {
@@ -41,6 +50,15 @@ class AlmacenService{
                 return callProcedure("createAlmacen", [body.alm_tipoinstalacion, body.fk_hubreg_id, body.fk_lug_id])
             }
         },
+        "/api/almacen/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/almacen/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateAlmacen", [id, body.alm_tipoinstalacion, body.fk_hubreg_id, body.fk_lug_id])
+            }
+        },
         "/api/inventario": {
             GET: async (_: Bun.BunRequest<"/api/inventario">) => listAll<Inventario>("listInventario"),
             POST: async (req: Bun.BunRequest<"/api/inventario">) => {
@@ -48,6 +66,10 @@ class AlmacenService{
                 if (body.fk_pro_id === undefined || body.fk_alm_id === undefined || body.inv_stockdisponible === undefined || body.inv_cantidad === undefined || !body.inv_fecha_actualizacion)
                     return new Response('fk_pro_id, fk_alm_id, inv_stockdisponible, inv_cantidad, inv_fecha_actualizacion are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createInventario", [body.fk_pro_id, body.fk_alm_id, body.inv_stockdisponible, body.inv_cantidad, body.inv_fecha_actualizacion])
+            },
+            PUT: async (req: Bun.BunRequest<"/api/inventario">) => {
+                const body = await req.json();
+                return callUpdate("updateInventario", [body.fk_pro_id, body.fk_alm_id, body.inv_stockdisponible, body.inv_cantidad, body.inv_fecha_actualizacion])
             }
         }
     }

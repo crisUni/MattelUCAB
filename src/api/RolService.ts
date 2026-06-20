@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
 
 type Rol = {
     id: number
@@ -29,6 +29,13 @@ class RolService{
         },
 
         "/api/rol/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/rol/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateRol", [id, body.rol_nombre])
+            },
 			GET: async (req: Bun.BunRequest<"/api/rol/:id">) => {
 				let found: Permiso_Rol[]
 
@@ -55,6 +62,15 @@ class RolService{
                 if (!body.perm_moduloacceso)
                     return new Response('perm_moduloacceso is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createPermiso", [body.perm_moduloacceso])
+            }
+        },
+        "/api/permiso/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/permiso/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updatePermiso", [id, body.perm_moduloacceso])
             }
         }
     }

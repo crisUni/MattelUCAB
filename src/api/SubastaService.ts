@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
 
 type CondicionSubasta = {
     consub_id: number
@@ -34,6 +34,15 @@ class SubastaService{
                 return callProcedure("createCondicionSubasta", [body.consub_nombre])
             }
         },
+        "/api/condicion_subasta/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/condicion_subasta/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateCondicionSubasta", [id, body.consub_nombre])
+            }
+        },
         "/api/subasta": {
             GET: async (_: Bun.BunRequest<"/api/subasta">) => listAll<Subasta>("listSubasta"),
             POST: async (req: Bun.BunRequest<"/api/subasta">) => {
@@ -43,6 +52,15 @@ class SubastaService{
                 return callProcedure("createSubasta", [body.sub_fechaini, body.sub_fechafin, body.sub_estado, body.sub_montoini, body.fk_pro_id, body.fk_consub_id])
             }
         },
+        "/api/subasta/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/subasta/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updateSubasta", [id, body.sub_fechaini, body.sub_fechafin, body.sub_estado, body.sub_montoini, body.fk_pro_id, body.fk_consub_id])
+            }
+        },
         "/api/puja_subasta": {
             GET: async (_: Bun.BunRequest<"/api/puja_subasta">) => listAll<PujaSubasta>("listPujaSubasta"),
             POST: async (req: Bun.BunRequest<"/api/puja_subasta">) => {
@@ -50,6 +68,15 @@ class SubastaService{
                 if (body.pujsub_monto === undefined || !body.pujsub_fechahor || body.fk_usu_id === undefined || body.fk_sub_id === undefined)
                     return new Response('pujsub_monto, pujsub_fechahor, fk_usu_id, fk_sub_id are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createPujaSubasta", [body.pujsub_monto, body.pujsub_fechahor, body.fk_usu_id, body.fk_sub_id])
+            }
+        },
+        "/api/puja_subasta/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/puja_subasta/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const body = await req.json();
+                return callUpdate("updatePujaSubasta", [id, body.pujsub_monto, body.pujsub_fechahor, body.fk_usu_id, body.fk_sub_id])
             }
         }
     }
