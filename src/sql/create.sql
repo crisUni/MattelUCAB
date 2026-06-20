@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS LOTE_PRODUCCION (
 CREATE TABLE IF NOT EXISTS INSPECCION_CALIDAD (
     inscal_id SERIAL PRIMARY KEY,
     inscal_fecha DATE NOT NULL,
-    inscal_resultado VARCHAR(50),
+    inscal_resultado VARCHAR(50) NOT NULL,  -- CORREGIDO: obligatorio (*) según el ER
     fk_lotpro_id INT,
     FOREIGN KEY (fk_lotpro_id) REFERENCES LOTE_PRODUCCION (lotpro_id)
 );
@@ -240,6 +240,7 @@ CREATE TABLE IF NOT EXISTS PRODUCTO (
     pro_sku INT NOT NULL,
     pro_nombre VARCHAR(100) NOT NULL,
     pro_preciobase FLOAT NOT NULL,
+    pro_costoproduccion FLOAT,              -- AÑADIDO: snapshot histórico del costo de producción (front: costoProduccionUsd). Nullable para no romper insert.sql.
     pro_lanzamientofecha DATE NOT NULL,
     pro_tipo VARCHAR(100) NOT NULL,
     fk_jug_id INT NOT NULL,
