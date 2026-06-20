@@ -1,0 +1,137 @@
+import {sql} from "bun";
+import { CORS_HEADERS, fetchAll, insertOne } from "./CorsHeaders";
+
+type Efectivo = {
+    fk_metpag_id: number
+    efe_denominacion: string
+}
+
+type Tarjeta = {
+    fk_metpag_id: number
+    tar_numero: number
+    tar_cvv: number
+    tar_banco: string
+    tar_emisor: string
+    tar_fechaven: string
+    tar_titular: string
+    tar_tipo: string
+}
+
+type Cheque = {
+    fk_metpag_id: number
+    che_codigocuenta: number
+    che_monto: number
+    che_banco: string
+    che_emisor: string
+    che_fechaemision: string
+}
+
+type DepositoBancario = {
+    fk_metpag_id: number
+    depban_cuentadestino: number
+    depban_bancodestino: number
+    depban_fecha: string
+    depban_numref: number
+    depban_monto: number
+}
+
+type Transferencia = {
+    fk_metpag_id: number
+    tra_numref: number
+    tra_fecha: string
+    tra_monto: number
+}
+
+type Criptomoneda = {
+    fk_metpag_id: number
+    cri_idtransaccion: number
+    cri_fecha: string
+    cri_monto: number
+    cri_direcciondestino: string
+    cri_monedanombre: string
+}
+
+type BilleteraDigital = {
+    fk_metpag_id: number
+    bildig_codigoreferencia: string
+    bildig_fecha: string
+    bildig_monto: number
+}
+
+type MetodoPago = {
+    metpag_id: number
+}
+
+class PagoService{
+    routes = {
+        "/api/efectivo": {
+            GET: async (_: Bun.BunRequest<"/api/efectivo">) => fetchAll<Efectivo>("efectivo"),
+            POST: async (req: Bun.BunRequest<"/api/efectivo">) => {
+                const body = await req.json();
+                if (!body.efe_denominacion)
+                    return new Response('efe_denominacion is required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("efectivo", body)
+            }
+        },
+        "/api/tarjeta": {
+            GET: async (_: Bun.BunRequest<"/api/tarjeta">) => fetchAll<Tarjeta>("tarjeta"),
+            POST: async (req: Bun.BunRequest<"/api/tarjeta">) => {
+                const body = await req.json();
+                if (!body.tar_numero || !body.tar_cvv || !body.tar_banco || !body.tar_emisor || !body.tar_fechaven || !body.tar_titular || !body.tar_tipo)
+                    return new Response('tar_numero, tar_cvv, tar_banco, tar_emisor, tar_fechaven, tar_titular, tar_tipo are required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("tarjeta", body)
+            }
+        },
+        "/api/cheque": {
+            GET: async (_: Bun.BunRequest<"/api/cheque">) => fetchAll<Cheque>("cheque"),
+            POST: async (req: Bun.BunRequest<"/api/cheque">) => {
+                const body = await req.json();
+                if (body.che_codigocuenta === undefined || body.che_monto === undefined || !body.che_banco || !body.che_emisor || !body.che_fechaemision)
+                    return new Response('che_codigocuenta, che_monto, che_banco, che_emisor, che_fechaemision are required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("cheque", body)
+            }
+        },
+        "/api/deposito_bancario": {
+            GET: async (_: Bun.BunRequest<"/api/deposito_bancario">) => fetchAll<DepositoBancario>("deposito_bancario"),
+            POST: async (req: Bun.BunRequest<"/api/deposito_bancario">) => {
+                const body = await req.json();
+                if (body.depban_cuentadestino === undefined || body.depban_bancodestino === undefined || !body.depban_fecha || body.depban_numref === undefined || body.depban_monto === undefined)
+                    return new Response('depban_cuentadestino, depban_bancodestino, depban_fecha, depban_numref, depban_monto are required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("deposito_bancario", body)
+            }
+        },
+        "/api/transferencia": {
+            GET: async (_: Bun.BunRequest<"/api/transferencia">) => fetchAll<Transferencia>("transferencia"),
+            POST: async (req: Bun.BunRequest<"/api/transferencia">) => {
+                const body = await req.json();
+                if (body.tra_numref === undefined || !body.tra_fecha || body.tra_monto === undefined)
+                    return new Response('tra_numref, tra_fecha, tra_monto are required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("transferencia", body)
+            }
+        },
+        "/api/criptomoneda": {
+            GET: async (_: Bun.BunRequest<"/api/criptomoneda">) => fetchAll<Criptomoneda>("criptomoneda"),
+            POST: async (req: Bun.BunRequest<"/api/criptomoneda">) => {
+                const body = await req.json();
+                if (body.cri_idtransaccion === undefined || !body.cri_fecha || body.cri_monto === undefined || !body.cri_direcciondestino || !body.cri_monedanombre)
+                    return new Response('cri_idtransaccion, cri_fecha, cri_monto, cri_direcciondestino, cri_monedanombre are required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("criptomoneda", body)
+            }
+        },
+        "/api/billetera_digital": {
+            GET: async (_: Bun.BunRequest<"/api/billetera_digital">) => fetchAll<BilleteraDigital>("billetera_digital"),
+            POST: async (req: Bun.BunRequest<"/api/billetera_digital">) => {
+                const body = await req.json();
+                if (!body.bildig_codigoreferencia || !body.bildig_fecha || body.bildig_monto === undefined)
+                    return new Response('bildig_codigoreferencia, bildig_fecha, bildig_monto are required', { status: 400, headers: CORS_HEADERS })
+                return insertOne("billetera_digital", body)
+            }
+        },
+        "/api/metodo_pago": {
+            GET: async (_: Bun.BunRequest<"/api/metodo_pago">) => fetchAll<MetodoPago>("metodo_pago"),
+            POST: async (_: Bun.BunRequest<"/api/metodo_pago">) => insertOne("metodo_pago", {})
+        }
+    }
+}
+
+export default new PagoService()

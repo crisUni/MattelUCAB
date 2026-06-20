@@ -1,32 +1,37 @@
 import { serve } from "bun";
 import index from "./index.html";
 
+import DescuentoService from "./api/DescuentoService";
+import JugueteService from "./api/JugueteService";
+import PagoService from "./api/PagoService";
+import ProductoService from "./api/ProductoService";
+import EmpleadoService from "./api/EmpleadoService";
+import RolService from "./api/RolService";
+import LugarService from "./api/LugarService";
+import InspeccionService from "./api/InspeccionService";
+import AlmacenService from "./api/AlmacenService";
+import ClienteService from "./api/ClienteService";
+import UsuarioService from "./api/UsuarioService";
+import SubastaService from "./api/SubastaService";
+import CompraService from "./api/CompraService";
+
 const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
     "/*": index,
-
-    "/api/hello": {
-      async GET(req) {
-        return Response.json({
-          message: "Hello, world!",
-          method: "GET",
-        });
-      },
-      async PUT(req) {
-        return Response.json({
-          message: "Hello, world!",
-          method: "PUT",
-        });
-      },
-    },
-
-    "/api/hello/:name": async req => {
-      const name = req.params.name;
-      return Response.json({
-        message: `Hello, ${name}!`,
-      });
-    },
+    ...DescuentoService.routes,
+    ...JugueteService.routes,
+    ...PagoService.routes,
+    ...ProductoService.routes,
+    ...EmpleadoService.routes,
+    ...RolService.routes,
+    ...LugarService.routes,
+    ...InspeccionService.routes,
+    ...AlmacenService.routes,
+    ...ClienteService.routes,
+    ...UsuarioService.routes,
+    ...SubastaService.routes,
+    ...CompraService.routes,
   },
 
   development: process.env.NODE_ENV !== "production" && {

@@ -670,17 +670,17 @@ INSERT INTO LOTE_PRODUCCION (lotpro_id, lotpro_fechaini, lotpro_fechafin) VALUES
     (10, '2024-10-01', '2024-10-15');
 
 -- INSPECCION_CALIDAD (10 filas)
-INSERT INTO INSPECCION_CALIDAD (inscal_id, inscal_fecha, inscal_resultado, fk_lotpro_id) VALUES
-    (1, '2024-01-16', 'APROBADO', 1),
-    (2, '2024-02-16', 'RECHAZADO', 2),
-    (3, '2024-03-16', 'APROBADO', 3),
-    (4, '2024-04-16', 'RECHAZADO', 4),
-    (5, '2024-05-16', 'APROBADO', 5),
-    (6, '2024-06-16', 'RECHAZADO', 6),
-    (7, '2024-07-16', 'APROBADO', 7),
-    (8, '2024-08-16', 'RECHAZADO', 8),
-    (9, '2024-09-16', 'APROBADO', 9),
-    (10, '2024-10-16', 'RECHAZADO', 10);
+INSERT INTO INSPECCION_CALIDAD (inscal_id, inscal_fecha, inscal_resultado, fk_lotpro_id, fk_emp_id) VALUES
+    (1, '2024-01-16', 'APROBADO', 1, 1),
+    (2, '2024-02-16', 'RECHAZADO', 2, 2),
+    (3, '2024-03-16', 'APROBADO', 3, 1),
+    (4, '2024-04-16', 'RECHAZADO', 4, 3),
+    (5, '2024-05-16', 'APROBADO', 5, 1),
+    (6, '2024-06-16', 'RECHAZADO', 6, 2),
+    (7, '2024-07-16', 'APROBADO', 7, 1),
+    (8, '2024-08-16', 'RECHAZADO', 8, 1),
+    (9, '2024-09-16', 'APROBADO', 9, 1),
+    (10, '2024-10-16', 'RECHAZADO', 10, 5);
 
 -- DEFECTO (10 filas)
 INSERT INTO DEFECTO (def_id, def_nombre) VALUES

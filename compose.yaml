@@ -8,7 +8,7 @@ services:
       POSTGRES_DB: fundana
       POSTGRES_PASSWORD: admin
     volumes:
-      - /var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     ports:
       - 5432:5432
 
@@ -27,9 +27,7 @@ services:
     image: oven/bun
     restart: no
     environment:
-      POSTGRES_URL: postgres://postgres:admin@mattel-database:5432/fundana
-    depends_on:
-      - mattel-database
+      POSTGRES_URL: postgres://postgres:admin@mattel-database:5432/postgres
     volumes:                   # 1. Create a virtual volume 
       - type: bind             # and bind it to the real folder
         source: ./      # 2. Bind ./backend
@@ -38,13 +36,6 @@ services:
     command: bun run dev       # 4. Run dev script in /home/bun/app
     ports:
       - 3000:3000
-    develop:
-      watch:
-        - action: sync
-          path: ./
-          target: /home/bun/app
-          ignore:
-            - node_modules/
-            - dist/
-            - .git/
-            - .DS_Store
+
+volumes:
+  pgdata:
