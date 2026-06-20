@@ -148,28 +148,18 @@ CREATE TABLE IF NOT EXISTS EMPLEADO (
     emp_direccion VARCHAR(100) NOT NULL
 );
 
--- CORREGIDO: se retiró fk_car_id. El ER modela el cargo del empleado en
--- una asociativa separada (CAR_EMP) con su propia vigencia.
 CREATE TABLE IF NOT EXISTS DEP_EMP (
     depemp_fechaini DATE NOT NULL,
     depemp_fechafin DATE,
     fk_dep_id INT,
     fk_emp_id INT,
+    fk_car_id INT NOT NULL,
     PRIMARY KEY (fk_dep_id, fk_emp_id),
     FOREIGN KEY (fk_dep_id) REFERENCES DEPARTAMENTO (dep_id),
-    FOREIGN KEY (fk_emp_id) REFERENCES EMPLEADO (emp_id)
+    FOREIGN KEY (fk_emp_id) REFERENCES EMPLEADO (emp_id),
+    Foreign Key (fk_car_id) REFERENCES CARGO (car_id)
 );
 
--- AÑADIDO: asociativa CAR_EMP del ER (Empleado <-> Cargo con vigencia).
-CREATE TABLE IF NOT EXISTS CAR_EMP (
-    caremp_fechaini DATE NOT NULL,
-    caremp_fechafin DATE,
-    fk_car_id INT,
-    fk_emp_id INT,
-    PRIMARY KEY (fk_car_id, fk_emp_id),
-    FOREIGN KEY (fk_car_id) REFERENCES CARGO (car_id),
-    FOREIGN KEY (fk_emp_id) REFERENCES EMPLEADO (emp_id)
-);
 
 CREATE TABLE IF NOT EXISTS EMP_TURNO (
     fk_emp_id INT,
@@ -320,8 +310,8 @@ CREATE TABLE IF NOT EXISTS EFECTIVO (
 
 CREATE TABLE IF NOT EXISTS TARJETA (
     fk_metpag_id INT PRIMARY KEY,
-    tar_numero VARCHAR(19) NOT NULL,    -- CORREGIDO: INT desbordaba (16-19 dígitos)
-    tar_cvv VARCHAR(4) NOT NULL,        -- CORREGIDO: conserva ceros a la izquierda
+    tar_numero BIGINT NOT NULL,    
+    tar_cvv INT NOT NULL,    
     tar_banco VARCHAR(100) NOT NULL,
     tar_emisor VARCHAR(100) NOT NULL,
     tar_fechaven DATE NOT NULL,
@@ -334,7 +324,7 @@ CREATE TABLE IF NOT EXISTS TARJETA (
 -- se eliminó che_emisor (redundante con che_banco = banco emisor).
 CREATE TABLE IF NOT EXISTS CHEQUE (
     fk_metpag_id INT PRIMARY KEY,
-    che_codigocuenta VARCHAR(20) NOT NULL,  -- CORREGIDO: cuenta como texto (20 díg.)
+    che_codigocuenta BIGINT NOT NULL,  -- CORREGIDO: cuenta como texto (20 díg.)
     che_numero VARCHAR(20) NOT NULL,        -- AÑADIDO (ER: chequ_numero)
     che_titular VARCHAR(100) NOT NULL,      -- AÑADIDO (ER: chequ_nombre_titular)
     che_monto FLOAT NOT NULL,
@@ -396,7 +386,7 @@ CREATE TABLE IF NOT EXISTS PERSONA_NATURAL (
     pernat_pnombre VARCHAR(50) NOT NULL,
     pernat_snombre VARCHAR(50),
     pernat_papellido VARCHAR(50) NOT NULL,
-    pernat_sapellido VARCHAR(50),           -- CORREGIDO: opcional (°) según el ER
+    pernat_sapellido VARCHAR(50),           
     pernat_fechanac DATE NOT NULL,
     pernat_direccion TEXT NOT NULL,
     FOREIGN KEY (fk_cli_id) REFERENCES CLIENTE (cli_id)
