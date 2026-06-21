@@ -10,7 +10,7 @@ import { Modal, ConfirmDialog } from "../../ui/Modal";
 import {
   Badge, Button, Field, TextInput, Select, SectionHeader,
 } from "../../ui/primitives";
-import { IconPlus, IconEdit, IconTrash, IconUsers, IconLock } from "../../ui/icons";
+import { IconPlus, IconEdit, IconTrash, IconUsers } from "../../ui/icons";
 
 const formVacio: Usuario = {
   id: "", nombre: "", username: "", email: "", passwordHash: "",
@@ -56,16 +56,12 @@ export function UsuariosTab() {
           </span>
           <div className="leading-tight">
             <p className="font-semibold text-navy-700">{u.nombre}</p>
-            <p className="text-xs text-slate-400">@{u.username}</p>
+            <p className="text-xs text-slate-400">{u.empleadoId ? "Interno · empleado" : u.clienteId ? "Externo · cliente" : "—"}</p>
           </div>
         </div>
       ),
     },
     { key: "email", header: "Email", sortValue: (u) => u.email, searchValue: (u) => u.email, cell: (u) => <span className="text-slate-500">{u.email}</span> },
-    {
-      key: "pass", header: "Contraseña",
-      cell: () => <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-400"><IconLock className="h-3.5 w-3.5" />••••••••</span>,
-    },
     {
       key: "roles", header: "Rol(es)",
       cell: (u) => (

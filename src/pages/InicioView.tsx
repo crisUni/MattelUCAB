@@ -12,7 +12,7 @@ export function InicioView() {
   const { data: usuarios } = useAsyncData<Usuario[]>(getUsuarios);
 
   const total = productos?.length ?? 0;
-  const platinum = (productos ?? []).filter((p) => p.exclusividadId === "exc-platinum").length;
+  const agotados = (productos ?? []).filter((p) => p.stock === 0).length;
   const valorInventario = (productos ?? []).reduce((s, p) => s + p.precioBaseUsd * p.stock, 0);
   const totalUsuarios = usuarios?.length ?? 0;
 
@@ -36,7 +36,7 @@ export function InicioView() {
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Productos en catálogo" value={total} hint="SKUs activos" tone="brand" icon={<IconDna className="h-5 w-5" />} />
-        <StatCard label="Ediciones Platinum" value={platinum} hint="< 1.000 unidades" tone="navy" icon={<IconBox className="h-5 w-5" />} />
+        <StatCard label="Productos agotados" value={agotados} hint="sin stock disponible" tone="navy" icon={<IconBox className="h-5 w-5" />} />
         <StatCard label="Usuarios registrados" value={totalUsuarios} hint="cuentas del sistema" tone="green" icon={<IconUsers className="h-5 w-5" />} />
         <StatCard
           label="Valor de inventario"

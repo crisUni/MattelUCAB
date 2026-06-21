@@ -6,7 +6,7 @@
  * (camelCase, ids string). La firma pública NO cambió para las lecturas, así que
  * los componentes siguen llamando getX() igual que antes.
  *
- * Fuera de alcance (siguen en mock): Reportes y Monedas.
+ * Los reportes se calculan en la base de datos (ver ReportesService / reports.sql).
  *
  * Mutaciones: guardar(recurso, entidad) / eliminar(recurso, id) despachan al
  * endpoint correcto por recurso. Algunos formularios no recogen todas las FK que
@@ -16,13 +16,9 @@
 import type {
   Usuario, Rol, Permiso,
   Producto, MoldeRostro, TipoCuerpo, Color, Material, Era, Exclusividad, TipoMaterial,
-  ReglaCompatibilidad, Pack, Personaje, Profesion, Moneda, ZonaColor, TipoVinculo, ColorAplicado, BomItem,
+  ReglaCompatibilidad, Pack, Personaje, Profesion, ZonaColor, TipoVinculo, ColorAplicado, BomItem,
   LabelExclusividad, AccionPermiso,
-  RentabilidadADN, DiversidadFila, ActividadSospechosa,
 } from "../data/types";
-
-import { monedas } from "../data/mock/catalogosMaestros";
-import { rentabilidadADN, diversidad, actividadSospechosa } from "../data/mock/reportes";
 
 /** URL base de la API (mismo origen que el front, servido por Bun). */
 export const API_URL =
@@ -111,6 +107,8 @@ export async function getUsuarios(): Promise<Usuario[]> {
     passwordHash: u.usu_clave ?? "",
     rolesIds: u.fk_rol_id != null ? [sid(u.fk_rol_id)] : [],
     fechaRegistro: "",
+    empleadoId: u.fk_emp_id != null ? sid(u.fk_emp_id) : undefined,
+    clienteId: u.fk_cli_id != null ? sid(u.fk_cli_id) : undefined,
   }));
 }
 
@@ -418,16 +416,6 @@ export async function getEdicionesOpc(): Promise<Opcion[]> {
   const rows = await getList("/edicion");
   return rows.map((e: any) => ({ id: sid(e.edi_id), nombre: e.edi_nombre }));
 }
-
-/* ===================================================================== *
- * LECTURAS — Fuera de alcance (mock): Monedas y Reportes               *
- * ===================================================================== */
-
-const clone = <T>(d: T): T => structuredClone(d);
-export const getMonedas = async (): Promise<Moneda[]> => clone(monedas);
-export const getRentabilidadADN = async (): Promise<RentabilidadADN[]> => clone(rentabilidadADN);
-export const getDiversidad = async (): Promise<DiversidadFila[]> => clone(diversidad);
-export const getActividadSospechosa = async (): Promise<ActividadSospechosa[]> => clone(actividadSospechosa);
 
 /* --------------------- Reportes analíticos (lógica en la BD) --------------------- */
 export interface ReporteColumna { key: string; label: string; tipo?: "texto" | "numero" | "dinero" | "pct" }
