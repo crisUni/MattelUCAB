@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll } from "./CorsHeaders";
 
 type Rol = {
     id: number
@@ -36,6 +36,12 @@ class RolService{
                 const body = await req.json();
                 return callUpdate("updateRol", [id, body.rol_nombre])
             },
+            DELETE: async (req: Bun.BunRequest<"/api/rol/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteRol", [id])
+            },
 			GET: async (req: Bun.BunRequest<"/api/rol/:id">) => {
 				let found: Permiso_Rol[]
 
@@ -59,9 +65,9 @@ class RolService{
             GET: async (_: Bun.BunRequest<"/api/permiso">) => listAll<Rol>("listPermiso"),
             POST: async (req: Bun.BunRequest<"/api/permiso">) => {
                 const body = await req.json();
-                if (!body.perm_moduloacceso)
-                    return new Response('perm_moduloacceso is required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createPermiso", [body.perm_moduloacceso])
+                if (!body.perm_recurso || !body.perm_accion)
+                    return new Response('perm_recurso and perm_accion are required', { status: 400, headers: CORS_HEADERS })
+                return callProcedure("createPermiso", [body.perm_recurso, body.perm_accion])
             }
         },
         "/api/permiso/:id": {
@@ -70,7 +76,13 @@ class RolService{
                 if (!Number.isInteger(id))
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
-                return callUpdate("updatePermiso", [id, body.perm_moduloacceso])
+                return callUpdate("updatePermiso", [id, body.perm_recurso, body.perm_accion])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/permiso/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deletePermiso", [id])
             }
         }
     }

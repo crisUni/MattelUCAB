@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll } from "./CorsHeaders";
 
 type Usuario = {
     usu_id: number
@@ -33,6 +33,12 @@ class UsuarioService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateUsuario", [id, body.usu_nombre, body.usu_clave, body.usu_correo, body.fk_rol_id, body.fk_emp_id, body.fk_cli_id])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/usuario/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteUsuario", [id])
             }
         },
         "/api/permiso_rol": {
@@ -40,6 +46,15 @@ class UsuarioService{
             POST: async (req: Bun.BunRequest<"/api/permiso_rol">) => {
                 const body = await req.json();
                 return callProcedure("createPermisoRol", [body.fk_rol_id, body.fk_per_id]);
+            }
+        },
+        "/api/permiso_rol/:rol/:perm": {
+            DELETE: async (req: Bun.BunRequest<"/api/permiso_rol/:rol/:perm">) => {
+                const rol = Number(req.params.rol);
+                const perm = Number(req.params.perm);
+                if (!Number.isInteger(rol) || !Number.isInteger(perm))
+                    return new Response("rol and perm must be valid integers", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deletePermisoRol", [rol, perm])
             }
         }
     }

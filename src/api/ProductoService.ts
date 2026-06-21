@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll } from "./CorsHeaders";
 
 type CategoriaProducto = {
     catpro_id: number
@@ -117,6 +117,12 @@ class ProductoService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateExclusividad", [id, body.exc_nombre, body.exc_limiteproducto])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/exclusividad/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteExclusividad", [id])
             }
         },
         "/api/producto": {
@@ -125,7 +131,7 @@ class ProductoService{
                 const body = await req.json();
                 if (!body.pro_nombre || body.pro_preciobase === undefined || !body.pro_lanzamientofecha || !body.pro_tipo || body.fk_jug_id === undefined || body.fk_catpro_id === undefined || body.fk_lotpro_id === undefined || body.fk_edi_id === undefined || body.fk_exc_id === undefined)
                     return new Response('pro_nombre, pro_preciobase, pro_lanzamientofecha, pro_tipo, fk_jug_id, fk_catpro_id, fk_lotpro_id, fk_edi_id, fk_exc_id are required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createProducto", [body.fk_jug_id, body.pro_id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
+                return callProcedure("createProducto", [body.fk_jug_id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
             }
         },
         "/api/producto/:id": {
@@ -135,6 +141,12 @@ class ProductoService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateProducto", [id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_jug_id, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/producto/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteProducto", [id])
             }
         },
         "/api/detalle_set": {

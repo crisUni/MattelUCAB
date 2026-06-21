@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll } from "./CorsHeaders";
 
 type Color = {
     col_id: number
@@ -92,6 +92,12 @@ class JugueteService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateColor", [id, body.col_nombre, body.col_codhex])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/color/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteColor", [id])
             }
         },
         "/api/tipo_cuerpo": {
@@ -110,6 +116,12 @@ class JugueteService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateTipoCuerpo", [id, body.tipcue_nombre])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/tipo_cuerpo/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteTipoCuerpo", [id])
             }
         },
         "/api/material": {
@@ -128,6 +140,12 @@ class JugueteService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateMaterial", [id, body.mat_nombre, body.mat_tipo, body.mat_unidad, body.mat_costo])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/material/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteMaterial", [id])
             }
         },
         "/api/era_historico": {
@@ -146,6 +164,12 @@ class JugueteService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateEraHistorico", [id, body.erahis_nombre, body.erahis_fechaini, body.erahis_fechafin])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/era_historico/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteEraHistorico", [id])
             }
         },
         "/api/diseno": {
@@ -190,7 +214,7 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.molros_nombre || !body.molros_patente || body.fk_per_id === undefined)
                     return new Response('molros_nombre, molros_patente, fk_per_id are required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createMoldeRostro", [body.molros_nombre, body.molros_patente, body.fk_per_id])
+                return callProcedure("createMoldeRostro", [body.molros_nombre, body.molros_patente, body.fk_per_id, body.molros_anopatente ?? null])
             }
         },
         "/api/molde_rostro/:id": {
@@ -199,7 +223,13 @@ class JugueteService{
                 if (!Number.isInteger(id))
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
-                return callUpdate("updateMoldeRostro", [id, body.molros_nombre, body.molros_patente, body.fk_per_id])
+                return callUpdate("updateMoldeRostro", [id, body.molros_nombre, body.molros_patente, body.fk_per_id, body.molros_anopatente ?? null])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/molde_rostro/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteMoldeRostro", [id])
             }
         },
         "/api/juguete": {
