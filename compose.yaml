@@ -2,7 +2,7 @@ services:
 
   # Database service
   mattel-database:
-    image: postgres:alpine
+    image: postgres:18-alpine   # pin major version (floating 'alpine' tag broke the data volume on the PG18 bump)
     restart: no # TODO: Change these to always when deploying
     environment:
       POSTGRES_DB: fundana

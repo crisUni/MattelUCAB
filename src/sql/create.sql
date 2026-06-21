@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS MOLDE_ROSTRO (
     molros_id SERIAL PRIMARY KEY,
     molros_nombre VARCHAR(100) NOT NULL,
     molros_patente VARCHAR(100) NOT NULL,
+    molros_anopatente INT,                  -- AÑADIDO: año de patente del molde (ej. Mackie 1991)
     fk_per_id INT NOT NULL,
     FOREIGN KEY (fk_per_id) REFERENCES PERSONAJE (per_id)
 );
@@ -186,7 +187,7 @@ CREATE TABLE IF NOT EXISTS INSPECCION_CALIDAD (
     fk_emp_id INT NOT NULL,
     FOREIGN KEY (fk_lotpro_id) REFERENCES LOTE_PRODUCCION(lotpro_id),
     Foreign Key (fk_emp_id) REFERENCES EMPLEADO(emp_id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS DEFECTO (
     def_id SERIAL PRIMARY KEY,
@@ -406,9 +407,13 @@ CREATE TABLE IF NOT EXISTS PERSONA_JURIDICA (
 -- SECCIÓN: USUARIOS / SEGURIDAD
 -- =====================================================================
 -- CORREGIDO: prefijo perm_ para evitar choque con PERSONAJE (per_).
+-- Permiso granular = (recurso, accion). Cada par define un privilegio concreto
+-- (ej. PRODUCTO/CREAR). Los roles se componen asignando varios permisos.
 CREATE TABLE IF NOT EXISTS PERMISO (
     perm_id SERIAL PRIMARY KEY,
-    perm_moduloacceso VARCHAR(50) NOT NULL
+    perm_recurso VARCHAR(50) NOT NULL,
+    perm_accion VARCHAR(20) NOT NULL CHECK (perm_accion IN ('VER', 'CREAR', 'EDITAR', 'ELIMINAR')),
+    UNIQUE (perm_recurso, perm_accion)
 );
 
 CREATE TABLE IF NOT EXISTS ROL (

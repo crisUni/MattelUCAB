@@ -472,17 +472,17 @@ INSERT INTO VINCULO_PERSONAJE (fk_personaje1, fk_personaje2, vinper_tipo_relacio
     (10, 1, 'Familia');
 
 -- MOLDE_ROSTRO (10 filas)
-INSERT INTO MOLDE_ROSTRO (molros_id, molros_nombre, molros_patente, fk_per_id) VALUES
-    (1, 'Molde Barbie', 'PAT-MOL-001', 1),
-    (2, 'Molde Ken', 'PAT-MOL-002', 2),
-    (3, 'Molde Skipper', 'PAT-MOL-003', 3),
-    (4, 'Molde Christie', 'PAT-MOL-004', 4),
-    (5, 'Molde Midge', 'PAT-MOL-005', 5),
-    (6, 'Molde Teresa', 'PAT-MOL-006', 6),
-    (7, 'Molde Raquelle', 'PAT-MOL-007', 7),
-    (8, 'Molde Stacie', 'PAT-MOL-008', 8),
-    (9, 'Molde Chelsea', 'PAT-MOL-009', 9),
-    (10, 'Molde Nikki', 'PAT-MOL-010', 10);
+INSERT INTO MOLDE_ROSTRO (molros_id, molros_nombre, molros_patente, fk_per_id, molros_anopatente) VALUES
+    (1, 'Molde Barbie', 'PAT-MOL-001', 1, 1959),
+    (2, 'Molde Ken', 'PAT-MOL-002', 2, 1961),
+    (3, 'Molde Skipper', 'PAT-MOL-003', 3, 1964),
+    (4, 'Molde Christie', 'PAT-MOL-004', 4, 1968),
+    (5, 'Molde Midge', 'PAT-MOL-005', 5, 1963),
+    (6, 'Molde Teresa', 'PAT-MOL-006', 6, 1988),
+    (7, 'Molde Raquelle', 'PAT-MOL-007', 7, 2006),
+    (8, 'Molde Stacie', 'PAT-MOL-008', 8, 1992),
+    (9, 'Molde Chelsea', 'PAT-MOL-009', 9, 2011),
+    (10, 'Molde Nikki', 'PAT-MOL-010', 10, 2006);
 
 -- ERA_HISTORICO (10 filas)
 INSERT INTO ERA_HISTORICO (erahis_id, erahis_nombre, erahis_fechaini, erahis_fechafin) VALUES
@@ -550,17 +550,19 @@ INSERT INTO COMPATIBILIDAD_JUGUETE (fk_juguete1, fk_juguete2) VALUES
     (10, 1);
 
 -- COLOR_PRODUCTO (10 filas)
+-- Cada juguete tiene tono de piel, color de ojos y color de cabello (zonas distintas,
+-- colores tomados de conjuntos disjuntos para respetar el trigger "un color por zona").
 INSERT INTO COLOR_PRODUCTO (fk_col_id, fk_jug_id, colpro_zonaaplicacion) VALUES
-    (1, 1, 'Cabello'),
-    (2, 2, 'Ojos'),
-    (3, 3, 'Vestido'),
-    (4, 4, 'Zapatos'),
-    (5, 5, 'Piel'),
-    (6, 6, 'Accesorio'),
-    (7, 7, 'Labios'),
-    (8, 8, 'Manos'),
-    (9, 9, 'Cara'),
-    (10, 10, 'Base');
+    (10, 1, 'Piel'),  (2, 1, 'Ojos'),  (3, 1, 'Cabello'),
+    (9, 2, 'Piel'),   (7, 2, 'Ojos'),  (4, 2, 'Cabello'),
+    (6, 3, 'Piel'),   (8, 3, 'Ojos'),  (3, 3, 'Cabello'),
+    (1, 4, 'Piel'),   (5, 4, 'Ojos'),  (4, 4, 'Cabello'),
+    (10, 5, 'Piel'),  (2, 5, 'Ojos'),  (3, 5, 'Cabello'),
+    (9, 6, 'Piel'),   (7, 6, 'Ojos'),  (4, 6, 'Cabello'),
+    (6, 7, 'Piel'),   (8, 7, 'Ojos'),  (3, 7, 'Cabello'),
+    (1, 8, 'Piel'),   (5, 8, 'Ojos'),  (4, 8, 'Cabello'),
+    (10, 9, 'Piel'),  (2, 9, 'Ojos'),  (3, 9, 'Cabello'),
+    (9, 10, 'Piel'),  (7, 10, 'Ojos'), (4, 10, 'Cabello');
 
 -- MATERIAL_PRODUCTO (10 filas)
 INSERT INTO MATERIAL_PRODUCTO (fk_mat_id, fk_jug_id, matpro_cantidad) VALUES
@@ -1814,17 +1816,16 @@ INSERT INTO PERSONA_JURIDICA (fk_cli_id, perjur_rif, perjur_razonsocial, perjur_
     (400, 'J-20000400-0', 'Empresa 400 C.A.', 'Representante 400');
 
 -- PERMISO (10 filas)
-INSERT INTO PERMISO (perm_id, perm_moduloacceso) VALUES
-    (1, 'VENTAS'),
-    (2, 'COMPRAS'),
-    (3, 'INVENTARIO'),
-    (4, 'USUARIOS'),
-    (5, 'REPORTES'),
-    (6, 'SUBASTAS'),
-    (7, 'PRODUCCION'),
-    (8, 'CALIDAD'),
-    (9, 'FINANZAS'),
-    (10, 'CONFIG');
+-- Permisos granulares: VER/CREAR/EDITAR/ELIMINAR por cada recurso administrable.
+INSERT INTO PERMISO (perm_recurso, perm_accion)
+SELECT res.r, act.a
+FROM (VALUES
+    ('USUARIO'),('ROL'),('PERMISO'),
+    ('PRODUCTO'),('MOLDE_ROSTRO'),('TIPO_CUERPO'),('COLOR'),('MATERIAL'),('ERA'),('EXCLUSIVIDAD'),
+    ('PERSONAJE'),('PROFESION'),('COMPATIBILIDAD'),('PACK'),
+    ('REPORTE'),('COSTO')
+) AS res(r)
+CROSS JOIN (VALUES ('VER'),('CREAR'),('EDITAR'),('ELIMINAR')) AS act(a);
 
 -- ROL (10 filas)
 INSERT INTO ROL (rol_id, rol_nombre) VALUES
@@ -2243,18 +2244,48 @@ INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_em
     (399, 'cliente399', 'hash_00399', 'cliente399@mail.com', 9, NULL, 399),
     (400, 'cliente400', 'hash_00400', 'cliente400@mail.com', 10, NULL, 400);
 
+-- Usuarios administradores del equipo (rol Admin = 1, vinculados a empleados, contraseña: password)
+INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_emp_id, fk_cli_id) VALUES
+    (401, 'Ana K', 'password', 'ana.k@mattelucab.com', 1, 1, NULL),
+    (402, 'Cris', 'password', 'cris@mattelucab.com', 1, 2, NULL),
+    (403, 'Marian', 'password', 'marian@mattelucab.com', 1, 3, NULL),
+    (404, 'Leo', 'password', 'leo@mattelucab.com', 1, 4, NULL);
+
 -- PERMISO_ROL (10 filas)
-INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id) VALUES
-    (1, 1),
-    (2, 2),
-    (3, 3),
-    (4, 4),
-    (5, 5),
-    (6, 6),
-    (7, 7),
-    (8, 8),
-    (9, 9),
-    (10, 10);
+-- Matriz de permisos por rol (compuesta con permisos granulares).
+-- Admin (1): acceso total.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id) SELECT 1, perm_id FROM PERMISO;
+-- Gerente (2): CRUD completo del genoma + ver reportes y costos.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 2, perm_id FROM PERMISO
+     WHERE perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK')
+        OR (perm_recurso IN ('REPORTE','COSTO') AND perm_accion = 'VER');
+-- Vendedor (3): ver catalogo y fichas (sin costos).
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 3, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('PRODUCTO','PACK','PERSONAJE','PROFESION','COMPATIBILIDAD');
+-- Cliente (4): igual que invitado — ver catalogo (sin costos).
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 4, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('PRODUCTO','PACK','PERSONAJE','PROFESION','COMPATIBILIDAD');
+-- Inspector (5): ver catalogo y maestros.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 5, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL');
+-- Almacen (6): ver catalogo.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 6, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
+-- Comprador (7): ver catalogo.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 7, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
+-- Auditor (8): ver reportes, costos y catalogo (solo lectura).
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 8, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('REPORTE','COSTO','PRODUCTO');
+-- Soporte (9): administrar usuarios (ver/editar) y ver roles/permisos.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 9, perm_id FROM PERMISO
+     WHERE (perm_recurso='USUARIO' AND perm_accion IN ('VER','EDITAR'))
+        OR (perm_recurso IN ('ROL','PERMISO') AND perm_accion='VER');
+-- Invitado (10): ver catalogo.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 10, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
 
 -- CONDICION_SUBASTA (10 filas)
 INSERT INTO CONDICION_SUBASTA (consub_id, consub_nombre) VALUES
@@ -10978,9 +11009,9 @@ SELECT setval('hub_regional_hubreg_id_seq', 10, true);
 SELECT setval('almacen_alm_id_seq', 10, true);
 SELECT setval('metodo_pago_metpag_id_seq', 70, true);
 SELECT setval('cliente_cli_id_seq', 400, true);
-SELECT setval('permiso_perm_id_seq', 10, true);
+SELECT setval('permiso_perm_id_seq', (SELECT MAX(perm_id) FROM PERMISO), true);
 SELECT setval('rol_rol_id_seq', 10, true);
-SELECT setval('usuario_usu_id_seq', 400, true);
+SELECT setval('usuario_usu_id_seq', 404, true);
 SELECT setval('condicion_subasta_consub_id_seq', 10, true);
 SELECT setval('subasta_sub_id_seq', 100, true);
 SELECT setval('puja_subasta_pujsub_id_seq', 6000, true);

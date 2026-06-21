@@ -289,7 +289,8 @@ CREATE OR REPLACE PROCEDURE updateMoldeRostro (
     molrosId INT,
     molrosNombre VARCHAR(100),
     molrosPatente VARCHAR(100),
-    fkPerId INT
+    fkPerId INT,
+    anoPatente INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
@@ -297,7 +298,8 @@ BEGIN
     UPDATE MOLDE_ROSTRO
     SET molros_nombre = molrosNombre,
         molros_patente = molrosPatente,
-        fk_per_id = fkPerId
+        fk_per_id = fkPerId,
+        molros_anopatente = anoPatente
     WHERE molros_id = molrosId;
 END
 $$;
@@ -2057,13 +2059,15 @@ END
 $$;
 CREATE OR REPLACE PROCEDURE updatePermiso (
     permId INT,
-    permModuloacceso VARCHAR(50)
+    permRecurso VARCHAR(50),
+    permAccion VARCHAR(20)
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     UPDATE PERMISO
-    SET perm_moduloacceso = permModuloacceso
+    SET perm_recurso = permRecurso,
+        perm_accion = permAccion
     WHERE perm_id = permId;
 END
 $$;
@@ -2947,13 +2951,14 @@ $$;
 CREATE OR REPLACE PROCEDURE createMoldeRostro (
     nombreMolde VARCHAR(100),
     patenteMolde VARCHAR(100),
-    fkPerId INT
+    fkPerId INT,
+    anoPatente INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO MOLDE_ROSTRO (molros_nombre, molros_patente, fk_per_id)
-    VALUES (nombreMolde, patenteMolde, fkPerId);
+    INSERT INTO MOLDE_ROSTRO (molros_nombre, molros_patente, fk_per_id, molros_anopatente)
+    VALUES (nombreMolde, patenteMolde, fkPerId, anoPatente);
 END
 $$;
 
@@ -3235,9 +3240,10 @@ BEGIN
 END
 $$;
 
+-- CORREGIDO: pro_id se omite del INSERT para que lo genere el SERIAL
+-- (antes exigía recibir un id explícito, impidiendo crear productos nuevos).
 CREATE OR REPLACE PROCEDURE createProducto (
     fkJugId INT,
-    proId INT,
     proSku INT,
     proNombre VARCHAR(100),
     proPrecioBase FLOAT,
@@ -3252,13 +3258,13 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     INSERT INTO PRODUCTO (
-        fk_jug_id, pro_id, pro_sku, pro_nombre, pro_preciobase, 
-        pro_lanzamientofecha, pro_tipo, fk_catpro_id, fk_lotpro_id, 
+        fk_jug_id, pro_sku, pro_nombre, pro_preciobase,
+        pro_lanzamientofecha, pro_tipo, fk_catpro_id, fk_lotpro_id,
         fk_edi_id, fk_exc_id
     )
     VALUES (
-        fkJugId, proId, proSku, proNombre, proPrecioBase, 
-        proLanzamientoFecha, proTipo, fkCatproId, fkLotproId, 
+        fkJugId, proSku, proNombre, proPrecioBase,
+        proLanzamientoFecha, proTipo, fkCatproId, fkLotproId,
         fkEdiId, fkExcId
     );
 END
@@ -3512,13 +3518,48 @@ END
 $$;
 
 CREATE OR REPLACE PROCEDURE createPermiso (
-    moduloAcceso VARCHAR(50)
+    permRecurso VARCHAR(50),
+    permAccion VARCHAR(20)
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO PERMISO (perm_moduloacceso)
-    VALUES (moduloAcceso);
+    INSERT INTO PERMISO (perm_recurso, perm_accion)
+    VALUES (permRecurso, permAccion);
+END
+$$;
+
+-- ===================== AUTENTICACIÓN / PERMISOS =====================
+-- Valida credenciales contra la BD (la comparación vive aquí, no en el front).
+CREATE OR REPLACE FUNCTION validar_login (
+    pUsuario VARCHAR(50),
+    pClave VARCHAR(50)
+)
+RETURNS TABLE (usu_id INT, usu_nombre VARCHAR(50), rol_id INT, rol_nombre VARCHAR(50))
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT u.usu_id, u.usu_nombre, r.rol_id, r.rol_nombre
+    FROM USUARIO u
+    JOIN ROL r ON r.rol_id = u.fk_rol_id
+    WHERE u.usu_nombre = pUsuario AND u.usu_clave = pClave;
+END
+$$;
+
+-- Devuelve la lista (recurso, accion) que concede un rol.
+CREATE OR REPLACE FUNCTION permisos_de_rol (
+    pRolId INT
+)
+RETURNS TABLE (perm_recurso VARCHAR(50), perm_accion VARCHAR(20))
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT p.perm_recurso, p.perm_accion
+    FROM PERMISO_ROL pr
+    JOIN PERMISO p ON p.perm_id = pr.fk_perm_id
+    WHERE pr.fk_rol_id = pRolId;
 END
 $$;
 
@@ -3562,7 +3603,7 @@ CREATE OR REPLACE PROCEDURE createPermisoRol (
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO PERMISO_ROL (fk_rol_id, fk_per_id)
+    INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     VALUES (fkRolId, fkPerId);
 END
 $$;
