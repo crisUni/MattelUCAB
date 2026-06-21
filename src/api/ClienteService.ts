@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type Cliente = {
     cli_id: number
@@ -49,6 +49,12 @@ class ClienteService{
             }
         },
         "/api/cliente/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/cliente/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteCliente", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/cliente/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -68,6 +74,10 @@ class ClienteService{
             PUT: async (req: Bun.BunRequest<"/api/persona_natural">) => {
                 const body = await req.json();
                 return callUpdate("updatePersonaNatural", [body.fk_cli_id, body.pernat_cedula, body.pernat_pnombre, body.pernat_snombre, body.pernat_papellido, body.pernat_sapellido, body.pernat_fechanac, body.pernat_direccion])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/persona_natural">) => {
+                const body = await req.json();
+                return callDelete("deletePersonaNatural", [body.fk_cli_id])
             }
         },
         "/api/persona_juridica": {
@@ -81,6 +91,10 @@ class ClienteService{
             PUT: async (req: Bun.BunRequest<"/api/persona_juridica">) => {
                 const body = await req.json();
                 return callUpdate("updatePersonaJuridica", [body.fk_cli_id, body.perjur_rif, body.perjur_razonsocial, body.perjur_reprelegal])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/persona_juridica">) => {
+                const body = await req.json();
+                return callDelete("deletePersonaJuridica", [body.fk_cli_id])
             }
         },
         "/api/membresia": {
@@ -93,6 +107,12 @@ class ClienteService{
             }
         },
         "/api/membresia/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/membresia/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteMembresia", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/membresia/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -112,6 +132,10 @@ class ClienteService{
             PUT: async (req: Bun.BunRequest<"/api/historico_membresia">) => {
                 const body = await req.json();
                 return callUpdate("updateHistoricoMembresia", [body.fk_mem_id, body.fk_cli_id, body.hismem_fechaini, body.hismem_fechafin])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/historico_membresia">) => {
+                const body = await req.json();
+                return callDelete("deleteHistoricoMembresia", [body.fk_mem_id, body.fk_cli_id])
             }
         }
     }

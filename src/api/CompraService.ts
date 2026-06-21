@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type AcuerdoComercial = {
     acucom_id: number
@@ -76,6 +76,12 @@ class CompraService{
             }
         },
         "/api/acuerdo_comercial/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/acuerdo_comercial/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteAcuerdoComercial", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/acuerdo_comercial/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -94,6 +100,12 @@ class CompraService{
             }
         },
         "/api/transportista/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/transportista/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteTransportista", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/transportista/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -112,6 +124,12 @@ class CompraService{
             }
         },
         "/api/compra/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/compra/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteCompra", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/compra/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -130,6 +148,12 @@ class CompraService{
             }
         },
         "/api/estatus_compra/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/estatus_compra/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteEstatusCompra", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/estatus_compra/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -149,6 +173,10 @@ class CompraService{
             PUT: async (req: Bun.BunRequest<"/api/historico_estatus">) => {
                 const body = await req.json();
                 return callUpdate("updateHistoricoEstatus", [body.fk_estcom_id, body.fk_com_id, body.hisest_fechahora])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/historico_estatus">) => {
+                const body = await req.json();
+                return callDelete("deleteHistoricoEstatus", [body.fk_estcom_id, body.fk_com_id])
             }
         },
         "/api/descuento_compra": {
@@ -156,6 +184,10 @@ class CompraService{
             POST: async (req: Bun.BunRequest<"/api/descuento_compra">) => {
                 const body = await req.json();
                 return callProcedure("createDescuentoCompra", [body.fk_des_id, body.fk_com_id]);
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/descuento_compra">) => {
+                const body = await req.json();
+                return callDelete("deleteDescuentoCompra", [body.fk_des_id, body.fk_com_id])
             }
         },
         "/api/historico_tasa_cambio": {
@@ -168,6 +200,12 @@ class CompraService{
             }
         },
         "/api/historico_tasa_cambio/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/historico_tasa_cambio/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteHistoricoTasaCambio", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/historico_tasa_cambio/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -187,6 +225,10 @@ class CompraService{
             PUT: async (req: Bun.BunRequest<"/api/pago">) => {
                 const body = await req.json();
                 return callUpdate("updatePago", [body.pag_id, body.fk_com_id, body.fk_metpag_id, body.pag_monto, body.pag_fecha])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/pago">) => {
+                const body = await req.json();
+                return callDelete("deletePago", [body.pag_id, body.fk_com_id, body.fk_metpag_id])
             }
         },
         "/api/detalle_compra": {
@@ -200,6 +242,10 @@ class CompraService{
             PUT: async (req: Bun.BunRequest<"/api/detalle_compra">) => {
                 const body = await req.json();
                 return callUpdate("updateDetalleCompra", [body.fk_com_id, body.fk_pro_id, body.fk_alm_id, body.detcom_cantidad])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/detalle_compra">) => {
+                const body = await req.json();
+                return callDelete("deleteDetalleCompra", [body.fk_com_id, body.fk_pro_id, body.fk_alm_id])
             }
         }
     }

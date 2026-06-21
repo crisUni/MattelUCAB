@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type LoteProduccion = {
     lotpro_id: number
@@ -37,6 +37,12 @@ class InspeccionService{
             }
         },
         "/api/lote_produccion/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/lote_produccion/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteLoteProduccion", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/lote_produccion/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -55,6 +61,12 @@ class InspeccionService{
             }
         },
         "/api/inspeccion_calidad/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/inspeccion_calidad/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteInspeccionCalidad", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/inspeccion_calidad/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -73,6 +85,12 @@ class InspeccionService{
             }
         },
         "/api/defecto/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/defecto/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteDefecto", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/defecto/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -92,6 +110,10 @@ class InspeccionService{
             PUT: async (req: Bun.BunRequest<"/api/defecto_lote">) => {
                 const body = await req.json();
                 return callUpdate("updateDefectoLote", [body.fk_def_id, body.fk_lotpro_id, body.deflot_cantidadafectada])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/defecto_lote">) => {
+                const body = await req.json();
+                return callDelete("deleteDefectoLote", [body.fk_def_id, body.fk_lotpro_id])
             }
         }
     }

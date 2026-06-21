@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll, insertOne } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll, insertOne } from "./CorsHeaders";
 
 type Efectivo = {
     fk_metpag_id: number
@@ -74,6 +74,10 @@ class PagoService{
             PUT: async (req: Bun.BunRequest<"/api/efectivo">) => {
                 const body = await req.json();
                 return callUpdate("updateEfectivo", [body.fk_metpag_id, body.efe_denominacion])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/efectivo">) => {
+                const body = await req.json();
+                return callDelete("deleteEfectivo", [body.fk_metpag_id])
             }
         },
         "/api/tarjeta": {
@@ -87,6 +91,10 @@ class PagoService{
             PUT: async (req: Bun.BunRequest<"/api/tarjeta">) => {
                 const body = await req.json();
                 return callUpdate("updateTarjeta", [body.fk_metpag_id, body.tar_numero, body.tar_cvv, body.tar_banco, body.tar_emisor, body.tar_fechaven, body.tar_titular, body.tar_tipo])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/tarjeta">) => {
+                const body = await req.json();
+                return callDelete("deleteTarjeta", [body.fk_metpag_id])
             }
         },
         "/api/cheque": {
@@ -100,6 +108,10 @@ class PagoService{
             PUT: async (req: Bun.BunRequest<"/api/cheque">) => {
                 const body = await req.json();
                 return callUpdate("updateCheque", [body.fk_metpag_id, body.che_codigocuenta, body.che_numero, body.che_titular, body.che_monto, body.che_banco, body.che_fechaemision])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/cheque">) => {
+                const body = await req.json();
+                return callDelete("deleteCheque", [body.fk_metpag_id])
             }
         },
         "/api/deposito_bancario": {
@@ -113,6 +125,10 @@ class PagoService{
             PUT: async (req: Bun.BunRequest<"/api/deposito_bancario">) => {
                 const body = await req.json();
                 return callUpdate("updateDepositoBancario", [body.fk_metpag_id, body.depban_cuentadestino, body.depban_bancodestino, body.depban_fecha, body.depban_numref, body.depban_monto])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/deposito_bancario">) => {
+                const body = await req.json();
+                return callDelete("deleteDepositoBancario", [body.fk_metpag_id])
             }
         },
         "/api/transferencia": {
@@ -126,6 +142,10 @@ class PagoService{
             PUT: async (req: Bun.BunRequest<"/api/transferencia">) => {
                 const body = await req.json();
                 return callUpdate("updateTransferencia", [body.fk_metpag_id, body.tran_numref, body.tran_fecha, body.tran_monto])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/transferencia">) => {
+                const body = await req.json();
+                return callDelete("deleteTransferencia", [body.fk_metpag_id])
             }
         },
         "/api/criptomoneda": {
@@ -139,6 +159,10 @@ class PagoService{
             PUT: async (req: Bun.BunRequest<"/api/criptomoneda">) => {
                 const body = await req.json();
                 return callUpdate("updateCriptomoneda", [body.fk_metpag_id, body.cri_idtransaccion, body.cri_fecha, body.cri_monto, body.cri_direcciondestino, body.cri_monedanombre])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/criptomoneda">) => {
+                const body = await req.json();
+                return callDelete("deleteCriptomoneda", [body.fk_metpag_id])
             }
         },
         "/api/billetera_digital": {
@@ -152,11 +176,23 @@ class PagoService{
             PUT: async (req: Bun.BunRequest<"/api/billetera_digital">) => {
                 const body = await req.json();
                 return callUpdate("updateBilleteraDigital", [body.fk_metpag_id, body.bildig_codigoreferencia, body.bildig_fecha, body.bildig_monto])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/billetera_digital">) => {
+                const body = await req.json();
+                return callDelete("deleteBilleteraDigital", [body.fk_metpag_id])
             }
         },
         "/api/metodo_pago": {
             GET: async (_: Bun.BunRequest<"/api/metodo_pago">) => listAll<MetodoPago>("listMetodoPago"),
             POST: async (_: Bun.BunRequest<"/api/metodo_pago">) => insertOne("metodo_pago", {})
+        },
+        "/api/metodo_pago/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/metodo_pago/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteMetodoPago", [id])
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type CategoriaProducto = {
     catpro_id: number
@@ -59,6 +59,12 @@ class ProductoService{
             }
         },
         "/api/categoria_producto/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/categoria_producto/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteCategoriaProducto", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/categoria_producto/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -77,6 +83,12 @@ class ProductoService{
             }
         },
         "/api/edicion/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/edicion/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteEdicion", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/edicion/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -95,6 +107,12 @@ class ProductoService{
             }
         },
         "/api/profesion/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/profesion/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteProfesion", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/profesion/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -111,6 +129,12 @@ class ProductoService{
             }
         },
         "/api/exclusividad/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/exclusividad/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteExclusividad", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/exclusividad/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -129,6 +153,12 @@ class ProductoService{
             }
         },
         "/api/producto/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/producto/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteProducto", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/producto/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -148,6 +178,10 @@ class ProductoService{
             PUT: async (req: Bun.BunRequest<"/api/detalle_set">) => {
                 const body = await req.json();
                 return callUpdate("updateDetalleSet", [body.fk_pro1, body.fk_pro2, body.detset_nombre])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/detalle_set">) => {
+                const body = await req.json();
+                return callDelete("deleteDetalleSet", [body.fk_pro1, body.fk_pro2])
             }
         },
         "/api/historico_profesion": {
@@ -161,6 +195,10 @@ class ProductoService{
             PUT: async (req: Bun.BunRequest<"/api/historico_profesion">) => {
                 const body = await req.json();
                 return callUpdate("updateHistoricoProfesion", [body.fk_pro_id, body.fk_prof_id, body.hispro_anoasignacion])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/historico_profesion">) => {
+                const body = await req.json();
+                return callDelete("deleteHistoricoProfesion", [body.fk_pro_id, body.fk_prof_id])
             }
         }
     }
