@@ -294,20 +294,39 @@ export async function getProfesiones(): Promise<Profesion[]> {
 }
 
 export async function getReglasCompatibilidad(): Promise<ReglaCompatibilidad[]> {
-  const [compat, juguetes] = await Promise.all([
+  const [compat, juguetes, productos] = await Promise.all([
     getList("/compatibilidad_juguete"),
     getList("/juguete"),
+    getList("/producto"),
   ]);
-  const adn = (id: number) =>
-    juguetes.find((j: any) => j.jug_id === id)?.jug_adn ?? `Juguete ${id}`;
+  // Mostrar el nombre del producto en lugar del código ADN (más legible).
+  const label = (id: number) => {
+    const pro = productos.find((p: any) => p.fk_jug_id === id);
+    if (pro) return pro.pro_nombre as string;
+    return juguetes.find((j: any) => j.jug_id === id)?.jug_adn ?? `Juguete ${id}`;
+  };
   return compat.map((c: any): ReglaCompatibilidad => ({
     id: `${c.fk_juguete1}-${c.fk_juguete2}`,
-    nombre: `Compatibilidad ${adn(c.fk_juguete1)} ↔ ${adn(c.fk_juguete2)}`,
-    origen: adn(c.fk_juguete1),
-    destino: adn(c.fk_juguete2),
+    nombre: `Compatibilidad ${label(c.fk_juguete1)} ↔ ${label(c.fk_juguete2)}`,
+    origen: label(c.fk_juguete1),
+    destino: label(c.fk_juguete2),
     resultado: "COMPATIBLE",
     motivo: "Juguetes registrados como compatibles entre sí.",
   }));
+}
+
+/** Opciones de juguete (genoma) etiquetadas por el nombre del producto, no por su ADN. */
+export async function getJuguetesConProductoOpc(): Promise<Opcion[]> {
+  const [juguetes, productos] = await Promise.all([getList("/juguete"), getList("/producto")]);
+  return juguetes.map((j: any) => {
+    const pro = productos.find((p: any) => p.fk_jug_id === j.jug_id);
+    return { id: sid(j.jug_id), nombre: pro ? `${pro.pro_nombre} · ${j.jug_adn}` : j.jug_adn };
+  });
+}
+
+/** Registra un par de juguetes (genomas) como compatibles entre sí. */
+export async function crearCompatibilidad(jug1: string, jug2: string): Promise<void> {
+  await send("POST", "/compatibilidad_juguete", { fk_juguete1: Number(jug1), fk_juguete2: Number(jug2) });
 }
 
 export async function getPacks(): Promise<Pack[]> {
@@ -466,6 +485,42 @@ export async function getLotesOpc(): Promise<Opcion[]> {
 export async function getEdicionesOpc(): Promise<Opcion[]> {
   const rows = await getList("/edicion");
   return rows.map((e: any) => ({ id: sid(e.edi_id), nombre: e.edi_nombre }));
+}
+
+export async function getDisenosOpc(): Promise<Opcion[]> {
+  const [disenos, empleados] = await Promise.all([getList("/diseno"), getList("/empleado")]);
+  return disenos.map((d: any) => {
+    const e = empleados.find((x: any) => x.emp_id === d.fk_emp_id);
+    return { id: sid(d.dis_id), nombre: `${d.dis_patentecod}${e ? ` · ${e.emp_pnombre} ${e.emp_papellido}` : ""}` };
+  });
+}
+
+export async function getProfesionesOpc(): Promise<Opcion[]> {
+  const rows = await getList("/profesion");
+  return rows.map((p: any) => ({ id: sid(p.prof_id), nombre: p.prof_nombre }));
+}
+
+/** Alta completa de una muñeca (genoma + colores + producto + profesión), todo en la BD. */
+export interface NuevaMuneca {
+  nombre: string; precio: number; fecha: string;
+  molros: string; tipcue: string; era: string; dis: string;
+  cat: string; edi: string; lote: string; exc: string;
+  colores: { colId: string; zona: string }[];
+  profId?: string; profAno?: string;
+}
+export async function crearMuneca(m: NuevaMuneca): Promise<void> {
+  await send("POST", "/muneca", {
+    nombre: m.nombre, precio: m.precio, fecha: (m.fecha || "").slice(0, 10),
+    molros: Number(m.molros), tipcue: Number(m.tipcue), era: Number(m.era), dis: Number(m.dis),
+    cat: Number(m.cat), edi: Number(m.edi), lote: Number(m.lote), exc: Number(m.exc),
+    colIds: m.colores.map((c) => Number(c.colId)), zonas: m.colores.map((c) => c.zona),
+    prof: m.profId ? Number(m.profId) : null, profAno: m.profAno || null,
+  });
+}
+
+/** Crea un set/pack (par de productos compatibles) — aparece en la pestaña de Sets. */
+export async function crearSet(nombre: string, pro1: string, pro2: string): Promise<void> {
+  await send("POST", "/detalle_set", { fk_pro1: Number(pro1), fk_pro2: Number(pro2), detset_nombre: nombre });
 }
 
 /* --------------------- Reportes analíticos (lógica en la BD) --------------------- */

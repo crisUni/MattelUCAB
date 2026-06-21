@@ -1,3 +1,4 @@
+import { sql } from "bun";
 import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll, fetchAll } from "./CorsHeaders";
 
 type CategoriaProducto = {
@@ -128,6 +129,26 @@ class ProductoService{
         // Catálogo resuelto (vista VW_PRODUCTO_ADN): joins + stock + costo calculados en la BD.
         "/api/producto_adn": {
             GET: async (_: Bun.BunRequest<"/api/producto_adn">) => fetchAll("vw_producto_adn"),
+        },
+        // Alta completa de una muñeca (genoma + colores + producto + profesión) en la BD.
+        "/api/muneca": {
+            POST: async (req: Bun.BunRequest<"/api/muneca">) => {
+                const b = await req.json();
+                if (!b.nombre || b.precio === undefined || !b.fecha || b.molros === undefined || b.tipcue === undefined || b.era === undefined || b.dis === undefined || b.cat === undefined || b.edi === undefined || b.lote === undefined || b.exc === undefined)
+                    return new Response('Faltan campos del genoma/producto', { status: 400, headers: CORS_HEADERS })
+                // Las arrays se envian como texto delimitado y se reconstruyen en SQL (string_to_array);
+                // se usa sql.unsafe con placeholders posicionales, igual que callProcedure.
+                const colIds = Array.isArray(b.colIds) && b.colIds.length ? b.colIds.join(',') : null;
+                const zonas = Array.isArray(b.zonas) && b.zonas.length ? b.zonas.join(',') : null;
+                try {
+                    const q = `SELECT crear_muneca($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, COALESCE(string_to_array($12, ','), '{}')::int[], COALESCE(string_to_array($13, ','), '{}')::varchar[], $14, $15) AS pro_id`;
+                    const params = [b.nombre, b.precio, b.fecha, b.molros, b.tipcue, b.era, b.dis, b.cat, b.edi, b.lote, b.exc, colIds, zonas, b.prof ?? null, b.profAno ?? null];
+                    const rows = await sql.unsafe(q, params) as any[];
+                    return Response.json({ pro_id: rows[0].pro_id }, { status: 201, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } })
+                } catch (e) {
+                    return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+                }
+            }
         },
         "/api/producto": {
             GET: async (_: Bun.BunRequest<"/api/producto">) => listAll<Producto>("listProducto"),

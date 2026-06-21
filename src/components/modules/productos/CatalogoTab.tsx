@@ -5,8 +5,8 @@ import type {
 import {
   getProductos, getMoldesRostro, getTiposCuerpo, getColores,
   getEras, getExclusividades, getMateriales, getPersonajes, guardar, eliminar, nuevoId,
-  getJuguetesOpc, getCategoriasOpc, getLotesOpc, getEdicionesOpc, type Opcion,
 } from "../../../services/api";
+import { NuevoProductoForm } from "./NuevoProductoForm";
 import { costoVigente } from "../../../data/costing";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { useSession } from "../../../context/SessionContext";
@@ -43,6 +43,7 @@ export function CatalogoTab() {
   const [detail, setDetail] = useState<Producto | null>(null);
   const [editing, setEditing] = useState<Producto | null>(null);
   const [confirm, setConfirm] = useState<Producto | null>(null);
+  const [nuevo, setNuevo] = useState(false);
 
   const lookups = useMemo(() => ({
     molde: (id?: string) => moldes?.find((m) => m.id === id),
@@ -114,7 +115,7 @@ export function CatalogoTab() {
         icon={<IconDna className="h-5 w-5" />}
         title="Catálogo de Productos · Genoma Barbie"
         subtitle="Cada SKU es la variante mínima e indivisible. Haz clic en una fila para ver su ficha de ADN completa."
-        action={puedeCrear ? <Button onClick={() => setEditing(blankProducto())}><IconPlus className="h-4 w-4" />Nuevo producto</Button> : undefined}
+        action={puedeCrear ? <Button onClick={() => setNuevo(true)}><IconPlus className="h-4 w-4" />Nuevo producto</Button> : undefined}
       />
       {!puedeVerCostos && (
         <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-700">
@@ -126,15 +127,9 @@ export function CatalogoTab() {
       {detail && <FichaADN producto={detail} lookups={lookups} materiales={materiales ?? []} puedeVerCostos={puedeVerCostos} puedeEditar={puedeEditar} onClose={() => setDetail(null)} onEdit={() => { setEditing(detail); setDetail(null); }} />}
       {editing && <ProductoForm producto={editing} moldes={moldes ?? []} cuerpos={cuerpos ?? []} colores={colores ?? []} eras={eras ?? []} excl={excl ?? []} personajes={personajes ?? []} onCancel={() => setEditing(null)} onSave={handleSave} />}
       <ConfirmDialog open={!!confirm} title="Eliminar producto" message={`¿Eliminar ${confirm?.nombre} (${confirm?.sku})?`} onCancel={() => setConfirm(null)} onConfirm={() => confirm && handleDelete(confirm)} />
+      {nuevo && <NuevoProductoForm onCancel={() => setNuevo(false)} onSaved={async () => { setNuevo(false); setData(await getProductos()); }} />}
     </div>
   );
-}
-
-function blankProducto(): Producto {
-  return {
-    id: "", sku: "", nombre: "", precioBaseUsd: 0, costoProduccionUsd: 0,
-    fechaLanzamiento: new Date().toISOString(), tipo: "INDIVIDUAL", colores: [], bom: [], stock: 0,
-  };
 }
 
 /* ------------------------------ Ficha ADN ------------------------------ */
@@ -284,12 +279,7 @@ function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personaj
   const [form, setForm] = useState<Producto>(producto);
   const set = (p: Partial<Producto>) => setForm((f) => ({ ...f, ...p }));
   const opt = (id?: string) => id ?? "";
-  const esNuevo = !producto.id;
   const [error, setError] = useState<string | null>(null);
-  const { data: juguetes } = useAsyncData<Opcion[]>(getJuguetesOpc);
-  const { data: categorias } = useAsyncData<Opcion[]>(getCategoriasOpc);
-  const { data: lotes } = useAsyncData<Opcion[]>(getLotesOpc);
-  const { data: ediciones } = useAsyncData<Opcion[]>(getEdicionesOpc);
 
   async function submit() {
     setError(null);
@@ -308,42 +298,10 @@ function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personaj
 
   return (
     <Modal open onClose={onCancel} size="lg"
-      title={producto.id ? "Editar producto" : "Nuevo producto"}
-      subtitle="Define la taxonomía (ADN). Si cambia el color de los zapatos, debe ser un SKU nuevo."
-      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit}>Guardar producto</Button></>}
+      title="Editar producto"
+      subtitle="Edita los datos del producto. El genoma (molde, cuerpo, era) se define al crearlo."
+      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit}>Guardar cambios</Button></>}
     >
-      {esNuevo && (
-        <div className="mb-5 rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
-          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-brand-600">Datos estructurales (requeridos para crear)</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Juguete / genoma" hint="Define molde, cuerpo y era">
-              <Select value={opt(form.jugueteId)} onChange={(e) => set({ jugueteId: e.target.value || undefined })}>
-                <option value="">— Selecciona —</option>
-                {(juguetes ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
-              </Select>
-            </Field>
-            <Field label="Categoría">
-              <Select value={opt(form.categoriaId)} onChange={(e) => set({ categoriaId: e.target.value || undefined })}>
-                <option value="">— Selecciona —</option>
-                {(categorias ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
-              </Select>
-            </Field>
-            <Field label="Lote de producción">
-              <Select value={opt(form.loteId)} onChange={(e) => set({ loteId: e.target.value || undefined })}>
-                <option value="">— Selecciona —</option>
-                {(lotes ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
-              </Select>
-            </Field>
-            <Field label="Edición">
-              <Select value={opt(form.edicionId)} onChange={(e) => set({ edicionId: e.target.value || undefined })}>
-                <option value="">— Selecciona —</option>
-                {(ediciones ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
-              </Select>
-            </Field>
-          </div>
-        </div>
-      )}
-
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="SKU"><TextInput value={form.sku} onChange={(e) => set({ sku: e.target.value })} placeholder="BRB-AAAA-XXX" /></Field>
         <Field label="Nombre comercial"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} /></Field>

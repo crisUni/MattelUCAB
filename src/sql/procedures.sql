@@ -3273,6 +3273,63 @@ BEGIN
 END
 $$;
 
+-- ===================== ALTA COMPLETA DE UNA MUÑECA =====================
+-- Crea, en una sola transacción: el JUGUETE (genoma) con ADN autogenerado,
+-- sus colores por zona, el PRODUCTO con SKU autogenerado y (opcional) su
+-- profesión en el multiverso. Devuelve el id del producto creado.
+CREATE OR REPLACE FUNCTION crear_muneca (
+    pNombre VARCHAR(100), pPrecio FLOAT, pFecha DATE,
+    pMolros INT, pTipcue INT, pEra INT, pDis INT,
+    pCat INT, pEdi INT, pLote INT, pExc INT,
+    pColIds INT[], pZonas VARCHAR[],
+    pProf INT DEFAULT NULL, pProfAno VARCHAR(4) DEFAULT NULL
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vJug INT;
+    vPro INT;
+    vAdn VARCHAR(50);
+    vSku INT;
+    i INT;
+BEGIN
+    -- ADN autogenerado a partir del personaje + molde
+    SELECT 'ADN-' || UPPER(LEFT(REPLACE(COALESCE(per.per_nombre, 'GEN'), ' ', ''), 12)) || '-' || UPPER(LEFT(REPLACE(COALESCE(mr.molros_nombre, 'X'), ' ', ''), 14))
+      INTO vAdn
+      FROM MOLDE_ROSTRO mr LEFT JOIN PERSONAJE per ON per.per_id = mr.fk_per_id
+     WHERE mr.molros_id = pMolros;
+    vAdn := COALESCE(vAdn, 'ADN-GEN-' || pMolros);
+
+    INSERT INTO JUGUETE (jug_adn, fk_molros_id, fk_tipcue_id, fk_erahis_id, fk_dis_id)
+    VALUES (vAdn, pMolros, pTipcue, pEra, pDis)
+    RETURNING jug_id INTO vJug;
+
+    IF pColIds IS NOT NULL THEN
+        FOR i IN 1 .. COALESCE(array_length(pColIds, 1), 0) LOOP
+            IF pColIds[i] IS NOT NULL THEN
+                INSERT INTO COLOR_PRODUCTO (fk_col_id, fk_jug_id, colpro_zonaaplicacion)
+                VALUES (pColIds[i], vJug, pZonas[i]);
+            END IF;
+        END LOOP;
+    END IF;
+
+    SELECT COALESCE(MAX(pro_sku), 100000) + 1 INTO vSku FROM PRODUCTO;
+
+    INSERT INTO PRODUCTO (fk_jug_id, pro_sku, pro_nombre, pro_preciobase, pro_lanzamientofecha,
+                          pro_tipo, fk_catpro_id, fk_lotpro_id, fk_edi_id, fk_exc_id)
+    VALUES (vJug, vSku, pNombre, pPrecio, pFecha, 'INDIVIDUAL', pCat, pLote, pEdi, pExc)
+    RETURNING pro_id INTO vPro;
+
+    IF pProf IS NOT NULL THEN
+        INSERT INTO HISTORICO_PROFESION (hispro_anoasignacion, fk_prof_id, fk_pro_id)
+        VALUES (COALESCE(pProfAno, EXTRACT(YEAR FROM CURRENT_DATE)::TEXT), pProf, vPro);
+    END IF;
+
+    RETURN vPro;
+END
+$$;
+
 CREATE OR REPLACE PROCEDURE createHistoricoProfesion (
     anoAsignacion VARCHAR(4),
     fkProfId INT,
