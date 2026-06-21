@@ -3,12 +3,14 @@ import { getReporte, reportePdfUrl, type ReporteData, type ReporteColumna } from
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { SubTabs, type SubTab, SectionHeader, Button, fmtUsd } from "../../ui/primitives";
 import { DataTable, type Column } from "../../ui/DataTable";
-import { IconReport, IconBox } from "../../ui/icons";
+import { IconReport, IconBox, IconDna, IconScale } from "../../ui/icons";
 
 const TABS: SubTab[] = [
   { id: "sueltas", label: "Unidades sueltas por Hub", icon: <IconBox className="h-4 w-4" /> },
   { id: "sculpts", label: "Top Face Sculpts", icon: <IconReport className="h-4 w-4" /> },
   { id: "agotado", label: "Subensamblaje agotado", icon: <IconReport className="h-4 w-4" /> },
+  { id: "rentabilidad", label: "Rentabilidad por ADN", icon: <IconDna className="h-4 w-4" /> },
+  { id: "diversidad", label: "Índice de diversidad", icon: <IconScale className="h-4 w-4" /> },
 ];
 
 export function ReportesModule() {

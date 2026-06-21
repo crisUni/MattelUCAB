@@ -273,6 +273,44 @@ CREATE TRIGGER trg_exclusividad_limite
     FOR EACH ROW EXECUTE FUNCTION fn_exclusividad_limite();
 
 
+-- ---------------------------------------------------------------------
+-- A8. Compatibilidad obligatoria en packs (DETALLE_SET)
+-- "Logica de fits": dos productos solo pueden agruparse en un set si sus
+-- juguetes (genomas) son compatibles (registrados en COMPATIBILIDAD_JUGUETE)
+-- o son el mismo genoma. Productos incompatibles no pueden unirse.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_detalle_set_compatible()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_jug1 INT;
+    v_jug2 INT;
+BEGIN
+    SELECT fk_jug_id INTO v_jug1 FROM PRODUCTO WHERE pro_id = NEW.fk_pro1;
+    SELECT fk_jug_id INTO v_jug2 FROM PRODUCTO WHERE pro_id = NEW.fk_pro2;
+
+    IF v_jug1 IS NULL OR v_jug2 IS NULL OR v_jug1 = v_jug2 THEN
+        RETURN NEW;  -- sin juguete o mismo genoma: compatible
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM COMPATIBILIDAD_JUGUETE c
+        WHERE (c.fk_juguete1 = v_jug1 AND c.fk_juguete2 = v_jug2)
+           OR (c.fk_juguete1 = v_jug2 AND c.fk_juguete2 = v_jug1)
+    ) THEN
+        RAISE EXCEPTION 'Productos incompatibles: los juguetes % y % no son compatibles y no pueden agruparse en un set.', v_jug1, v_jug2;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_detalle_set_compatible ON DETALLE_SET;
+CREATE TRIGGER trg_detalle_set_compatible
+    BEFORE INSERT OR UPDATE ON DETALLE_SET
+    FOR EACH ROW EXECUTE FUNCTION fn_detalle_set_compatible();
+
+
 -- #####################################################################
 -- ##  MODULO B: SEGURIDAD / GESTION DE USUARIOS Y ROLES
 -- #####################################################################

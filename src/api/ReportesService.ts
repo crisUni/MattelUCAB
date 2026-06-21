@@ -38,6 +38,34 @@ const REPORTES: Record<string, { fn: string; titulo: string; descripcion: string
       { key: "skus_agotados", label: "SKUs agotados", tipo: "numero" },
     ],
   },
+  rentabilidad: {
+    fn: "reporte_rentabilidad_adn",
+    titulo: "Rentabilidad por ADN (Face Sculpt)",
+    descripcion: "Ranking de los moldes de rostro más rentables, cruzando unidades vendidas, ingreso y costo de producción.",
+    columnas: [
+      { key: "molde", label: "Face Sculpt", tipo: "texto" },
+      { key: "patente", label: "Patente", tipo: "texto" },
+      { key: "unidades_vendidas", label: "Vendidas", tipo: "numero" },
+      { key: "ingreso", label: "Ingreso", tipo: "dinero" },
+      { key: "costo", label: "Costo", tipo: "dinero" },
+      { key: "margen", label: "Margen", tipo: "dinero" },
+      { key: "margen_pct", label: "Margen %", tipo: "pct" },
+    ],
+  },
+  diversidad: {
+    fn: "reporte_indice_diversidad",
+    titulo: "Índice de Diversidad",
+    descripcion: "Matriz de representación: % de unidades producidas vs vendidas por tipo de cuerpo y tono de piel (alerta si la producción es menor al 5%).",
+    columnas: [
+      { key: "dimension", label: "Dimensión", tipo: "texto" },
+      { key: "categoria", label: "Categoría", tipo: "texto" },
+      { key: "producidas", label: "Producidas", tipo: "numero" },
+      { key: "pct_producidas", label: "% Producidas", tipo: "pct" },
+      { key: "vendidas", label: "Vendidas", tipo: "numero" },
+      { key: "pct_vendidas", label: "% Vendidas", tipo: "pct" },
+      { key: "alerta", label: "Inclusión", tipo: "texto" },
+    ],
+  },
 };
 
 class ReportesService {

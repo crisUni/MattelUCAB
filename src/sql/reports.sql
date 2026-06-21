@@ -101,3 +101,83 @@ BEGIN
     ORDER BY 3 DESC, m.mat_nombre;
 END
 $$;
+
+-- Reporte 4: Rentabilidad por "ADN" (molde de rostro). Ranking de los moldes mas
+-- rentables cruzando ventas (DETALLE_COMPRA) con el costo de produccion (BOM).
+CREATE OR REPLACE FUNCTION reporte_rentabilidad_adn()
+RETURNS TABLE (molde VARCHAR, patente VARCHAR, unidades_vendidas BIGINT, ingreso NUMERIC, costo NUMERIC, margen NUMERIC, margen_pct NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH costo_unit AS (
+        SELECT p.pro_id, COALESCE(SUM(m.mat_costo * mp.matpro_cantidad), 0)::NUMERIC AS costo
+        FROM PRODUCTO p
+        LEFT JOIN MATERIAL_PRODUCTO mp ON mp.fk_jug_id = p.fk_jug_id
+        LEFT JOIN MATERIAL m ON m.mat_id = mp.fk_mat_id
+        GROUP BY p.pro_id
+    ),
+    ventas AS (
+        SELECT dc.fk_pro_id, SUM(dc.detcom_cantidad) AS vendidas
+        FROM DETALLE_COMPRA dc
+        GROUP BY dc.fk_pro_id
+    ),
+    por_molde AS (
+        SELECT j.fk_molros_id,
+               SUM(v.vendidas) AS vendidas,
+               SUM(v.vendidas * p.pro_preciobase)::NUMERIC AS ingreso,
+               SUM(v.vendidas * c.costo)::NUMERIC AS costo
+        FROM ventas v
+        JOIN PRODUCTO p   ON p.pro_id = v.fk_pro_id
+        JOIN JUGUETE j    ON j.jug_id = p.fk_jug_id
+        JOIN costo_unit c ON c.pro_id = p.pro_id
+        GROUP BY j.fk_molros_id
+    )
+    SELECT mr.molros_nombre, mr.molros_patente,
+           pm.vendidas::BIGINT,
+           ROUND(pm.ingreso, 2),
+           ROUND(pm.costo, 2),
+           ROUND(pm.ingreso - pm.costo, 2),
+           ROUND(CASE WHEN pm.ingreso = 0 THEN 0 ELSE 100.0 * (pm.ingreso - pm.costo) / pm.ingreso END, 2)
+    FROM por_molde pm
+    JOIN MOLDE_ROSTRO mr ON mr.molros_id = pm.fk_molros_id
+    ORDER BY (pm.ingreso - pm.costo) DESC
+    LIMIT 10;
+END
+$$;
+
+-- Reporte 5: Indice de Diversidad. Matriz de representacion: % producidas vs
+-- vendidas por Tipo de cuerpo y por Tono de piel. Alerta si producidas < 5%.
+CREATE OR REPLACE FUNCTION reporte_indice_diversidad()
+RETURNS TABLE (dimension VARCHAR, categoria VARCHAR, producidas BIGINT, pct_producidas NUMERIC, vendidas BIGINT, pct_vendidas NUMERIC, alerta VARCHAR)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH ps AS (
+        SELECT p.pro_id, p.fk_jug_id,
+               COALESCE((SELECT SUM(i.inv_cantidad) FROM INVENTARIO i WHERE i.fk_pro_id = p.pro_id), 0) AS producidas,
+               COALESCE((SELECT SUM(dc.detcom_cantidad) FROM DETALLE_COMPRA dc WHERE dc.fk_pro_id = p.pro_id), 0) AS vendidas
+        FROM PRODUCTO p
+    ),
+    tot AS (SELECT GREATEST(SUM(ps.producidas), 1) AS tp, GREATEST(SUM(ps.vendidas), 1) AS tv FROM ps)
+    SELECT 'Tipo de cuerpo'::VARCHAR, tc.tipcue_nombre,
+           SUM(ps.producidas)::BIGINT, ROUND(100.0 * SUM(ps.producidas) / (SELECT tp FROM tot), 2),
+           SUM(ps.vendidas)::BIGINT, ROUND(100.0 * SUM(ps.vendidas) / (SELECT tv FROM tot), 2),
+           (CASE WHEN 100.0 * SUM(ps.producidas) / (SELECT tp FROM tot) < 5 THEN 'Baja inclusion' ELSE 'OK' END)::VARCHAR
+    FROM ps
+    JOIN JUGUETE j     ON j.jug_id = ps.fk_jug_id
+    JOIN TIPO_CUERPO tc ON tc.tipcue_id = j.fk_tipcue_id
+    GROUP BY tc.tipcue_nombre
+    UNION ALL
+    SELECT 'Tono de piel'::VARCHAR, co.col_nombre,
+           SUM(ps.producidas)::BIGINT, ROUND(100.0 * SUM(ps.producidas) / (SELECT tp FROM tot), 2),
+           SUM(ps.vendidas)::BIGINT, ROUND(100.0 * SUM(ps.vendidas) / (SELECT tv FROM tot), 2),
+           (CASE WHEN 100.0 * SUM(ps.producidas) / (SELECT tp FROM tot) < 5 THEN 'Baja inclusion' ELSE 'OK' END)::VARCHAR
+    FROM ps
+    JOIN COLOR_PRODUCTO cp ON cp.fk_jug_id = ps.fk_jug_id AND cp.colpro_zonaaplicacion = 'Piel'
+    JOIN COLOR co ON co.col_id = cp.fk_col_id
+    GROUP BY co.col_nombre
+    ORDER BY 1, 4 DESC;
+END
+$$;
