@@ -576,7 +576,10 @@ INSERT INTO MATERIAL_PRODUCTO (fk_mat_id, fk_jug_id, matpro_cantidad) VALUES
     (7, 7, 35),
     (8, 8, 40),
     (9, 9, 45),
-    (10, 10, 50);
+    (10, 10, 50),
+    -- Material 1 es un subensamblaje comun (presente en todos los juguetes).
+    (1, 2, 4), (1, 3, 4), (1, 4, 4), (1, 5, 4), (1, 6, 4),
+    (1, 7, 4), (1, 8, 4), (1, 9, 4), (1, 10, 4);
 
 -- DEPARTAMENTO (10 filas)
 INSERT INTO DEPARTAMENTO (dep_id, dep_nombre, dep_descripcion) VALUES
@@ -836,10 +839,10 @@ INSERT INTO INVENTARIO (fk_pro_id, fk_alm_id, inv_stockdisponible, inv_cantidad,
     (4, 4, 470, 940, '2025-04-10'),
     (5, 5, 460, 920, '2025-05-10'),
     (6, 6, 450, 900, '2025-06-10'),
-    (7, 7, 440, 880, '2025-01-10'),
-    (8, 8, 430, 860, '2025-02-10'),
-    (9, 9, 420, 840, '2025-03-10'),
-    (10, 10, 410, 820, '2025-04-10');
+    (7, 7, 0, 880, '2025-01-10'),
+    (8, 8, 0, 860, '2025-02-10'),
+    (9, 9, 0, 840, '2025-03-10'),
+    (10, 10, 0, 820, '2025-04-10');
 
 -- METODO_PAGO (70 filas)
 INSERT INTO METODO_PAGO (metpag_id) VALUES

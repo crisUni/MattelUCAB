@@ -451,6 +451,24 @@ export const getRentabilidadADN = async (): Promise<RentabilidadADN[]> => clone(
 export const getDiversidad = async (): Promise<DiversidadFila[]> => clone(diversidad);
 export const getActividadSospechosa = async (): Promise<ActividadSospechosa[]> => clone(actividadSospechosa);
 
+/* --------------------- Reportes analíticos (lógica en la BD) --------------------- */
+export interface ReporteColumna { key: string; label: string; tipo?: "texto" | "numero" | "dinero" | "pct" }
+export interface ReporteResumen { id: string; titulo: string; descripcion: string }
+export interface ReporteData extends ReporteResumen { columnas: ReporteColumna[]; filas: Record<string, unknown>[] }
+
+export async function getReportes(): Promise<ReporteResumen[]> {
+  return getList("/reportes");
+}
+export async function getReporte(id: string): Promise<ReporteData> {
+  const res = await fetch(`${API_URL}/reportes/${id}`);
+  if (!res.ok) throw new Error(`Reporte ${id} → ${res.status} ${await res.text()}`);
+  return res.json();
+}
+/** URL del PDF (jsreport) de un reporte. */
+export function reportePdfUrl(id: string): string {
+  return `${API_URL}/reportes/${id}/pdf`;
+}
+
 /* ===================================================================== *
  * MUTACIONES                                                            *
  * ===================================================================== */
