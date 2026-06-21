@@ -1,5 +1,6 @@
 import { sql } from "bun";
 import { CORS_HEADERS } from "./CorsHeaders";
+import { renderReportePdf } from "./reportRenderer";
 
 type Col = { key: string; label: string; tipo?: "texto" | "numero" | "dinero" | "pct" };
 
@@ -58,6 +59,22 @@ class ReportesService {
             { id: req.params.id, titulo: r.titulo, descripcion: r.descripcion, columnas: r.columnas, filas },
             { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
           );
+        } catch (e) {
+          return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+        }
+      },
+    },
+    "/api/reportes/:id/pdf": {
+      GET: async (req: Bun.BunRequest<"/api/reportes/:id/pdf">) => {
+        const r = REPORTES[req.params.id];
+        if (!r) return new Response("Reporte no encontrado", { status: 404, headers: CORS_HEADERS });
+        try {
+          const filas = await sql.unsafe(`SELECT * FROM ${r.fn}()`) as Record<string, unknown>[];
+          const pdf = await renderReportePdf({ titulo: r.titulo, descripcion: r.descripcion, columnas: r.columnas, filas });
+          return new Response(pdf, {
+            status: 200,
+            headers: { ...CORS_HEADERS, "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="reporte-${req.params.id}.pdf"` },
+          });
         } catch (e) {
           return new Response(String(e), { status: 500, headers: CORS_HEADERS });
         }
