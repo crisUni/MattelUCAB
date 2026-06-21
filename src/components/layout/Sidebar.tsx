@@ -20,7 +20,7 @@ export function Sidebar({
   collapsed: boolean;
   onToggle: () => void;
 }) {
-  const { rolActual } = useSession();
+  const { sesion } = useSession();
 
   return (
     <aside
@@ -62,12 +62,12 @@ export function Sidebar({
       <div className="border-t border-slate-100 p-3">
         <div className={`flex items-center gap-2 rounded-xl bg-slate-50 p-2.5 ${collapsed ? "justify-center" : ""}`}>
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-500 text-xs font-bold text-white">
-            {rolActual.nombre.slice(0, 2).toUpperCase()}
+            {sesion.rolNombre.slice(0, 2).toUpperCase()}
           </span>
           {!collapsed && (
             <div className="animate-fade-in-fast min-w-0 leading-tight">
-              <p className="truncate text-xs font-bold text-navy-700">{rolActual.nombre}</p>
-              <p className="text-[10px] text-slate-400">Rol activo</p>
+              <p className="truncate text-xs font-bold text-navy-700">{sesion.usuario?.nombre ?? "Invitado"}</p>
+              <p className="text-[10px] text-slate-400">{sesion.rolNombre}</p>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Personaje, Profesion } from "../../../data/types";
 import { getPersonajes, getProfesiones } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
@@ -8,7 +8,7 @@ import { IconBriefcase } from "../../ui/icons";
 export function MultiversoTab() {
   const { data: personajes } = useAsyncData<Personaje[]>(getPersonajes);
   const { data: profesiones, loading } = useAsyncData<Profesion[]>(getProfesiones);
-  const [charId, setCharId] = useState("char-barbie");
+  const [charId, setCharId] = useState("");
 
   const carrera = useMemo(
     () => (profesiones ?? []).filter((p) => p.personajeId === charId).sort((a, b) => a.anio - b.anio),
@@ -18,6 +18,15 @@ export function MultiversoTab() {
     const ids = new Set((profesiones ?? []).map((p) => p.personajeId));
     return (personajes ?? []).filter((p) => ids.has(p.id));
   }, [personajes, profesiones]);
+
+  // Por defecto muestra a Barbie en la primera carga (o el primer personaje con carrera).
+  useEffect(() => {
+    if (!conProfesiones.length) return;
+    if (!conProfesiones.some((p) => p.id === charId)) {
+      const barbie = conProfesiones.find((p) => p.nombre.toLowerCase() === "barbie") ?? conProfesiones[0]!;
+      setCharId(barbie.id);
+    }
+  }, [conProfesiones, charId]);
 
   return (
     <div className="animate-fade-in">

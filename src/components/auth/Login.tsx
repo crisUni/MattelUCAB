@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../../services/authService";
+import { useSession } from "../../context/SessionContext";
 import barbieImg from "../../assets/Barbie_Login.jpg";
 import "../../styles/auth/Login.css";
 
@@ -11,9 +11,12 @@ import "../../styles/auth/Login.css";
 export function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
   const [transitionState, setTransitionState] = useState<
     "enter" | "entered" | "exit"
   >("enter");
+  const { iniciarSesion, entrarComoInvitado } = useSession();
   const navigate = useNavigate();
   const formSectionRef = useRef<HTMLElement | null>(null);
 
@@ -63,7 +66,21 @@ export function Login() {
     event: FormEvent<HTMLFormElement>
   ): Promise<void> => {
     event.preventDefault();
-    await loginUser({ username, password });
+    setError(null);
+    setEnviando(true);
+    try {
+      const ok = await iniciarSesion(username, password);
+      if (ok) navigateWithTransition("/app");
+      else setError("Usuario o contraseña incorrectos.");
+    } catch {
+      setError("No se pudo conectar con el servidor.");
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const handleInvitado = async (): Promise<void> => {
+    await entrarComoInvitado();
     navigateWithTransition("/app");
   };
 
@@ -117,12 +134,27 @@ export function Login() {
                 />
               </div>
 
+              {error && (
+                <p className="auth-error" role="alert" style={{ color: "#d11", margin: "4px 0", fontSize: "0.9rem" }}>
+                  {error}
+                </p>
+              )}
+
               <div className="auth-actions">
-                <button className="auth-button" type="submit">
-                  Iniciar Sesion
+                <button className="auth-button" type="submit" disabled={enviando}>
+                  {enviando ? "Verificando…" : "Iniciar Sesión"}
                 </button>
               </div>
             </form>
+
+            <button
+              type="button"
+              className="auth-guest-link"
+              onClick={handleInvitado}
+              style={{ marginTop: "14px", background: "none", border: "none", color: "#b3146e", cursor: "pointer", textDecoration: "underline", fontSize: "0.9rem" }}
+            >
+              Entrar como invitado (solo catálogo)
+            </button>
           </div>
         </section>
         <div className="auth-content__spacer" aria-hidden="true" />

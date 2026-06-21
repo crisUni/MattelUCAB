@@ -56,8 +56,8 @@ export function MatrizTab() {
                 <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50/60">
                   <td className="sticky left-0 z-10 bg-white px-4 py-2.5">
                     <div className="leading-tight">
-                      <p className="text-sm font-semibold text-navy-700">{p.nombre}</p>
-                      <p className="text-[11px] text-slate-400">{p.modulo}</p>
+                      <p className="text-sm font-semibold text-navy-700">{p.recurso}</p>
+                      <p className="text-[11px] text-slate-400">{p.accion}</p>
                     </div>
                   </td>
                   {current.map((r) => {

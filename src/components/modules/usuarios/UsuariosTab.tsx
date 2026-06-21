@@ -1,20 +1,27 @@
 import { useState } from "react";
 import type { Usuario, Rol } from "../../../data/types";
-import { getUsuarios, getRoles, guardar, eliminar, nuevoId } from "../../../services/api";
+import {
+  getUsuarios, getRoles, getEmpleadosOpc, getClientesOpc, guardar, eliminar, nuevoId, type Opcion,
+} from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
+import { useSession } from "../../../context/SessionContext";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
 import {
-  Badge, Button, Field, TextInput, Toggle, SectionHeader, fmtFecha,
+  Badge, Button, Field, TextInput, Select, SectionHeader,
 } from "../../ui/primitives";
 import { IconPlus, IconEdit, IconTrash, IconUsers, IconLock } from "../../ui/icons";
 
 const formVacio: Usuario = {
-  id: "", nombre: "", username: "", email: "", passwordHash: "$2b$10$••••••••••••••••",
-  rolesIds: [], fechaRegistro: new Date().toISOString(),
+  id: "", nombre: "", username: "", email: "", passwordHash: "",
+  rolesIds: [], fechaRegistro: "", empleadoId: undefined, clienteId: undefined, password: "",
 };
 
 export function UsuariosTab() {
+  const { puede } = useSession();
+  const puedeCrear = puede("USUARIO", "CREAR");
+  const puedeEditar = puede("USUARIO", "EDITAR");
+  const puedeEliminar = puede("USUARIO", "ELIMINAR");
   const { data: usuarios, setData, loading } = useAsyncData<Usuario[]>(getUsuarios);
   const { data: roles } = useAsyncData<Rol[]>(getRoles);
   const [editing, setEditing] = useState<Usuario | null>(null);
@@ -24,7 +31,7 @@ export function UsuariosTab() {
 
   async function handleSave(u: Usuario) {
     const isNew = !u.id;
-    const saved = await guardar({ ...u, id: u.id || nuevoId("user") });
+    const saved = await guardar("usuario", { ...u, id: u.id || nuevoId("user") });
     setData((prev) => {
       const list = prev ?? [];
       return isNew ? [saved, ...list] : list.map((x) => (x.id === saved.id ? saved : x));
@@ -33,7 +40,7 @@ export function UsuariosTab() {
   }
 
   async function handleDelete(u: Usuario) {
-    await eliminar(u.id);
+    await eliminar("usuario", u.id);
     setData((prev) => (prev ?? []).filter((x) => x.id !== u.id));
     setConfirm(null);
   }
@@ -67,16 +74,15 @@ export function UsuariosTab() {
         </div>
       ),
     },
-    { key: "fecha", header: "Registro", align: "right", sortValue: (u) => u.fechaRegistro, cell: (u) => <span className="text-xs text-slate-400">{fmtFecha(u.fechaRegistro)}</span> },
-    {
-      key: "acc", header: "", align: "right",
-      cell: (u) => (
+    ...(puedeEditar || puedeEliminar ? [{
+      key: "acc", header: "", align: "right" as const,
+      cell: (u: Usuario) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <IconBtn title="Editar" onClick={() => setEditing(u)}><IconEdit className="h-4 w-4" /></IconBtn>
-          <IconBtn title="Eliminar" onClick={() => setConfirm(u)} tone="red"><IconTrash className="h-4 w-4" /></IconBtn>
+          {puedeEditar && <IconBtn title="Editar" onClick={() => setEditing(u)}><IconEdit className="h-4 w-4" /></IconBtn>}
+          {puedeEliminar && <IconBtn title="Eliminar" onClick={() => setConfirm(u)} tone="red"><IconTrash className="h-4 w-4" /></IconBtn>}
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -84,13 +90,13 @@ export function UsuariosTab() {
       <SectionHeader
         icon={<IconUsers className="h-5 w-5" />}
         title="Usuarios"
-        subtitle="Gestión de cuentas, estados y roles asignados. El bloqueo temporal permite sancionar a scalpers y morosos."
-        action={<Button onClick={() => setEditing({ ...formVacio })}><IconPlus className="h-4 w-4" />Nuevo usuario</Button>}
+        subtitle="Gestión de cuentas y roles asignados. Cada usuario es interno (empleado) o externo (cliente)."
+        action={puedeCrear ? <Button onClick={() => setEditing({ ...formVacio })}><IconPlus className="h-4 w-4" />Nuevo usuario</Button> : undefined}
       />
       <DataTable
         columns={columns} rows={usuarios ?? []} rowKey={(u) => u.id} loading={loading}
         searchPlaceholder="Buscar por nombre, usuario o email…"
-        onRowClick={(u) => setEditing(u)} emptyTitle="No hay usuarios"
+        onRowClick={puedeEditar ? (u) => setEditing(u) : undefined} emptyTitle="No hay usuarios"
       />
 
       {editing && (
@@ -115,46 +121,77 @@ function IconBtn({ children, onClick, title, tone = "slate" }: { children: React
 
 function UsuarioForm({ usuario, roles, onCancel, onSave }: { usuario: Usuario; roles: Rol[]; onCancel: () => void; onSave: (u: Usuario) => void }) {
   const [form, setForm] = useState<Usuario>(usuario);
+  const [tipo, setTipo] = useState<"EMPLEADO" | "CLIENTE">(usuario.clienteId ? "CLIENTE" : "EMPLEADO");
+  const [error, setError] = useState<string | null>(null);
+  const { data: empleados } = useAsyncData<Opcion[]>(getEmpleadosOpc);
+  const { data: clientes } = useAsyncData<Opcion[]>(getClientesOpc);
+  const esNuevo = !usuario.id;
   const set = (patch: Partial<Usuario>) => setForm((f) => ({ ...f, ...patch }));
-  const toggleRol = (id: string) =>
-    set({ rolesIds: form.rolesIds.includes(id) ? form.rolesIds.filter((r) => r !== id) : [...form.rolesIds, id] });
+
+  function cambiarTipo(t: "EMPLEADO" | "CLIENTE") {
+    setTipo(t);
+    set(t === "EMPLEADO" ? { clienteId: undefined } : { empleadoId: undefined });
+  }
+
+  async function submit() {
+    setError(null);
+    try { await onSave(form); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+  }
 
   return (
     <Modal
       open onClose={onCancel}
-      title={usuario.id ? "Editar usuario" : "Nuevo usuario"}
-      subtitle="Los datos sensibles (hash de contraseña) se muestran enmascarados."
-      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={() => onSave(form)}>Guardar</Button></>}
+      title={esNuevo ? "Nuevo usuario" : "Editar usuario"}
+      subtitle="Un usuario es interno (empleado) o externo (cliente), con un rol del sistema."
+      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit}>Guardar</Button></>}
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nombre completo"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} placeholder="Nombre y apellido" /></Field>
         <Field label="Username"><TextInput value={form.username} onChange={(e) => set({ username: e.target.value })} placeholder="usuario.demo" /></Field>
         <Field label="Email"><TextInput type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder="correo@mattelucab.com" /></Field>
-        <Field label="Hash de contraseña" hint="Sólo lectura · gestionado por el backend">
-          <TextInput value="$2b$10$••••••••••••••••••••••" disabled className="font-mono opacity-70" />
+        <Field label="Contraseña" hint={esNuevo ? "Requerida" : "Dejar en blanco para no cambiarla"}>
+          <TextInput type="password" value={form.password ?? ""} onChange={(e) => set({ password: e.target.value })} placeholder="••••••••" />
+        </Field>
+        <Field label="Rol">
+          <Select value={form.rolesIds[0] ?? ""} onChange={(e) => set({ rolesIds: e.target.value ? [e.target.value] : [] })}>
+            <option value="">— Selecciona —</option>
+            {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+          </Select>
         </Field>
       </div>
 
-      <div className="mt-5">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Roles asignados</p>
-        <RolGroup title="Roles disponibles" roles={roles} selected={form.rolesIds} onToggle={toggleRol} />
-      </div>
-    </Modal>
-  );
-}
+      {esNuevo ? (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label="Tipo de usuario">
+            <Select value={tipo} onChange={(e) => cambiarTipo(e.target.value as "EMPLEADO" | "CLIENTE")}>
+              <option value="EMPLEADO">Interno (empleado)</option>
+              <option value="CLIENTE">Externo (cliente)</option>
+            </Select>
+          </Field>
+          {tipo === "EMPLEADO" ? (
+            <Field label="Empleado vinculado">
+              <Select value={form.empleadoId ?? ""} onChange={(e) => set({ empleadoId: e.target.value || undefined })}>
+                <option value="">— Selecciona —</option>
+                {(empleados ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+              </Select>
+            </Field>
+          ) : (
+            <Field label="Cliente vinculado">
+              <Select value={form.clienteId ?? ""} onChange={(e) => set({ clienteId: e.target.value || undefined })}>
+                <option value="">— Selecciona —</option>
+                {(clientes ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+              </Select>
+            </Field>
+          )}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          El vínculo de identidad (empleado/cliente) es inmutable y no puede cambiarse tras crear el usuario.
+        </p>
+      )}
 
-function RolGroup({ title, roles, selected, onToggle }: { title: string; roles: Rol[]; selected: string[]; onToggle: (id: string) => void }) {
-  return (
-    <div className="rounded-xl border border-slate-200 p-3">
-      <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">{title}</p>
-      <div className="space-y-2">
-        {roles.map((r) => (
-          <div key={r.id} className="flex items-center justify-between gap-2">
-            <span className="text-sm text-navy-700">{r.nombre}</span>
-            <Toggle checked={selected.includes(r.id)} onChange={() => onToggle(r.id)} label={r.nombre} />
-          </div>
-        ))}
-      </div>
-    </div>
+      {error && <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+    </Modal>
   );
 }

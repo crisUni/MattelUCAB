@@ -23,6 +23,11 @@ export interface Usuario {
   passwordHash: string;  // ER: Usuario_HashPassword
   rolesIds: string[];          // ER: junction Usuario↔Rol
   fechaRegistro: string;       // solo-frontend (ISO)
+  /** Vínculo de identidad — un usuario es interno (empleado) XOR externo (cliente). Requerido al crear. */
+  empleadoId?: string;
+  clienteId?: string;
+  /** Contraseña en claro sólo al crear/editar (no se devuelve en lecturas). */
+  password?: string;
 }
 
 /**
@@ -39,20 +44,17 @@ export interface Rol {
   esSistema?: boolean;
 }
 
-export type AccionPermiso = "VER" | "CREAR" | "EDITAR" | "ELIMINAR" | "APROBAR";
+export type AccionPermiso = "VER" | "CREAR" | "EDITAR" | "ELIMINAR";
 
 /**
- * ER: `Permiso` sólo tiene `Permiso_ModuloAcceso`. `nombre`/`descripcion` son
- * solo-frontend. La visibilidad de costos de producción NO usa una bandera aparte: se
- * deriva de tener el permiso del módulo "Costos" (ver `puedeVerCostos` en SessionContext),
- * lo que reserva ese acceso a ciertos roles de back-office.
+ * Permiso granular = (recurso, accion). Define un privilegio concreto, p.ej.
+ * { recurso: "PRODUCTO", accion: "CREAR" }. Un rol se compone de varios permisos
+ * y el front filtra pantallas/botones según ellos (ver `puede()` en SessionContext).
  */
 export interface Permiso {
   id: string;
-  nombre: string;              // solo-frontend
-  /** Módulo de acceso (ER: Permiso_ModuloAcceso): Inventario, Productos, Ventas, Costos, … */
-  modulo: string;
-  descripcion: string;         // solo-frontend
+  recurso: string;
+  accion: AccionPermiso;
 }
 
 /* ------------------------------------------------------------------ */
@@ -81,6 +83,8 @@ export interface MoldeRostro {
   id: string;
   nombre: string;
   anioPatente: number;
+  /** Código de patente real (ER: Molde_Patente). Se muestra en lugar del año cuando existe. */
+  patente?: string;
   descripcion: string;
 }
 
@@ -176,6 +180,15 @@ export interface Producto {
   bom: BomItem[];
   imagen?: string;
   stock: number;
+  /**
+   * FK estructurales necesarias para CREAR un producto (el ER liga el producto a un
+   * juguete/genoma + categoría + lote + edición). Sólo se usan en el formulario de alta;
+   * en lecturas la taxonomía ya viene resuelta en moldeRostroId/tipoCuerpoId/eraId.
+   */
+  jugueteId?: string;
+  categoriaId?: string;
+  loteId?: string;
+  edicionId?: string;
 }
 
 /**

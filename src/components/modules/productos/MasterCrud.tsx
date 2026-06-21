@@ -7,7 +7,8 @@ import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
 import { Button, Field, TextInput, Select } from "../../ui/primitives";
 import { IconPlus, IconEdit, IconTrash } from "../../ui/icons";
-import { guardar, eliminar, nuevoId } from "../../../services/api";
+import { guardar, eliminar, nuevoId, type Recurso } from "../../../services/api";
+import { useSession } from "../../../context/SessionContext";
 
 export interface FieldDef {
   key: string;
@@ -24,48 +25,58 @@ interface Props<T extends { id: string }> {
   columns: Column<T>[];
   fields: FieldDef[];
   idPrefix: string;
+  /** Recurso de la API al que persisten las altas/ediciones/bajas. */
+  resource: Recurso;
+  /** Recurso de permisos (mayúsculas) para gatear los botones. */
+  permRecurso: string;
   blank: () => T;
   searchPlaceholder?: string;
   title: string;
 }
 
 export function MasterCrud<T extends { id: string }>({
-  rows, loading, setRows, columns, fields, idPrefix, blank, searchPlaceholder, title,
+  rows, loading, setRows, columns, fields, idPrefix, resource, permRecurso, blank, searchPlaceholder, title,
 }: Props<T>) {
+  const { puede } = useSession();
+  const puedeCrear = puede(permRecurso, "CREAR");
+  const puedeEditar = puede(permRecurso, "EDITAR");
+  const puedeEliminar = puede(permRecurso, "ELIMINAR");
   const [editing, setEditing] = useState<T | null>(null);
   const [confirm, setConfirm] = useState<T | null>(null);
 
   async function handleSave(item: T) {
     const isNew = !item.id;
-    const saved = await guardar({ ...item, id: item.id || nuevoId(idPrefix) });
+    const saved = await guardar(resource, { ...item, id: item.id || nuevoId(idPrefix) });
     setRows((prev) => { const l = prev ?? []; return isNew ? [saved, ...l] : l.map((x) => x.id === saved.id ? saved : x); });
     setEditing(null);
   }
   async function handleDelete(item: T) {
-    await eliminar(item.id);
+    await eliminar(resource, item.id);
     setRows((prev) => (prev ?? []).filter((x) => x.id !== item.id));
     setConfirm(null);
   }
 
   const cols: Column<T>[] = [
     ...columns,
-    {
-      key: "__acc", header: "", align: "right",
-      cell: (row) => (
+    ...(puedeEditar || puedeEliminar ? [{
+      key: "__acc", header: "", align: "right" as const,
+      cell: (row: T) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <button title="Editar" onClick={() => setEditing(row)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-navy-700"><IconEdit className="h-4 w-4" /></button>
-          <button title="Eliminar" onClick={() => setConfirm(row)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"><IconTrash className="h-4 w-4" /></button>
+          {puedeEditar && <button title="Editar" onClick={() => setEditing(row)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-navy-700"><IconEdit className="h-4 w-4" /></button>}
+          {puedeEliminar && <button title="Eliminar" onClick={() => setConfirm(row)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"><IconTrash className="h-4 w-4" /></button>}
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
     <div>
-      <div className="mb-3 flex justify-end">
-        <Button onClick={() => setEditing(blank())}><IconPlus className="h-4 w-4" />Nuevo</Button>
-      </div>
-      <DataTable columns={cols} rows={rows} rowKey={(r) => r.id} loading={loading} onRowClick={(r) => setEditing(r)} searchPlaceholder={searchPlaceholder ?? "Buscar…"} emptyTitle={`No hay registros`} pageSize={6} />
+      {puedeCrear && (
+        <div className="mb-3 flex justify-end">
+          <Button onClick={() => setEditing(blank())}><IconPlus className="h-4 w-4" />Nuevo</Button>
+        </div>
+      )}
+      <DataTable columns={cols} rows={rows} rowKey={(r) => r.id} loading={loading} onRowClick={puedeEditar ? (r) => setEditing(r) : undefined} searchPlaceholder={searchPlaceholder ?? "Buscar…"} emptyTitle={`No hay registros`} pageSize={6} />
 
       {editing && (
         <GenericForm item={editing} fields={fields} title={`${editing.id ? "Editar" : "Nuevo"} · ${title}`} onCancel={() => setEditing(null)} onSave={handleSave} />

@@ -5,6 +5,7 @@ import type {
 import {
   getProductos, getMoldesRostro, getTiposCuerpo, getColores,
   getEras, getExclusividades, getMateriales, getPersonajes, guardar, eliminar, nuevoId,
+  getJuguetesOpc, getCategoriasOpc, getLotesOpc, getEdicionesOpc, type Opcion,
 } from "../../../services/api";
 import { costoVigente } from "../../../data/costing";
 import { useAsyncData } from "../../../hooks/useAsyncData";
@@ -21,8 +22,15 @@ const tipoLabel: Record<TipoProducto, string> = {
   MUNECA: "Muñeca", ACCESORIO: "Accesorio", INMUEBLE: "Inmueble", VEHICULO: "Vehículo", PACK: "Pack",
 };
 
+const zonaLabel: Record<ZonaColor, string> = {
+  PIEL: "Piel", OJOS: "Ojos", CABELLO: "Cabello", LABIOS: "Labios", VESTUARIO: "Vestuario",
+};
+
 export function CatalogoTab() {
-  const { puedeVerCostos } = useSession();
+  const { puedeVerCostos, puede } = useSession();
+  const puedeCrear = puede("PRODUCTO", "CREAR");
+  const puedeEditar = puede("PRODUCTO", "EDITAR");
+  const puedeEliminar = puede("PRODUCTO", "ELIMINAR");
   const { data: productos, setData, loading } = useAsyncData<Producto[]>(getProductos);
   const { data: moldes } = useAsyncData<MoldeRostro[]>(getMoldesRostro);
   const { data: cuerpos } = useAsyncData<TipoCuerpo[]>(getTiposCuerpo);
@@ -48,12 +56,12 @@ export function CatalogoTab() {
 
   async function handleSave(p: Producto) {
     const isNew = !p.id;
-    const saved = await guardar({ ...p, id: p.id || nuevoId("prod") });
+    const saved = await guardar("producto", { ...p, id: p.id || nuevoId("prod") });
     setData((prev) => { const l = prev ?? []; return isNew ? [saved, ...l] : l.map((x) => x.id === saved.id ? saved : x); });
     setEditing(null);
   }
   async function handleDelete(p: Producto) {
-    await eliminar(p.id);
+    await eliminar("producto", p.id);
     setData((prev) => (prev ?? []).filter((x) => x.id !== p.id));
     setConfirm(null);
   }
@@ -65,11 +73,22 @@ export function CatalogoTab() {
       cell: (p) => (
         <div className="leading-tight">
           <p className="font-semibold text-navy-700">{p.nombre}</p>
-          <p className="text-xs text-slate-400">{tipoLabel[p.tipo]}{lookups.molde(p.moldeRostroId) ? ` · ${lookups.molde(p.moldeRostroId)!.nombre} ${lookups.molde(p.moldeRostroId)!.anioPatente}` : ""}</p>
+          <p className="text-xs text-slate-400">{tipoLabel[p.tipo]}{lookups.molde(p.moldeRostroId) ? ` · ${lookups.molde(p.moldeRostroId)!.nombre} ${lookups.molde(p.moldeRostroId)!.patente ?? lookups.molde(p.moldeRostroId)!.anioPatente}` : ""}</p>
         </div>
       ),
     },
     { key: "label", header: "Label", sortValue: (p) => lookups.excl(p.exclusividadId)?.codigo ?? "", cell: (p) => lookups.excl(p.exclusividadId) ? <LabelChip codigo={lookups.excl(p.exclusividadId)!.codigo} /> : <span className="text-slate-300">—</span> },
+    {
+      key: "colores", header: "Colores",
+      cell: (p) => p.colores.length === 0 ? <span className="text-slate-300">—</span> : (
+        <div className="flex items-center gap-1">
+          {p.colores.map((c) => {
+            const col = lookups.color(c.colorId);
+            return <span key={c.zona + c.colorId} title={`${col?.nombre ?? c.colorId} · ${zonaLabel[c.zona]}`} className="h-4 w-4 rounded-full ring-1 ring-slate-200" style={{ background: col?.hex ?? "#ccc" }} />;
+          })}
+        </div>
+      ),
+    },
     { key: "precio", header: "Precio", align: "right", sortValue: (p) => p.precioBaseUsd, cell: (p) => <span className="font-semibold text-navy-700">{fmtUsd(p.precioBaseUsd)}</span> },
     {
       key: "costo", header: "Costo prod.", align: "right", hidden: !puedeVerCostos,
@@ -77,15 +96,15 @@ export function CatalogoTab() {
       cell: (p) => <span className="font-mono text-sm text-rose-600">{fmtUsd(p.costoProduccionUsd)}</span>,
     },
     { key: "stock", header: "Stock", align: "right", sortValue: (p) => p.stock, cell: (p) => <span className={p.stock < 10 ? "font-bold text-amber-600" : "text-slate-500"}>{p.stock}</span> },
-    {
-      key: "acc", header: "", align: "right",
-      cell: (p) => (
+    ...(puedeEditar || puedeEliminar ? [{
+      key: "acc", header: "", align: "right" as const,
+      cell: (p: Producto) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <button title="Editar" onClick={() => setEditing(p)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-navy-700"><IconEdit className="h-4 w-4" /></button>
-          <button title="Eliminar" onClick={() => setConfirm(p)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"><IconTrash className="h-4 w-4" /></button>
+          {puedeEditar && <button title="Editar" onClick={() => setEditing(p)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-navy-700"><IconEdit className="h-4 w-4" /></button>}
+          {puedeEliminar && <button title="Eliminar" onClick={() => setConfirm(p)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"><IconTrash className="h-4 w-4" /></button>}
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -94,7 +113,7 @@ export function CatalogoTab() {
         icon={<IconDna className="h-5 w-5" />}
         title="Catálogo de Productos · Genoma Barbie"
         subtitle="Cada SKU es la variante mínima e indivisible. Haz clic en una fila para ver su ficha de ADN completa."
-        action={<Button onClick={() => setEditing(blankProducto())}><IconPlus className="h-4 w-4" />Nuevo producto</Button>}
+        action={puedeCrear ? <Button onClick={() => setEditing(blankProducto())}><IconPlus className="h-4 w-4" />Nuevo producto</Button> : undefined}
       />
       {!puedeVerCostos && (
         <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-700">
@@ -103,7 +122,7 @@ export function CatalogoTab() {
       )}
       <DataTable columns={columns} rows={productos ?? []} rowKey={(p) => p.id} loading={loading} onRowClick={(p) => setDetail(p)} searchPlaceholder="Buscar por SKU o nombre…" emptyTitle="No hay productos" pageSize={8} />
 
-      {detail && <FichaADN producto={detail} lookups={lookups} materiales={materiales ?? []} puedeVerCostos={puedeVerCostos} onClose={() => setDetail(null)} onEdit={() => { setEditing(detail); setDetail(null); }} />}
+      {detail && <FichaADN producto={detail} lookups={lookups} materiales={materiales ?? []} puedeVerCostos={puedeVerCostos} puedeEditar={puedeEditar} onClose={() => setDetail(null)} onEdit={() => { setEditing(detail); setDetail(null); }} />}
       {editing && <ProductoForm producto={editing} moldes={moldes ?? []} cuerpos={cuerpos ?? []} colores={colores ?? []} eras={eras ?? []} excl={excl ?? []} personajes={personajes ?? []} onCancel={() => setEditing(null)} onSave={handleSave} />}
       <ConfirmDialog open={!!confirm} title="Eliminar producto" message={`¿Eliminar ${confirm?.nombre} (${confirm?.sku})?`} onCancel={() => setConfirm(null)} onConfirm={() => confirm && handleDelete(confirm)} />
     </div>
@@ -118,8 +137,8 @@ function blankProducto(): Producto {
 }
 
 /* ------------------------------ Ficha ADN ------------------------------ */
-function FichaADN({ producto, lookups, materiales, puedeVerCostos, onClose, onEdit }: {
-  producto: Producto; lookups: any; materiales: Material[]; puedeVerCostos: boolean; onClose: () => void; onEdit: () => void;
+function FichaADN({ producto, lookups, materiales, puedeVerCostos, puedeEditar, onClose, onEdit }: {
+  producto: Producto; lookups: any; materiales: Material[]; puedeVerCostos: boolean; puedeEditar: boolean; onClose: () => void; onEdit: () => void;
 }) {
   const colorEnZona = (z: ZonaColor) => {
     const aplicado = producto.colores.find((c) => c.zona === z);
@@ -139,7 +158,7 @@ function FichaADN({ producto, lookups, materiales, puedeVerCostos, onClose, onEd
     <Modal open onClose={onClose} size="lg"
       title="Ficha de ADN del producto"
       subtitle={`${producto.sku} · taxonomía completa`}
-      footer={<><Button variant="ghost" onClick={onClose}>Cerrar</Button><Button onClick={onEdit}><IconEdit className="h-4 w-4" />Editar</Button></>}
+      footer={<><Button variant="ghost" onClick={onClose}>Cerrar</Button>{puedeEditar && <Button onClick={onEdit}><IconEdit className="h-4 w-4" />Editar</Button>}</>}
     >
       {/* Encabezado tipo ficha de personaje */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-grape-600 p-5 text-white">
@@ -162,12 +181,33 @@ function FichaADN({ producto, lookups, materiales, puedeVerCostos, onClose, onEd
 
       {/* Cromosomas / atributos */}
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <Chromo label="Molde de Rostro (Face Sculpt)" value={molde ? `${molde.nombre} (${molde.anioPatente})` : "—"} hint={molde?.descripcion} />
+        <Chromo label="Molde de Rostro (Face Sculpt)" value={molde ? `${molde.nombre} (${molde.patente ?? molde.anioPatente})` : "—"} hint={molde?.descripcion} />
         <Chromo label="Tipo de Cuerpo" value={cuerpo ? cuerpo.nombre : "—"} hint={cuerpo ? `Pie ${cuerpo.formaPie.toLowerCase()}${cuerpo.articulado ? " · articulado" : ""}` : undefined} />
         <Chromo label="Tono de Piel" value={tono?.nombre ?? "—"} swatch={tono?.hex} />
         <Chromo label="Color de Ojos" value={ojos?.nombre ?? "—"} swatch={ojos?.hex} />
         <Chromo label="Era Histórica" value={era ? `${era.nombre} (${era.fechaInicio}–${era.fechaFin ?? "hoy"})` : "—"} hint={era?.descripcion} />
         <Chromo label="Exclusividad / Label" value={exclusividad ? exclusividad.nombre : "—"} />
+      </div>
+
+      {/* Paleta de colores aplicada (todas las zonas) */}
+      <div className="mt-4 rounded-2xl border border-slate-200 p-4">
+        <p className="mb-3 text-sm font-bold text-navy-700">Colores aplicados (por zona)</p>
+        {producto.colores.length === 0 ? (
+          <p className="text-sm text-slate-400">Sin colores registrados.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {producto.colores.map((c) => {
+              const col = lookups.color(c.colorId);
+              return (
+                <span key={c.zona + c.colorId} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-sm">
+                  <span className="h-4 w-4 shrink-0 rounded-full ring-1 ring-slate-200" style={{ background: col?.hex ?? "#ccc" }} />
+                  <span className="text-navy-700">{col?.nombre ?? c.colorId}</span>
+                  <span className="text-[11px] uppercase tracking-wide text-slate-400">{zonaLabel[c.zona]}</span>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* BOM / receta */}
@@ -241,6 +281,18 @@ function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personaj
   const [form, setForm] = useState<Producto>(producto);
   const set = (p: Partial<Producto>) => setForm((f) => ({ ...f, ...p }));
   const opt = (id?: string) => id ?? "";
+  const esNuevo = !producto.id;
+  const [error, setError] = useState<string | null>(null);
+  const { data: juguetes } = useAsyncData<Opcion[]>(getJuguetesOpc);
+  const { data: categorias } = useAsyncData<Opcion[]>(getCategoriasOpc);
+  const { data: lotes } = useAsyncData<Opcion[]>(getLotesOpc);
+  const { data: ediciones } = useAsyncData<Opcion[]>(getEdicionesOpc);
+
+  async function submit() {
+    setError(null);
+    try { await onSave(form); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+  }
 
   // El color se aplica por zona (junction Color_Producto). Estos helpers leen/escriben
   // la entrada de `colores` correspondiente a una zona, dejando el resto intacto.
@@ -255,8 +307,40 @@ function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personaj
     <Modal open onClose={onCancel} size="lg"
       title={producto.id ? "Editar producto" : "Nuevo producto"}
       subtitle="Define la taxonomía (ADN). Si cambia el color de los zapatos, debe ser un SKU nuevo."
-      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={() => onSave(form)}>Guardar producto</Button></>}
+      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit}>Guardar producto</Button></>}
     >
+      {esNuevo && (
+        <div className="mb-5 rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-brand-600">Datos estructurales (requeridos para crear)</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Juguete / genoma" hint="Define molde, cuerpo y era">
+              <Select value={opt(form.jugueteId)} onChange={(e) => set({ jugueteId: e.target.value || undefined })}>
+                <option value="">— Selecciona —</option>
+                {(juguetes ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+              </Select>
+            </Field>
+            <Field label="Categoría">
+              <Select value={opt(form.categoriaId)} onChange={(e) => set({ categoriaId: e.target.value || undefined })}>
+                <option value="">— Selecciona —</option>
+                {(categorias ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+              </Select>
+            </Field>
+            <Field label="Lote de producción">
+              <Select value={opt(form.loteId)} onChange={(e) => set({ loteId: e.target.value || undefined })}>
+                <option value="">— Selecciona —</option>
+                {(lotes ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+              </Select>
+            </Field>
+            <Field label="Edición">
+              <Select value={opt(form.edicionId)} onChange={(e) => set({ edicionId: e.target.value || undefined })}>
+                <option value="">— Selecciona —</option>
+                {(ediciones ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+              </Select>
+            </Field>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="SKU"><TextInput value={form.sku} onChange={(e) => set({ sku: e.target.value })} placeholder="BRB-AAAA-XXX" /></Field>
         <Field label="Nombre comercial"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} /></Field>
@@ -281,7 +365,7 @@ function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personaj
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Molde de rostro">
           <Select value={opt(form.moldeRostroId)} onChange={(e) => set({ moldeRostroId: e.target.value || undefined })}>
-            <option value="">—</option>{moldes.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.anioPatente})</option>)}
+            <option value="">—</option>{moldes.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.patente ?? m.anioPatente})</option>)}
           </Select>
         </Field>
         <Field label="Tipo de cuerpo">
@@ -310,6 +394,8 @@ function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personaj
           </Select>
         </Field>
       </div>
+
+      {error && <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
     </Modal>
   );
 }

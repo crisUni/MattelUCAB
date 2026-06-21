@@ -7,7 +7,7 @@ import { IconDna, IconUsers, IconBox, IconScale, IconSpark } from "../components
 import { BarbieConfetti } from "../components/ui/Decor";
 
 export function InicioView() {
-  const { rolActual, puedeVerCostos, can } = useSession();
+  const { sesion, puedeVerCostos, puede } = useSession();
   const { data: productos } = useAsyncData<Producto[]>(getProductos);
   const { data: usuarios } = useAsyncData<Usuario[]>(getUsuarios);
 
@@ -28,7 +28,7 @@ export function InicioView() {
           <h2 className="mt-3 text-2xl font-extrabold sm:text-3xl">Bienvenido a MattelUCAB</h2>
           <p className="mt-1 max-w-2xl text-sm text-white/80">
             Plataforma unificada de gestión del ciclo de vida del producto: ERP corporativo
-            y portal de e-commerce. Estás operando como <b>{rolActual.nombre}</b>.
+            y portal de e-commerce. Estás operando como <b>{sesion.rolNombre}</b>.
           </p>
         </div>
       </Card>
@@ -51,9 +51,9 @@ export function InicioView() {
       <div>
         <p className="mb-3 text-sm font-bold text-navy-700">Tus accesos</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <AccesoCard show={can("perm-usuarios-admin")} icon={<IconUsers className="h-5 w-5" />} title="Usuarios & Seguridad" desc="Roles, permisos, matriz y simulador de sesión." />
-          <AccesoCard show={can("perm-prod-ver")} icon={<IconDna className="h-5 w-5" />} title="Genoma Barbie" desc="Catálogo ADN, compatibilidad, multiverso y packs." />
-          <AccesoCard show={can("perm-reportes-ver")} icon={<IconScale className="h-5 w-5" />} title="Reportes" desc="Rentabilidad, diversidad, scalpers y documentos." />
+          <AccesoCard show={puede("USUARIO", "VER")} icon={<IconUsers className="h-5 w-5" />} title="Usuarios & Seguridad" desc="Usuarios, roles, permisos y matriz." />
+          <AccesoCard show={puede("PRODUCTO", "VER")} icon={<IconDna className="h-5 w-5" />} title="Genoma Barbie" desc="Catálogo ADN, compatibilidad, multiverso y packs." />
+          <AccesoCard show={puede("REPORTE", "VER")} icon={<IconScale className="h-5 w-5" />} title="Reportes" desc="Rentabilidad, diversidad, scalpers y documentos." />
         </div>
       </div>
     </div>
