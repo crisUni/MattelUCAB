@@ -438,12 +438,12 @@ INSERT INTO TIPO_CUERPO (tipcue_id, tipcue_nombre) VALUES
     (2, 'Curvy'),
     (3, 'Petite'),
     (4, 'Tall'),
-    (5, 'Bebe'),
-    (6, 'Infantil'),
-    (7, 'Articulado'),
-    (8, 'Flexible'),
-    (9, 'Clasico'),
-    (10, 'Deportivo');
+    (5, 'Made-to-Move'),
+    (6, 'Slim'),
+    (7, 'Atletica'),
+    (8, 'Clasica'),
+    (9, 'Articulada'),
+    (10, 'Vintage');
 
 -- PERSONAJE (10 filas)
 INSERT INTO PERSONAJE (per_id, per_nombre) VALUES
@@ -473,29 +473,29 @@ INSERT INTO VINCULO_PERSONAJE (fk_personaje1, fk_personaje2, vinper_tipo_relacio
 
 -- MOLDE_ROSTRO (10 filas)
 INSERT INTO MOLDE_ROSTRO (molros_id, molros_nombre, molros_patente, fk_per_id, molros_anopatente) VALUES
-    (1, 'Molde Barbie', 'PAT-MOL-001', 1, 1959),
-    (2, 'Molde Ken', 'PAT-MOL-002', 2, 1961),
-    (3, 'Molde Skipper', 'PAT-MOL-003', 3, 1964),
-    (4, 'Molde Christie', 'PAT-MOL-004', 4, 1968),
-    (5, 'Molde Midge', 'PAT-MOL-005', 5, 1963),
-    (6, 'Molde Teresa', 'PAT-MOL-006', 6, 1988),
-    (7, 'Molde Raquelle', 'PAT-MOL-007', 7, 2006),
-    (8, 'Molde Stacie', 'PAT-MOL-008', 8, 1992),
-    (9, 'Molde Chelsea', 'PAT-MOL-009', 9, 2011),
-    (10, 'Molde Nikki', 'PAT-MOL-010', 10, 2006);
+    (1, 'Superstar', 'PAT-MOL-001', 1, 1977),
+    (2, 'Ken Original', 'PAT-MOL-002', 2, 1961),
+    (3, 'Steffie', 'PAT-MOL-003', 3, 1972),
+    (4, 'Goddess', 'PAT-MOL-004', 4, 1999),
+    (5, 'Mackie', 'PAT-MOL-005', 5, 1991),
+    (6, 'Diva', 'PAT-MOL-006', 6, 2001),
+    (7, 'Lea', 'PAT-MOL-007', 7, 2010),
+    (8, 'Generation Girl', 'PAT-MOL-008', 8, 1999),
+    (9, 'Belly Button', 'PAT-MOL-009', 9, 2000),
+    (10, 'Millie', 'PAT-MOL-010', 10, 2015);
 
 -- ERA_HISTORICO (10 filas)
 INSERT INTO ERA_HISTORICO (erahis_id, erahis_nombre, erahis_fechaini, erahis_fechafin) VALUES
-    (1, 'Era 1959s', '1959-01-01', '1963-12-31'),
-    (2, 'Era 1964s', '1964-01-01', '1968-12-31'),
-    (3, 'Era 1969s', '1969-01-01', '1973-12-31'),
-    (4, 'Era 1974s', '1974-01-01', '1978-12-31'),
-    (5, 'Era 1979s', '1979-01-01', '1983-12-31'),
-    (6, 'Era 1984s', '1984-01-01', '1988-12-31'),
-    (7, 'Era 1989s', '1989-01-01', '1993-12-31'),
-    (8, 'Era 1994s', '1994-01-01', '1998-12-31'),
-    (9, 'Era 1999s', '1999-01-01', '2003-12-31'),
-    (10, 'Era 2004s', '2004-01-01', '2008-12-31');
+    (1, 'Vintage Era', '1959-01-01', '1966-12-31'),
+    (2, 'Mod Era', '1967-01-01', '1972-12-31'),
+    (3, 'Superstar Era', '1977-01-01', '1989-12-31'),
+    (4, 'Pink Box Era', '1990-01-01', '1997-12-31'),
+    (5, 'Generation Girl Era', '1998-01-01', '2003-12-31'),
+    (6, 'Fashionistas Era', '2004-01-01', '2009-12-31'),
+    (7, 'Diversity Era', '2010-01-01', '2015-12-31'),
+    (8, 'Made-to-Move Era', '2016-01-01', '2019-12-31'),
+    (9, 'Movie Era', '2020-01-01', '2022-12-31'),
+    (10, 'Modern Era', '2023-01-01', '2025-12-31');
 
 -- MATERIAL (10 filas)
 INSERT INTO MATERIAL (mat_id, mat_nombre, mat_tipo, mat_unidad, mat_costo) VALUES
@@ -526,16 +526,16 @@ INSERT INTO DISENO (dis_id, dis_patentecod) VALUES
 
 -- JUGUETE (10 filas)
 INSERT INTO JUGUETE (jug_id, jug_adn, fk_molros_id, fk_tipcue_id, fk_erahis_id, fk_dis_id) VALUES
-    (1, 'ADN-00001', 1, 1, 1, 1),
-    (2, 'ADN-00002', 2, 2, 2, 2),
-    (3, 'ADN-00003', 3, 3, 3, 3),
-    (4, 'ADN-00004', 4, 4, 4, 4),
-    (5, 'ADN-00005', 5, 5, 5, 5),
-    (6, 'ADN-00006', 6, 6, 6, 6),
-    (7, 'ADN-00007', 7, 7, 7, 7),
-    (8, 'ADN-00008', 8, 8, 8, 8),
-    (9, 'ADN-00009', 9, 9, 9, 9),
-    (10, 'ADN-00010', 10, 10, 10, 10);
+    (1, 'ADN-BARBIE-SUPERSTAR', 1, 1, 1, 1),
+    (2, 'ADN-KEN-ORIGINAL', 2, 2, 2, 2),
+    (3, 'ADN-SKIPPER-STEFFIE', 3, 3, 3, 3),
+    (4, 'ADN-CHRISTIE-GODDESS', 4, 4, 4, 4),
+    (5, 'ADN-MIDGE-MACKIE', 5, 5, 5, 5),
+    (6, 'ADN-TERESA-DIVA', 6, 6, 6, 6),
+    (7, 'ADN-RAQUELLE-LEA', 7, 7, 7, 7),
+    (8, 'ADN-STACIE-GENGIRL', 8, 8, 8, 8),
+    (9, 'ADN-CHELSEA-BELLYBTN', 9, 9, 9, 9),
+    (10, 'ADN-NIKKI-MILLIE', 10, 10, 10, 10);
 
 -- COMPATIBILIDAD_JUGUETE (10 filas)
 INSERT INTO COMPATIBILIDAD_JUGUETE (fk_juguete1, fk_juguete2) VALUES
@@ -713,16 +713,16 @@ INSERT INTO DEFECTO_LOTE (deflot_cantidadafectada, fk_def_id, fk_lotpro_id) VALU
 
 -- CATEGORIA_PRODUCTO (10 filas)
 INSERT INTO CATEGORIA_PRODUCTO (catpro_id, catpro_descripcion) VALUES
-    (1, 'Categoria Munecas'),
-    (2, 'Categoria Vehiculos'),
-    (3, 'Categoria Casas'),
-    (4, 'Categoria Accesorios'),
-    (5, 'Categoria Sets'),
-    (6, 'Categoria Ropa'),
-    (7, 'Categoria Mascotas'),
-    (8, 'Categoria Coleccionables'),
-    (9, 'Categoria Juegos'),
-    (10, 'Categoria Figuras');
+    (1, 'Munecas'),
+    (2, 'Vehiculos'),
+    (3, 'Casas (Dreamhouse)'),
+    (4, 'Accesorios'),
+    (5, 'Sets de regalo'),
+    (6, 'Ropa y moda'),
+    (7, 'Mascotas'),
+    (8, 'Coleccionables'),
+    (9, 'Juegos'),
+    (10, 'Figuras');
 
 -- EDICION (10 filas)
 INSERT INTO EDICION (edi_id, edi_nombre) VALUES
@@ -752,42 +752,42 @@ INSERT INTO PROFESION (prof_id, prof_nombre) VALUES
 
 -- EXCLUSIVIDAD (10 filas)
 INSERT INTO EXCLUSIVIDAD (exc_id, exc_nombre, exc_limiteproducto) VALUES
-    (1, 'Exclusiva 1', 100),
-    (2, 'Exclusiva 2', 200),
-    (3, 'Exclusiva 3', 300),
-    (4, 'Exclusiva 4', 400),
-    (5, 'Exclusiva 5', 500),
-    (6, 'Exclusiva 6', 600),
-    (7, 'Exclusiva 7', 700),
-    (8, 'Exclusiva 8', 800),
-    (9, 'Exclusiva 9', 900),
-    (10, 'Exclusiva 10', 1000);
+    (1, 'Pink Label', 1000000),
+    (2, 'Black Label', 100000),
+    (3, 'Gold Label', 25000),
+    (4, 'Platinum Label', 1000),
+    (5, 'Signature', 5000),
+    (6, 'Holiday Edition', 10000),
+    (7, 'Anniversary', 3000),
+    (8, 'Designer Edition', 2000),
+    (9, 'Convention Exclusive', 500),
+    (10, 'Prototype', 50);
 
 -- PRODUCTO (10 filas)
 INSERT INTO PRODUCTO (pro_id, pro_sku, pro_nombre, pro_preciobase, pro_lanzamientofecha, pro_tipo, fk_jug_id, fk_catpro_id, fk_lotpro_id, fk_edi_id, fk_exc_id) VALUES
-    (1, 100000, 'Producto 1', 19.99, '2024-01-01', 'INDIVIDUAL', 1, 1, 1, 1, 1),
-    (2, 100001, 'Producto 2', 24.99, '2024-02-01', 'SET', 2, 2, 2, 2, 2),
-    (3, 100002, 'Producto 3', 29.99, '2024-03-01', 'INDIVIDUAL', 3, 3, 3, 3, 3),
-    (4, 100003, 'Producto 4', 34.99, '2024-04-01', 'SET', 4, 4, 4, 4, 4),
-    (5, 100004, 'Producto 5', 39.99, '2024-05-01', 'INDIVIDUAL', 5, 5, 5, 5, 5),
-    (6, 100005, 'Producto 6', 44.99, '2024-06-01', 'SET', 6, 6, 6, 6, 6),
-    (7, 100006, 'Producto 7', 49.99, '2024-07-01', 'INDIVIDUAL', 7, 7, 7, 7, 7),
-    (8, 100007, 'Producto 8', 54.99, '2024-08-01', 'SET', 8, 8, 8, 8, 8),
-    (9, 100008, 'Producto 9', 59.99, '2024-09-01', 'INDIVIDUAL', 9, 9, 9, 9, 9),
-    (10, 100009, 'Producto 10', 64.99, '2024-10-01', 'SET', 10, 10, 10, 10, 10);
+    (1, 100000, 'Barbie Doctora', 149.99, '2024-01-01', 'INDIVIDUAL', 1, 1, 1, 1, 1),
+    (2, 100001, 'Ken Astronauta', 199.99, '2024-02-01', 'INDIVIDUAL', 2, 1, 2, 2, 2),
+    (3, 100002, 'Skipper Maestra', 259.99, '2024-03-01', 'INDIVIDUAL', 3, 1, 3, 3, 3),
+    (4, 100003, 'Christie Chef', 329.99, '2024-04-01', 'INDIVIDUAL', 4, 1, 4, 4, 4),
+    (5, 100004, 'Midge Veterinaria', 399.99, '2024-05-01', 'INDIVIDUAL', 5, 1, 5, 5, 5),
+    (6, 100005, 'Teresa Piloto', 479.99, '2024-06-01', 'INDIVIDUAL', 6, 1, 6, 6, 6),
+    (7, 100006, 'Raquelle Cientifica', 559.99, '2024-07-01', 'INDIVIDUAL', 7, 1, 7, 7, 7),
+    (8, 100007, 'Stacie Bombera', 649.99, '2024-08-01', 'INDIVIDUAL', 8, 1, 8, 8, 8),
+    (9, 100008, 'Chelsea Cantante', 749.99, '2024-09-01', 'INDIVIDUAL', 9, 1, 9, 9, 9),
+    (10, 100009, 'Nikki Atleta', 899.99, '2024-10-01', 'INDIVIDUAL', 10, 1, 10, 10, 10);
 
 -- DETALLE_SET (10 filas)
 INSERT INTO DETALLE_SET (fk_pro1, fk_pro2, detset_nombre) VALUES
-    (1, 2, 'Set 1'),
-    (2, 3, 'Set 2'),
-    (3, 4, 'Set 3'),
-    (4, 5, 'Set 4'),
-    (5, 6, 'Set 5'),
-    (6, 7, 'Set 6'),
-    (7, 8, 'Set 7'),
-    (8, 9, 'Set 8'),
-    (9, 10, 'Set 9'),
-    (10, 1, 'Set 10');
+    (1, 2, 'Set Profesiones'),
+    (2, 3, 'Pack Aventuras'),
+    (3, 4, 'Set Carreras'),
+    (4, 5, 'Pack Familia'),
+    (5, 6, 'Set Duo Estelar'),
+    (6, 7, 'Pack Coleccionista'),
+    (7, 8, 'Set Heroinas'),
+    (8, 9, 'Pack Suenos'),
+    (9, 10, 'Set Hermanas'),
+    (10, 1, 'Pack Fiesta');
 
 -- HISTORICO_PROFESION (10 filas)
 INSERT INTO HISTORICO_PROFESION (hispro_anoasignacion, fk_prof_id, fk_pro_id) VALUES
