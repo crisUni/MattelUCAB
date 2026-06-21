@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll, fetchAll } from "./CorsHeaders";
 
 type CategoriaProducto = {
     catpro_id: number
@@ -124,6 +124,10 @@ class ProductoService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 return callDelete("deleteExclusividad", [id])
             }
+        },
+        // Catálogo resuelto (vista VW_PRODUCTO_ADN): joins + stock + costo calculados en la BD.
+        "/api/producto_adn": {
+            GET: async (_: Bun.BunRequest<"/api/producto_adn">) => fetchAll("vw_producto_adn"),
         },
         "/api/producto": {
             GET: async (_: Bun.BunRequest<"/api/producto">) => listAll<Producto>("listProducto"),

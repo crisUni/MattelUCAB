@@ -5,10 +5,12 @@ services:
     image: postgres:18-alpine   # pin major version (floating 'alpine' tag broke the data volume on the PG18 bump)
     restart: no # TODO: Change these to always when deploying
     environment:
-      POSTGRES_DB: fundana
+      POSTGRES_DB: postgres     # la app usa la BD 'postgres'; los scripts se cargan aqui
       POSTGRES_PASSWORD: admin
     volumes:
       - pgdata:/var/lib/postgresql
+      - ./src/sql:/sql:ro                         # scripts SQL (fuente)
+      - ./db-init:/docker-entrypoint-initdb.d:ro  # se ejecuta solo en una BD nueva (volumen vacio)
     ports:
       - 5432:5432
 

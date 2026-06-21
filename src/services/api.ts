@@ -334,65 +334,43 @@ export async function getPacks(): Promise<Pack[]> {
  * ===================================================================== */
 
 export async function getProductos(): Promise<Producto[]> {
-  const [productos, juguetes, moldes, colorProd, matProd, inventario, materiales, disenos, empleados] = await Promise.all([
-    getList("/producto"),
-    getList("/juguete"),
-    getList("/molde_rostro"),
+  // La vista VW_PRODUCTO_ADN resuelve en la BD las uniones, el stock y el costo.
+  // El front sólo agrupa colores/BOM (datos 1:N) por juguete.
+  const [rows, colorProd, matProd] = await Promise.all([
+    getList("/producto_adn"),
     getList("/color_producto"),
     getList("/material_producto"),
-    getList("/inventario"),
-    getList("/material"),
-    getList("/diseno"),
-    getList("/empleado"),
   ]);
 
-  // Costo unitario por material, para derivar el costo de producción desde el BOM.
-  const costoMaterial = new Map<number, number>(
-    materiales.map((m: any) => [m.mat_id, m.mat_costo ?? 0])
-  );
+  return rows.map((p: any): Producto => {
+    const colores: ColorAplicado[] = colorProd
+      .filter((cp: any) => cp.fk_jug_id === p.fk_jug_id)
+      .map((cp: any) => ({ colorId: sid(cp.fk_col_id), zona: zonaColor(cp.colpro_zonaaplicacion) }));
 
-  return productos.map((p: any): Producto => {
-    const jug = juguetes.find((j: any) => j.jug_id === p.fk_jug_id);
-    const molde = jug ? moldes.find((m: any) => m.molros_id === jug.fk_molros_id) : undefined;
-    const diseno = jug ? disenos.find((d: any) => d.dis_id === jug.fk_dis_id) : undefined;
-    const emp = diseno?.fk_emp_id ? empleados.find((e: any) => e.emp_id === diseno.fk_emp_id) : undefined;
-
-    const colores: ColorAplicado[] = jug
-      ? colorProd
-          .filter((cp: any) => cp.fk_jug_id === jug.jug_id)
-          .map((cp: any) => ({ colorId: sid(cp.fk_col_id), zona: zonaColor(cp.colpro_zonaaplicacion) }))
-      : [];
-
-    const bomRaw = jug ? matProd.filter((mp: any) => mp.fk_jug_id === jug.jug_id) : [];
-    const bom: BomItem[] = bomRaw.map((mp: any) => ({ materialId: sid(mp.fk_mat_id), cantidad: mp.matpro_cantidad }));
-    // Costo de producción derivado del BOM (Σ costo material × cantidad), usado como
-    // snapshot cuando la BD no tiene un valor congelado (pro_costoproduccion NULL).
-    const costoBom = bomRaw.reduce((s: number, mp: any) => s + (costoMaterial.get(mp.fk_mat_id) ?? 0) * mp.matpro_cantidad, 0);
-
-    const stock = inventario
-      .filter((inv: any) => inv.fk_pro_id === p.pro_id)
-      .reduce((s: number, inv: any) => s + (inv.inv_stockdisponible ?? 0), 0);
+    const bom: BomItem[] = matProd
+      .filter((mp: any) => mp.fk_jug_id === p.fk_jug_id)
+      .map((mp: any) => ({ materialId: sid(mp.fk_mat_id), cantidad: mp.matpro_cantidad }));
 
     return {
       id: sid(p.pro_id),
       sku: String(p.pro_sku),
       nombre: p.pro_nombre,
-      precioBaseUsd: p.pro_preciobase ?? 0,
-      costoProduccionUsd: p.pro_costoproduccion ?? costoBom,
+      precioBaseUsd: Number(p.pro_preciobase ?? 0),
+      costoProduccionUsd: Number(p.costo_produccion ?? 0),
       fechaLanzamiento: p.pro_lanzamientofecha ?? "",
       tipo: tipoProducto(p.pro_tipo),
-      moldeRostroId: sid(jug?.fk_molros_id) || undefined,
-      tipoCuerpoId: sid(jug?.fk_tipcue_id) || undefined,
-      eraId: sid(jug?.fk_erahis_id) || undefined,
+      moldeRostroId: sid(p.fk_molros_id) || undefined,
+      tipoCuerpoId: sid(p.fk_tipcue_id) || undefined,
+      eraId: sid(p.fk_erahis_id) || undefined,
       exclusividadId: sid(p.fk_exc_id) || undefined,
-      personajeId: sid(molde?.fk_per_id) || undefined,
+      personajeId: sid(p.personaje_id) || undefined,
       colores,
       bom,
-      stock,
-      adn: jug?.jug_adn,
-      disenoPatente: diseno?.dis_patentecod,
-      disenadorId: sid(diseno?.fk_emp_id) || undefined,
-      disenador: emp ? `${emp.emp_pnombre} ${emp.emp_papellido}` : undefined,
+      stock: Number(p.stock ?? 0),
+      adn: p.jug_adn ?? undefined,
+      disenoPatente: p.diseno_patente ?? undefined,
+      disenadorId: sid(p.disenador_id) || undefined,
+      disenador: p.disenador ?? undefined,
     };
   });
 }

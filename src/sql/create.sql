@@ -590,3 +590,40 @@ CREATE TABLE IF NOT EXISTS HISTORICO_MEMBRESIA (
     FOREIGN KEY (fk_mem_id) REFERENCES MEMBRESIA (mem_id),
     FOREIGN KEY (fk_cli_id) REFERENCES CLIENTE (cli_id)
 );
+
+-- ---------------------------------------------------------------------
+-- VISTA: catálogo de productos resuelto (ADN). Resuelve en la BD las
+-- uniones (juguete → molde → diseño → empleado), el stock total y el
+-- COSTO de producción (Σ costo material × cantidad del BOM), para que el
+-- front no calcule nada: sólo lee la vista.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE VIEW VW_PRODUCTO_ADN AS
+SELECT
+    p.pro_id,
+    p.pro_sku,
+    p.pro_nombre,
+    p.pro_preciobase,
+    p.pro_lanzamientofecha,
+    p.pro_tipo,
+    p.fk_exc_id,
+    p.fk_jug_id,
+    j.jug_adn,
+    j.fk_molros_id,
+    j.fk_tipcue_id,
+    j.fk_erahis_id,
+    mr.fk_per_id AS personaje_id,
+    d.dis_patentecod AS diseno_patente,
+    d.fk_emp_id AS disenador_id,
+    CASE WHEN e.emp_id IS NULL THEN NULL
+         ELSE e.emp_pnombre || ' ' || e.emp_papellido END AS disenador,
+    COALESCE((SELECT SUM(i.inv_stockdisponible) FROM INVENTARIO i WHERE i.fk_pro_id = p.pro_id), 0) AS stock,
+    COALESCE(p.pro_costoproduccion,
+             (SELECT SUM(m.mat_costo * mp.matpro_cantidad)
+                FROM MATERIAL_PRODUCTO mp JOIN MATERIAL m ON m.mat_id = mp.fk_mat_id
+               WHERE mp.fk_jug_id = p.fk_jug_id),
+             0) AS costo_produccion
+FROM PRODUCTO p
+LEFT JOIN JUGUETE j      ON j.jug_id    = p.fk_jug_id
+LEFT JOIN MOLDE_ROSTRO mr ON mr.molros_id = j.fk_molros_id
+LEFT JOIN DISENO d       ON d.dis_id    = j.fk_dis_id
+LEFT JOIN EMPLEADO e     ON e.emp_id    = d.fk_emp_id;
