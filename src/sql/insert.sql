@@ -702,17 +702,14 @@ INSERT INTO DEFECTO (def_id, def_nombre) VALUES
     (10, 'Falta pieza');
 
 -- DEFECTO_LOTE (10 filas)
+-- Los defectos solo se registran en lotes RECHAZADOS (2,4,6,8,10);
+-- los lotes APROBADOS no tienen defectos (consistencia QA, forzada por trigger).
 INSERT INTO DEFECTO_LOTE (deflot_cantidadafectada, fk_def_id, fk_lotpro_id) VALUES
-    (3, 1, 1),
-    (6, 2, 2),
-    (9, 3, 3),
-    (12, 4, 4),
-    (15, 5, 5),
-    (18, 6, 6),
-    (21, 7, 7),
-    (24, 8, 8),
-    (27, 9, 9),
-    (30, 10, 10);
+    (6, 1, 2),  (4, 2, 2),
+    (12, 3, 4), (5, 4, 4),
+    (8, 5, 6),  (3, 6, 6),
+    (10, 7, 8), (7, 8, 8),
+    (15, 9, 10),(9, 10, 10);
 
 -- CATEGORIA_PRODUCTO (10 filas)
 INSERT INTO CATEGORIA_PRODUCTO (catpro_id, catpro_descripcion) VALUES

@@ -342,6 +342,51 @@ CREATE TRIGGER trg_compat_no_borrar_si_en_set
     FOR EACH ROW EXECUTE FUNCTION fn_compat_no_borrar_si_en_set();
 
 
+-- ---------------------------------------------------------------------
+-- A10/A11. Coherencia de calidad (QA) <-> defectos
+-- Un lote APROBADO no puede tener defectos registrados, y viceversa:
+--   - no se puede marcar APROBADO un lote que tiene defectos,
+--   - no se puede registrar un defecto en un lote ya APROBADO.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_inspeccion_aprobada_sin_defectos()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.inscal_resultado = 'APROBADO'
+       AND EXISTS (SELECT 1 FROM DEFECTO_LOTE dl WHERE dl.fk_lotpro_id = NEW.fk_lotpro_id) THEN
+        RAISE EXCEPTION 'No se puede APROBAR el lote %: tiene defectos registrados (debe ser RECHAZADO).', NEW.fk_lotpro_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_inspeccion_aprobada_sin_defectos ON INSPECCION_CALIDAD;
+CREATE TRIGGER trg_inspeccion_aprobada_sin_defectos
+    BEFORE INSERT OR UPDATE ON INSPECCION_CALIDAD
+    FOR EACH ROW EXECUTE FUNCTION fn_inspeccion_aprobada_sin_defectos();
+
+CREATE OR REPLACE FUNCTION fn_defecto_no_en_lote_aprobado()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM INSPECCION_CALIDAD ic
+        WHERE ic.fk_lotpro_id = NEW.fk_lotpro_id AND ic.inscal_resultado = 'APROBADO'
+    ) THEN
+        RAISE EXCEPTION 'No se puede registrar un defecto en el lote %: ya fue APROBADO en calidad.', NEW.fk_lotpro_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_defecto_no_en_lote_aprobado ON DEFECTO_LOTE;
+CREATE TRIGGER trg_defecto_no_en_lote_aprobado
+    BEFORE INSERT OR UPDATE ON DEFECTO_LOTE
+    FOR EACH ROW EXECUTE FUNCTION fn_defecto_no_en_lote_aprobado();
+
+
 -- #####################################################################
 -- ##  MODULO B: SEGURIDAD / GESTION DE USUARIOS Y ROLES
 -- #####################################################################
