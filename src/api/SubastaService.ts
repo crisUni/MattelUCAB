@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type CondicionSubasta = {
     consub_id: number
@@ -35,6 +35,12 @@ class SubastaService{
             }
         },
         "/api/condicion_subasta/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/condicion_subasta/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteCondicionSubasta", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/condicion_subasta/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -53,6 +59,12 @@ class SubastaService{
             }
         },
         "/api/subasta/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/subasta/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteSubasta", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/subasta/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -71,6 +83,12 @@ class SubastaService{
             }
         },
         "/api/puja_subasta/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/puja_subasta/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deletePujaSubasta", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/puja_subasta/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))

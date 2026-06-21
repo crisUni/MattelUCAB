@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type HubRegional = {
     hubreg_id: number
@@ -33,6 +33,12 @@ class AlmacenService{
             }
         },
         "/api/hub_regional/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/hub_regional/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteHubRegional", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/hub_regional/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -51,6 +57,12 @@ class AlmacenService{
             }
         },
         "/api/almacen/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/almacen/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteAlmacen", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/almacen/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -70,6 +82,10 @@ class AlmacenService{
             PUT: async (req: Bun.BunRequest<"/api/inventario">) => {
                 const body = await req.json();
                 return callUpdate("updateInventario", [body.fk_pro_id, body.fk_alm_id, body.inv_stockdisponible, body.inv_cantidad, body.inv_fecha_actualizacion])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/inventario">) => {
+                const body = await req.json();
+                return callDelete("deleteInventario", [body.fk_pro_id, body.fk_alm_id])
             }
         }
     }
