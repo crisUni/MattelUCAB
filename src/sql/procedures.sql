@@ -429,13 +429,15 @@ END
 $$;
 CREATE OR REPLACE PROCEDURE updateDiseno (
     disId INT,
-    disPatentecod VARCHAR(50)
+    disPatentecod VARCHAR(50),
+    fkEmpId INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     UPDATE DISENO
-    SET dis_patentecod = disPatentecod
+    SET dis_patentecod = disPatentecod,
+        fk_emp_id = fkEmpId
     WHERE dis_id = disId;
 END
 $$;
@@ -2990,13 +2992,14 @@ END
 $$;
 
 CREATE OR REPLACE PROCEDURE createDiseno (
-    patenteCodDiseno VARCHAR(50)
+    patenteCodDiseno VARCHAR(50),
+    fkEmpId INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO DISENO (dis_patentecod)
-    VALUES (patenteCodDiseno);
+    INSERT INTO DISENO (dis_patentecod, fk_emp_id)
+    VALUES (patenteCodDiseno, fkEmpId);
 END
 $$;
 

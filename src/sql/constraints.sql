@@ -153,3 +153,6 @@ ALTER TABLE COMPRA ADD CONSTRAINT uq_com_factura UNIQUE (com_numfactura);
 
 -- COLOR
 ALTER TABLE COLOR ADD CONSTRAINT uq_col_codhex UNIQUE (col_codhex);
+
+-- DISENO -> EMPLEADO (diseñador). Se añade aquí porque DISENO se crea antes que EMPLEADO.
+ALTER TABLE DISENO ADD CONSTRAINT fk_diseno_empleado FOREIGN KEY (fk_emp_id) REFERENCES EMPLEADO (emp_id);

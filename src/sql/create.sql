@@ -69,7 +69,8 @@ CREATE TABLE IF NOT EXISTS MATERIAL (
 
 CREATE TABLE IF NOT EXISTS DISENO (
     dis_id SERIAL PRIMARY KEY,
-    dis_patentecod VARCHAR(50) NOT NULL
+    dis_patentecod VARCHAR(50) NOT NULL,
+    fk_emp_id INT                           -- AÑADIDO: empleado (I+D) que diseñó el ADN (FK en constraints.sql)
 );
 
 CREATE TABLE IF NOT EXISTS JUGUETE (

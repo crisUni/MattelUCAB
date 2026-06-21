@@ -511,6 +511,7 @@ INSERT INTO MATERIAL (mat_id, mat_nombre, mat_tipo, mat_unidad, mat_costo) VALUE
     (10, 'Silicona', 'Polimero', 'kg', 18.25);
 
 -- DISENO (10 filas)
+-- fk_emp_id (diseñador) se asigna mas abajo, tras cargar EMPLEADO.
 INSERT INTO DISENO (dis_id, dis_patentecod) VALUES
     (1, 'PAT-DIS-0001'),
     (2, 'PAT-DIS-0002'),
@@ -10980,6 +10981,11 @@ INSERT INTO HISTORICO_MEMBRESIA (hismem_fechaini, hismem_fechafin, fk_mem_id, fk
     ('2024-08-01', NULL, 8, 8),
     ('2024-09-01', NULL, 9, 9),
     ('2024-10-01', NULL, 10, 10);
+
+-- Diseñador (I+D) de cada diseño (se asigna aqui, ya cargado EMPLEADO).
+UPDATE DISENO SET fk_emp_id = CASE dis_id
+    WHEN 1 THEN 1 WHEN 2 THEN 2 WHEN 3 THEN 3 WHEN 4 THEN 4 WHEN 5 THEN 5
+    WHEN 6 THEN 1 WHEN 7 THEN 2 WHEN 8 THEN 3 WHEN 9 THEN 4 WHEN 10 THEN 5 END;
 
 -- ---------------------------------------------------------------
 -- Reinicio de secuencias SERIAL (se insertaron IDs explicitos)
