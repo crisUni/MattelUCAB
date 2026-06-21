@@ -68,7 +68,7 @@ export function RolesTab() {
 }
 
 const GRUPOS: { titulo: string; recursos: string[] }[] = [
-  { titulo: "Seguridad", recursos: ["USUARIO", "ROL", "PERMISO"] },
+  { titulo: "Seguridad", recursos: ["USUARIO", "ROL"] },
   { titulo: "Genoma Barbie", recursos: ["PRODUCTO", "MOLDE_ROSTRO", "TIPO_CUERPO", "COLOR", "MATERIAL", "ERA", "EXCLUSIVIDAD", "PERSONAJE", "PROFESION", "COMPATIBILIDAD", "PACK"] },
   { titulo: "Reportes y costos", recursos: ["REPORTE", "COSTO"] },
 ];

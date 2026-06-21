@@ -61,29 +61,10 @@ class RolService{
 			}
         },
 
+        // Permisos: catálogo fijo de privilegios (no se crean/editan desde la app).
+        // Sólo lectura, para componer roles y la matriz.
         "/api/permiso": {
             GET: async (_: Bun.BunRequest<"/api/permiso">) => listAll<Rol>("listPermiso"),
-            POST: async (req: Bun.BunRequest<"/api/permiso">) => {
-                const body = await req.json();
-                if (!body.perm_recurso || !body.perm_accion)
-                    return new Response('perm_recurso and perm_accion are required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createPermiso", [body.perm_recurso, body.perm_accion])
-            }
-        },
-        "/api/permiso/:id": {
-            PUT: async (req: Bun.BunRequest<"/api/permiso/:id">) => {
-                const id = Number(req.params.id);
-                if (!Number.isInteger(id))
-                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
-                const body = await req.json();
-                return callUpdate("updatePermiso", [id, body.perm_recurso, body.perm_accion])
-            },
-            DELETE: async (req: Bun.BunRequest<"/api/permiso/:id">) => {
-                const id = Number(req.params.id);
-                if (!Number.isInteger(id))
-                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
-                return callDelete("deletePermiso", [id])
-            }
         }
     }
 }

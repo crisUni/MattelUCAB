@@ -1824,7 +1824,7 @@ INSERT INTO PERSONA_JURIDICA (fk_cli_id, perjur_rif, perjur_razonsocial, perjur_
 INSERT INTO PERMISO (perm_recurso, perm_accion)
 SELECT res.r, act.a
 FROM (VALUES
-    ('USUARIO'),('ROL'),('PERMISO'),
+    ('USUARIO'),('ROL'),
     ('PRODUCTO'),('MOLDE_ROSTRO'),('TIPO_CUERPO'),('COLOR'),('MATERIAL'),('ERA'),('EXCLUSIVIDAD'),
     ('PERSONAJE'),('PROFESION'),('COMPATIBILIDAD'),('PACK'),
     ('REPORTE'),('COSTO')
@@ -2282,11 +2282,11 @@ INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
 -- Auditor (8): ver reportes, costos y catalogo (solo lectura).
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 8, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('REPORTE','COSTO','PRODUCTO');
--- Soporte (9): administrar usuarios (ver/editar) y ver roles/permisos.
+-- Soporte (9): administrar usuarios (ver/editar) y ver roles.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 9, perm_id FROM PERMISO
      WHERE (perm_recurso='USUARIO' AND perm_accion IN ('VER','EDITAR'))
-        OR (perm_recurso IN ('ROL','PERMISO') AND perm_accion='VER');
+        OR (perm_recurso='ROL' AND perm_accion='VER');
 -- Invitado (10): ver catalogo.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 10, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';

@@ -440,7 +440,7 @@ export function reportePdfUrl(id: string): string {
  * ===================================================================== */
 
 export type Recurso =
-  | "usuario" | "rol" | "permiso"
+  | "usuario" | "rol"
   | "producto" | "molde_rostro" | "tipo_cuerpo" | "color"
   | "material" | "era_historico" | "exclusividad";
 
@@ -517,11 +517,6 @@ const writers: Record<Recurso, Writer> = {
     remove: (id) => send("DELETE", `/rol/${id}`),
   },
 
-  permiso: {
-    create: (p: Permiso) => send("POST", "/permiso", { perm_recurso: p.recurso, perm_accion: p.accion }),
-    update: (p: Permiso) => send("PUT", `/permiso/${p.id}`, { perm_recurso: p.recurso, perm_accion: p.accion }),
-    remove: (id) => send("DELETE", `/permiso/${id}`),
-  },
 
   producto: {
     create: async (p: Producto) => {
