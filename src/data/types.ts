@@ -262,6 +262,26 @@ export interface Pack {
   descripcion: string;
 }
 
+/** Lote de producción (manufactura) con su inspección de calidad y defectos. */
+export interface Lote {
+  id: string;
+  fechaInicio: string;
+  fechaFin: string | null;
+  resultado: "APROBADO" | "RECHAZADO" | null;
+  fechaInspeccion: string | null;
+  inspector: string | null;
+  numProductos: number;
+  numDefectos: number;
+  unidadesAfectadas: number;
+}
+
+/** Defecto detectado en un lote (Defecto_lote · Defecto). */
+export interface DefectoLote {
+  loteId: string;
+  defecto: string;
+  cantidad: number;
+}
+
 /* ------------------------------------------------------------------ */
 /* Módulo 3 — Reportes                                                */
 /* ------------------------------------------------------------------ */

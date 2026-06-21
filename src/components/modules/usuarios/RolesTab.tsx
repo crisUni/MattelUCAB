@@ -70,6 +70,7 @@ export function RolesTab() {
 const GRUPOS: { titulo: string; recursos: string[] }[] = [
   { titulo: "Seguridad", recursos: ["USUARIO", "ROL"] },
   { titulo: "Genoma Barbie", recursos: ["PRODUCTO", "MOLDE_ROSTRO", "TIPO_CUERPO", "COLOR", "MATERIAL", "ERA", "EXCLUSIVIDAD", "PERSONAJE", "PROFESION", "COMPATIBILIDAD", "PACK"] },
+  { titulo: "Manufactura y calidad", recursos: ["LOTE", "CALIDAD"] },
   { titulo: "Reportes y costos", recursos: ["REPORTE", "COSTO"] },
 ];
 const LABEL: Record<string, string> = {
@@ -77,6 +78,7 @@ const LABEL: Record<string, string> = {
   MOLDE_ROSTRO: "Molde de rostro", TIPO_CUERPO: "Tipo de cuerpo", COLOR: "Color",
   MATERIAL: "Material", ERA: "Era", EXCLUSIVIDAD: "Exclusividad", PERSONAJE: "Personaje",
   PROFESION: "Profesión", COMPATIBILIDAD: "Compatibilidad", PACK: "Pack",
+  LOTE: "Lote de producción", CALIDAD: "Calidad / inspección",
   REPORTE: "Reporte", COSTO: "Costos / márgenes",
 };
 const ACC_META: Record<AccionPermiso, { letra: string; on: string }> = {

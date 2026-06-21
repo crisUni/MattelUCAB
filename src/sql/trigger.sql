@@ -311,6 +311,37 @@ CREATE TRIGGER trg_detalle_set_compatible
     FOR EACH ROW EXECUTE FUNCTION fn_detalle_set_compatible();
 
 
+-- ---------------------------------------------------------------------
+-- A9. Consistencia compatibilidad <-> sets
+-- Evita que las reglas de compatibilidad "choquen" con los sets ya armados:
+-- no se puede eliminar una compatibilidad si existe un DETALLE_SET que la usa
+-- (quedaria un set con productos que dejaron de ser compatibles).
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_compat_no_borrar_si_en_set()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM DETALLE_SET ds
+        JOIN PRODUCTO p1 ON p1.pro_id = ds.fk_pro1
+        JOIN PRODUCTO p2 ON p2.pro_id = ds.fk_pro2
+        WHERE (p1.fk_jug_id = OLD.fk_juguete1 AND p2.fk_jug_id = OLD.fk_juguete2)
+           OR (p1.fk_jug_id = OLD.fk_juguete2 AND p2.fk_jug_id = OLD.fk_juguete1)
+    ) THEN
+        RAISE EXCEPTION 'No se puede eliminar la compatibilidad entre los juguetes % y %: existen sets que dependen de ella.', OLD.fk_juguete1, OLD.fk_juguete2;
+    END IF;
+    RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_compat_no_borrar_si_en_set ON COMPATIBILIDAD_JUGUETE;
+CREATE TRIGGER trg_compat_no_borrar_si_en_set
+    BEFORE DELETE ON COMPATIBILIDAD_JUGUETE
+    FOR EACH ROW EXECUTE FUNCTION fn_compat_no_borrar_si_en_set();
+
+
 -- #####################################################################
 -- ##  MODULO B: SEGURIDAD / GESTION DE USUARIOS Y ROLES
 -- #####################################################################

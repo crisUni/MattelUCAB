@@ -9,6 +9,7 @@ import { PersonajesTab } from "./PersonajesTab";
 import { MultiversoTab } from "./MultiversoTab";
 import { PacksTab } from "./PacksTab";
 import { TrazabilidadTab } from "./TrazabilidadTab";
+import { LotesTab } from "./LotesTab";
 
 /** Cada subpestaña requiere VER sobre su recurso para mostrarse. */
 const TABS: (SubTab & { recurso: string })[] = [
@@ -19,6 +20,7 @@ const TABS: (SubTab & { recurso: string })[] = [
   { id: "multiverso", label: "Multiverso laboral", icon: <IconBriefcase className="h-4 w-4" />, recurso: "PROFESION" },
   { id: "packs", label: "Packs", icon: <IconBox className="h-4 w-4" />, recurso: "PACK" },
   { id: "trazabilidad", label: "Trazabilidad de diseño", icon: <IconUsers className="h-4 w-4" />, recurso: "PRODUCTO" },
+  { id: "lotes", label: "Lotes & Calidad", icon: <IconLayers className="h-4 w-4" />, recurso: "LOTE" },
 ];
 
 export function ProductosModule() {
@@ -41,6 +43,7 @@ export function ProductosModule() {
       {tab === "multiverso" && <MultiversoTab />}
       {tab === "packs" && <PacksTab />}
       {tab === "trazabilidad" && <TrazabilidadTab />}
+      {tab === "lotes" && <LotesTab />}
     </div>
   );
 }

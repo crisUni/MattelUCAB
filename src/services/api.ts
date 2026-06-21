@@ -17,7 +17,7 @@ import type {
   Usuario, Rol, Permiso,
   Producto, MoldeRostro, TipoCuerpo, Color, Material, Era, Exclusividad, TipoMaterial,
   ReglaCompatibilidad, Pack, Personaje, Profesion, ZonaColor, TipoVinculo, ColorAplicado, BomItem,
-  LabelExclusividad, AccionPermiso,
+  LabelExclusividad, AccionPermiso, Lote, DefectoLote,
 } from "../data/types";
 
 /** URL base de la API (mismo origen que el front, servido por Bun). */
@@ -369,7 +369,58 @@ export async function getProductos(): Promise<Producto[]> {
       disenoPatente: p.diseno_patente ?? undefined,
       disenadorId: sid(p.disenador_id) || undefined,
       disenador: p.disenador ?? undefined,
+      jugueteId: sid(p.fk_jug_id) || undefined,
+      loteId: sid(p.fk_lotpro_id) || undefined,
+      categoriaId: sid(p.fk_catpro_id) || undefined,
+      edicionId: sid(p.fk_edi_id) || undefined,
     };
+  });
+}
+
+/* ===================================================================== *
+ * LECTURAS / ESCRITURAS — Manufactura (lotes, calidad, defectos)        *
+ * ===================================================================== */
+
+export async function getLotes(): Promise<Lote[]> {
+  const rows = await getList("/lote_resumen");
+  return rows.map((l: any): Lote => ({
+    id: sid(l.lotpro_id),
+    fechaInicio: l.lotpro_fechaini ?? "",
+    fechaFin: l.lotpro_fechafin ?? null,
+    resultado: l.inscal_resultado ?? null,
+    fechaInspeccion: l.inscal_fecha ?? null,
+    inspector: l.inspector ?? null,
+    numProductos: Number(l.num_productos ?? 0),
+    numDefectos: Number(l.num_defectos ?? 0),
+    unidadesAfectadas: Number(l.unidades_afectadas ?? 0),
+  }));
+}
+
+export async function getDefectosLote(): Promise<DefectoLote[]> {
+  const [dl, defectos] = await Promise.all([getList("/defecto_lote"), getList("/defecto")]);
+  const nombre = (id: number) => defectos.find((d: any) => d.def_id === id)?.def_nombre ?? `Defecto ${id}`;
+  return dl.map((x: any): DefectoLote => ({
+    loteId: sid(x.fk_lotpro_id),
+    defecto: nombre(x.fk_def_id),
+    cantidad: Number(x.deflot_cantidadafectada ?? 0),
+  }));
+}
+
+/** Crea un nuevo lote de producción. */
+export async function crearLote(fechaInicio: string, fechaFin: string | null): Promise<void> {
+  await send("POST", "/lote_produccion", {
+    lotpro_fechaini: (fechaInicio || "").slice(0, 10),
+    lotpro_fechafin: fechaFin ? fechaFin.slice(0, 10) : null,
+  });
+}
+
+/** Registra una inspección de calidad (QA) para un lote. */
+export async function registrarInspeccion(loteId: string, resultado: string, empleadoId: string, fecha: string): Promise<void> {
+  await send("POST", "/inspeccion_calidad", {
+    inscal_fecha: (fecha || "").slice(0, 10),
+    inscal_resultado: resultado,
+    fk_lotpro_id: Number(loteId),
+    fk_emp_id: Number(empleadoId),
   });
 }
 

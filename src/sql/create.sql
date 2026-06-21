@@ -607,6 +607,9 @@ SELECT
     p.pro_tipo,
     p.fk_exc_id,
     p.fk_jug_id,
+    p.fk_lotpro_id,
+    p.fk_catpro_id,
+    p.fk_edi_id,
     j.jug_adn,
     j.fk_molros_id,
     j.fk_tipcue_id,
@@ -627,3 +630,25 @@ LEFT JOIN JUGUETE j      ON j.jug_id    = p.fk_jug_id
 LEFT JOIN MOLDE_ROSTRO mr ON mr.molros_id = j.fk_molros_id
 LEFT JOIN DISENO d       ON d.dis_id    = j.fk_dis_id
 LEFT JOIN EMPLEADO e     ON e.emp_id    = d.fk_emp_id;
+
+-- ---------------------------------------------------------------------
+-- VISTA: resumen de lote de produccion. Cruza el lote con su inspeccion
+-- de calidad (resultado + inspector), el numero de productos fabricados
+-- y los defectos detectados, para la trazabilidad de manufactura.
+-- (En los datos hay 1 inspeccion por lote.)
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE VIEW VW_LOTE_RESUMEN AS
+SELECT
+    l.lotpro_id,
+    l.lotpro_fechaini,
+    l.lotpro_fechafin,
+    ic.inscal_resultado,
+    ic.inscal_fecha,
+    CASE WHEN e.emp_id IS NULL THEN NULL
+         ELSE e.emp_pnombre || ' ' || e.emp_papellido END AS inspector,
+    (SELECT COUNT(*) FROM PRODUCTO p WHERE p.fk_lotpro_id = l.lotpro_id) AS num_productos,
+    (SELECT COUNT(*) FROM DEFECTO_LOTE dl WHERE dl.fk_lotpro_id = l.lotpro_id) AS num_defectos,
+    COALESCE((SELECT SUM(dl.deflot_cantidadafectada) FROM DEFECTO_LOTE dl WHERE dl.fk_lotpro_id = l.lotpro_id), 0) AS unidades_afectadas
+FROM LOTE_PRODUCCION l
+LEFT JOIN INSPECCION_CALIDAD ic ON ic.fk_lotpro_id = l.lotpro_id
+LEFT JOIN EMPLEADO e            ON e.emp_id        = ic.fk_emp_id;

@@ -1827,6 +1827,7 @@ FROM (VALUES
     ('USUARIO'),('ROL'),
     ('PRODUCTO'),('MOLDE_ROSTRO'),('TIPO_CUERPO'),('COLOR'),('MATERIAL'),('ERA'),('EXCLUSIVIDAD'),
     ('PERSONAJE'),('PROFESION'),('COMPATIBILIDAD'),('PACK'),
+    ('LOTE'),('CALIDAD'),
     ('REPORTE'),('COSTO')
 ) AS res(r)
 CROSS JOIN (VALUES ('VER'),('CREAR'),('EDITAR'),('ELIMINAR')) AS act(a);
@@ -2262,7 +2263,7 @@ INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id) SELECT 1, perm_id FROM PERMISO;
 -- Gerente (2): CRUD completo del genoma + ver reportes y costos.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 2, perm_id FROM PERMISO
-     WHERE perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK')
+     WHERE perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK','LOTE','CALIDAD')
         OR (perm_recurso IN ('REPORTE','COSTO') AND perm_accion = 'VER');
 -- Vendedor (3): ver catalogo y fichas (sin costos).
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
@@ -2270,9 +2271,13 @@ INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
 -- Cliente (4): igual que invitado — ver catalogo (sin costos).
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 4, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('PRODUCTO','PACK','PERSONAJE','PROFESION','COMPATIBILIDAD');
--- Inspector (5): ver catalogo y maestros.
+-- Inspector (5): ver catalogo/maestros y gestionar lotes + calidad.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 5, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL');
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 5, perm_id FROM PERMISO
+     WHERE (perm_recurso = 'LOTE' AND perm_accion IN ('VER','CREAR'))
+        OR (perm_recurso = 'CALIDAD' AND perm_accion IN ('VER','CREAR'));
 -- Almacen (6): ver catalogo.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 6, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
