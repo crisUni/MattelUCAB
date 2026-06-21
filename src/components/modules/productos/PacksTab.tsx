@@ -23,17 +23,13 @@ export function PacksTab() {
             return (
               <Card key={pk.id} className="overflow-hidden">
                 <div className="flex items-start justify-between gap-3 bg-gradient-to-r from-brand-500 to-grape-500 p-4 text-white">
-                  <div>
-                    <p className="font-mono text-xs text-white/80">{pk.sku}</p>
-                    <p className="text-lg font-bold">{pk.nombre}</p>
-                  </div>
+                  <p className="text-lg font-bold">{pk.nombre}</p>
                   <div className="text-right">
                     <p className="text-2xl font-extrabold">{fmtUsd(pk.precioUsd)}</p>
-                    {ahorro > 0 && <p className="text-xs text-white/80">ahorras {fmtUsd(ahorro)}</p>}
+                    <p className="text-xs text-white/80">suma de productos</p>
                   </div>
                 </div>
                 <div className="p-4">
-                  <p className="mb-2 text-sm text-slate-500">{pk.descripcion}</p>
                   <div className="space-y-1.5">
                     {items.map((p) => (
                       <div key={p.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">

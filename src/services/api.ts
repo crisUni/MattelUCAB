@@ -95,7 +95,7 @@ function tipoVinculo(texto: string): TipoVinculo {
 }
 
 const tipoProducto = (pro_tipo: string): Producto["tipo"] =>
-  pro_tipo === "SET" ? "PACK" : "MUNECA";
+  pro_tipo === "SET" ? "SET" : "INDIVIDUAL";
 
 /* ===================================================================== *
  * LECTURAS — Seguridad / Usuarios                                       *
@@ -334,7 +334,7 @@ export async function getPacks(): Promise<Pack[]> {
  * ===================================================================== */
 
 export async function getProductos(): Promise<Producto[]> {
-  const [productos, juguetes, moldes, colorProd, matProd, inventario, materiales] = await Promise.all([
+  const [productos, juguetes, moldes, colorProd, matProd, inventario, materiales, disenos, empleados] = await Promise.all([
     getList("/producto"),
     getList("/juguete"),
     getList("/molde_rostro"),
@@ -342,6 +342,8 @@ export async function getProductos(): Promise<Producto[]> {
     getList("/material_producto"),
     getList("/inventario"),
     getList("/material"),
+    getList("/diseno"),
+    getList("/empleado"),
   ]);
 
   // Costo unitario por material, para derivar el costo de producción desde el BOM.
@@ -352,6 +354,8 @@ export async function getProductos(): Promise<Producto[]> {
   return productos.map((p: any): Producto => {
     const jug = juguetes.find((j: any) => j.jug_id === p.fk_jug_id);
     const molde = jug ? moldes.find((m: any) => m.molros_id === jug.fk_molros_id) : undefined;
+    const diseno = jug ? disenos.find((d: any) => d.dis_id === jug.fk_dis_id) : undefined;
+    const emp = diseno?.fk_emp_id ? empleados.find((e: any) => e.emp_id === diseno.fk_emp_id) : undefined;
 
     const colores: ColorAplicado[] = jug
       ? colorProd
@@ -385,6 +389,10 @@ export async function getProductos(): Promise<Producto[]> {
       colores,
       bom,
       stock,
+      adn: jug?.jug_adn,
+      disenoPatente: diseno?.dis_patentecod,
+      disenadorId: sid(diseno?.fk_emp_id) || undefined,
+      disenador: emp ? `${emp.emp_pnombre} ${emp.emp_papellido}` : undefined,
     };
   });
 }
@@ -540,7 +548,7 @@ const writers: Record<Recurso, Writer> = {
         pro_nombre: p.nombre,
         pro_preciobase: p.precioBaseUsd,
         pro_lanzamientofecha: (p.fechaLanzamiento || "").slice(0, 10),
-        pro_tipo: p.tipo === "PACK" ? "SET" : "INDIVIDUAL",
+        pro_tipo: p.tipo,
         fk_jug_id: Number(p.jugueteId),
         fk_catpro_id: Number(p.categoriaId),
         fk_lotpro_id: Number(p.loteId),
@@ -556,7 +564,7 @@ const writers: Record<Recurso, Writer> = {
         pro_nombre: p.nombre,
         pro_preciobase: p.precioBaseUsd,
         pro_lanzamientofecha: (p.fechaLanzamiento || "").slice(0, 10),
-        pro_tipo: p.tipo === "PACK" ? "SET" : "INDIVIDUAL",
+        pro_tipo: p.tipo,
         fk_jug_id: row?.fk_jug_id,
         fk_catpro_id: row?.fk_catpro_id,
         fk_lotpro_id: row?.fk_lotpro_id,

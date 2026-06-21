@@ -72,12 +72,8 @@ export type LabelExclusividad =
   | "GOLD"
   | "PLATINUM";
 
-export type TipoProducto =
-  | "MUNECA"
-  | "ACCESORIO"
-  | "INMUEBLE"
-  | "VEHICULO"
-  | "PACK";
+/** Valor real de PRODUCTO.pro_tipo en la BD. */
+export type TipoProducto = "INDIVIDUAL" | "SET";
 
 export interface MoldeRostro {
   id: string;
@@ -189,6 +185,11 @@ export interface Producto {
   categoriaId?: string;
   loteId?: string;
   edicionId?: string;
+  /** Trazabilidad de diseño (juguete → diseño → empleado diseñador). Solo lectura. */
+  adn?: string;
+  disenoPatente?: string;
+  disenadorId?: string;
+  disenador?: string;
 }
 
 /**

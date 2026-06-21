@@ -7,7 +7,7 @@ import {
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { MasterCrud, type FieldDef } from "./MasterCrud";
-import { SectionHeader, Badge, LabelChip } from "../../ui/primitives";
+import { SectionHeader, Badge } from "../../ui/primitives";
 import { IconLayers } from "../../ui/icons";
 
 const SUBS = [
@@ -60,18 +60,10 @@ function Moldes() {
 
 function Cuerpos() {
   const { data, setData, loading } = useAsyncData<TipoCuerpo[]>(getTiposCuerpo);
-  const fields: FieldDef[] = [
-    { key: "nombre", label: "Nombre" },
-    { key: "formaPie", label: "Forma del pie", type: "select", options: [{ value: "ARQUEADO", label: "Arqueado" }, { value: "PLANO", label: "Plano" }] },
-    { key: "articulado", label: "Articulado (true/false)", hint: "Escribe true o false" },
-    { key: "descripcion", label: "Descripción" },
-  ];
+  const fields: FieldDef[] = [{ key: "nombre", label: "Nombre" }];
   return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Tipo de cuerpo" idPrefix="body" resource="tipo_cuerpo" permRecurso="TIPO_CUERPO" blank={(): TipoCuerpo => ({ id: "", nombre: "", descripcion: "", formaPie: "PLANO", articulado: false })} fields={fields}
     columns={[
-      { key: "nombre", header: "Cuerpo", sortValue: (c) => c.nombre, searchValue: (c) => c.nombre, cell: (c) => <span className="font-semibold text-navy-700">{c.nombre}</span> },
-      { key: "pie", header: "Pie", align: "center", sortValue: (c) => c.formaPie, cell: (c) => <Badge tone={c.formaPie === "ARQUEADO" ? "amber" : "green"}>{c.formaPie === "ARQUEADO" ? "Arqueado" : "Plano"}</Badge> },
-      { key: "art", header: "Articulado", align: "center", cell: (c) => c.articulado ? <Badge tone="brand">Sí</Badge> : <span className="text-slate-300">—</span> },
-      { key: "desc", header: "Descripción", cell: (c) => <span className="text-sm text-slate-500">{c.descripcion}</span> },
+      { key: "nombre", header: "Tipo de cuerpo", sortValue: (c) => c.nombre, searchValue: (c) => c.nombre, cell: (c) => <span className="font-semibold text-navy-700">{c.nombre}</span> },
     ]} />;
 }
 
@@ -111,13 +103,12 @@ function Eras() {
     { key: "nombre", label: "Nombre" },
     { key: "fechaInicio", label: "Año de inicio", type: "number" },
     { key: "fechaFin", label: "Año de fin (vacío = en curso)", type: "number" },
-    { key: "descripcion", label: "Descripción" },
   ];
   return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Era" idPrefix="era" resource="era_historico" permRecurso="ERA" blank={(): Era => ({ id: "", nombre: "", fechaInicio: new Date().getFullYear(), fechaFin: null, descripcion: "" })} fields={fields}
     columns={[
       { key: "nombre", header: "Era", sortValue: (e) => e.nombre, searchValue: (e) => e.nombre, cell: (e) => <span className="font-semibold text-navy-700">{e.nombre}</span> },
-      { key: "rango", header: "Rango", align: "center", sortValue: (e) => e.fechaInicio, cell: (e) => <Badge tone="navy">{e.fechaInicio}–{e.fechaFin ?? "hoy"}</Badge> },
-      { key: "desc", header: "Descripción", cell: (e) => <span className="text-sm text-slate-500">{e.descripcion}</span> },
+      { key: "inicio", header: "Inicio", align: "center", sortValue: (e) => e.fechaInicio, cell: (e) => <span className="text-slate-600">{e.fechaInicio}</span> },
+      { key: "fin", header: "Fin", align: "center", sortValue: (e) => e.fechaFin ?? Infinity, cell: (e) => <span className="text-slate-600">{e.fechaFin ?? "en curso"}</span> },
     ]} />;
 }
 
@@ -128,7 +119,7 @@ function Exclusividades() {
   ];
   return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Exclusividad" idPrefix="exc" resource="exclusividad" permRecurso="EXCLUSIVIDAD" blank={(): Exclusividad => ({ id: "", codigo: "PINK", nombre: "", tiradaMax: null })} fields={fields}
     columns={[
-      { key: "label", header: "Label", sortValue: (e) => e.codigo, searchValue: (e) => e.nombre, cell: (e) => <LabelChip codigo={e.codigo} /> },
-      { key: "tirada", header: "Tirada máx.", align: "right", sortValue: (e) => e.tiradaMax ?? Infinity, cell: (e) => e.tiradaMax ? <span className="font-semibold text-navy-700">{e.tiradaMax.toLocaleString()}</span> : <Badge tone="green">Masiva</Badge> },
+      { key: "nombre", header: "Exclusividad", sortValue: (e) => e.nombre, searchValue: (e) => e.nombre, cell: (e) => <span className="font-semibold text-navy-700">{e.nombre}</span> },
+      { key: "tirada", header: "Límite de producción", align: "right", sortValue: (e) => e.tiradaMax ?? Infinity, cell: (e) => e.tiradaMax ? <span className="font-semibold text-navy-700">{e.tiradaMax.toLocaleString()}</span> : <Badge tone="green">Masiva</Badge> },
     ]} />;
 }

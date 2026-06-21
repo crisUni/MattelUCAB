@@ -28,14 +28,10 @@ export function PersonajesTab() {
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/20 text-lg font-extrabold backdrop-blur">{p.nombre[0]}</span>
                 <div className="leading-tight">
                   <p className="text-lg font-bold">{p.nombre}</p>
-                  <p className="text-xs text-white/80">{p.nombreCompleto}</p>
+                  <p className="text-xs text-white/80">{p.vinculos.length} vínculo{p.vinculos.length === 1 ? "" : "s"}</p>
                 </div>
               </div>
               <div className="p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Badge tone="slate">{p.rol}</Badge>
-                  <Badge tone="navy">Debut {p.debut}</Badge>
-                </div>
                 <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400"><IconLink className="h-3.5 w-3.5" />Vínculos</p>
                 <div className="space-y-1.5">
                   {p.vinculos.length === 0 && <p className="text-xs text-slate-400">Sin vínculos.</p>}

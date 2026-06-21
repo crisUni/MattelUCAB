@@ -61,7 +61,6 @@ export function MultiversoTab() {
                   <p className="font-bold text-navy-700">{p.titulo}</p>
                   <Badge tone="brand">{p.anio}</Badge>
                 </div>
-                <p className="mt-1 text-sm text-slate-500">{p.descripcion}</p>
               </Card>
             </div>
           ))}

@@ -13,13 +13,13 @@ import { useSession } from "../../../context/SessionContext";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
 import {
-  Badge, Button, Field, TextInput, Select, SectionHeader, LabelChip, fmtUsd, fmtFecha,
+  Button, Field, TextInput, Select, SectionHeader, fmtUsd, fmtFecha,
 } from "../../ui/primitives";
 import { IconPlus, IconEdit, IconTrash, IconDna, IconLock, IconBox } from "../../ui/icons";
 import { BarbieConfetti } from "../../ui/Decor";
 
 const tipoLabel: Record<TipoProducto, string> = {
-  MUNECA: "Muñeca", ACCESORIO: "Accesorio", INMUEBLE: "Inmueble", VEHICULO: "Vehículo", PACK: "Pack",
+  INDIVIDUAL: "Individual", SET: "Set",
 };
 
 const zonaLabel: Record<ZonaColor, string> = {
@@ -77,7 +77,8 @@ export function CatalogoTab() {
         </div>
       ),
     },
-    { key: "label", header: "Label", sortValue: (p) => lookups.excl(p.exclusividadId)?.codigo ?? "", cell: (p) => lookups.excl(p.exclusividadId) ? <LabelChip codigo={lookups.excl(p.exclusividadId)!.codigo} /> : <span className="text-slate-300">—</span> },
+    { key: "exclusividad", header: "Exclusividad", sortValue: (p) => lookups.excl(p.exclusividadId)?.nombre ?? "", cell: (p) => <span className="text-sm text-navy-700">{lookups.excl(p.exclusividadId)?.nombre ?? "—"}</span> },
+    { key: "disenador", header: "Diseñador", sortValue: (p) => p.disenador ?? "", searchValue: (p) => p.disenador ?? "", cell: (p) => <span className="text-sm text-slate-500">{p.disenador ?? "—"}</span> },
     {
       key: "colores", header: "Colores",
       cell: (p) => p.colores.length === 0 ? <span className="text-slate-300">—</span> : (
@@ -132,7 +133,7 @@ export function CatalogoTab() {
 function blankProducto(): Producto {
   return {
     id: "", sku: "", nombre: "", precioBaseUsd: 0, costoProduccionUsd: 0,
-    fechaLanzamiento: new Date().toISOString(), tipo: "MUNECA", colores: [], bom: [], stock: 0,
+    fechaLanzamiento: new Date().toISOString(), tipo: "INDIVIDUAL", colores: [], bom: [], stock: 0,
   };
 }
 
@@ -176,17 +177,19 @@ function FichaADN({ producto, lookups, materiales, puedeVerCostos, puedeEditar, 
             <p className="text-xs text-white/70">Lanzamiento {fmtFecha(producto.fechaLanzamiento)}</p>
           </div>
         </div>
-        {exclusividad && <div className="relative mt-3"><LabelChip codigo={exclusividad.codigo} /></div>}
+        {exclusividad && <div className="relative mt-3"><span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white">{exclusividad.nombre}</span></div>}
       </div>
 
       {/* Cromosomas / atributos */}
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <Chromo label="Molde de Rostro (Face Sculpt)" value={molde ? `${molde.nombre} (${molde.patente ?? molde.anioPatente})` : "—"} hint={molde?.descripcion} />
-        <Chromo label="Tipo de Cuerpo" value={cuerpo ? cuerpo.nombre : "—"} hint={cuerpo ? `Pie ${cuerpo.formaPie.toLowerCase()}${cuerpo.articulado ? " · articulado" : ""}` : undefined} />
+        <Chromo label="Molde de Rostro (Face Sculpt)" value={molde ? `${molde.nombre} (${molde.patente ?? molde.anioPatente})` : "—"} />
+        <Chromo label="Tipo de Cuerpo" value={cuerpo ? cuerpo.nombre : "—"} />
         <Chromo label="Tono de Piel" value={tono?.nombre ?? "—"} swatch={tono?.hex} />
         <Chromo label="Color de Ojos" value={ojos?.nombre ?? "—"} swatch={ojos?.hex} />
-        <Chromo label="Era Histórica" value={era ? `${era.nombre} (${era.fechaInicio}–${era.fechaFin ?? "hoy"})` : "—"} hint={era?.descripcion} />
+        <Chromo label="Era Histórica" value={era ? `${era.nombre} (${era.fechaInicio}–${era.fechaFin ?? "hoy"})` : "—"} />
         <Chromo label="Exclusividad / Label" value={exclusividad ? exclusividad.nombre : "—"} />
+        <Chromo label="Diseño · Patente" value={producto.disenoPatente ?? "—"} />
+        <Chromo label="Diseñador (I+D)" value={producto.disenador ?? "—"} hint={producto.adn ? `ADN ${producto.adn}` : undefined} />
       </div>
 
       {/* Paleta de colores aplicada (todas las zonas) */}
