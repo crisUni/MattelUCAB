@@ -2252,7 +2252,7 @@ INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_em
 -- Usuarios administradores del equipo (rol Admin = 1, vinculados a empleados, contraseña: password)
 INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_emp_id, fk_cli_id) VALUES
     (401, 'Ana K', 'password', 'ana.k@mattelucab.com', 1, 1, NULL),
-    (402, 'Cris', 'password', 'cris@mattelucab.com', 1, 2, NULL),
+    (402, 'Chris', 'password', 'chris@mattelucab.com', 1, 2, NULL),
     (403, 'Marian', 'password', 'marian@mattelucab.com', 1, 3, NULL),
     (404, 'Leo', 'password', 'leo@mattelucab.com', 1, 4, NULL);
 
