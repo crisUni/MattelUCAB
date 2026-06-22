@@ -2194,7 +2194,7 @@ BEGIN
     UPDATE USUARIO
     SET usu_nombre = usuNombre,
         usu_clave = usuClave,
-        usu_correo = usuCorreo,
+        usu_correo = CASE WHEN usu_correo <> usuCorreo THEN usuCorreo ELSE usu_correo END,
         fk_rol_id = fkRolId,
         fk_emp_id = fkEmpId,
         fk_cli_id = fkCliId
@@ -3721,6 +3721,9 @@ BEGIN
         nombreUsuario, claveUsuario, correoUsuario, 
         fkRolId, fkEmpId, fkCliId
     );
+EXCEPTION
+    WHEN UNIQUE_VIOLATION THEN
+        RAISE EXCEPTION 'El correo "%" ya está registrado', correoUsuario;
 END
 $$;
 CREATE OR REPLACE PROCEDURE createPermisoRol (
