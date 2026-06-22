@@ -490,3 +490,25 @@ DROP TRIGGER IF EXISTS trg_usuario_rol_con_permisos ON USUARIO;
 CREATE TRIGGER trg_usuario_rol_con_permisos
     BEFORE INSERT OR UPDATE ON USUARIO
     FOR EACH ROW EXECUTE FUNCTION fn_usuario_rol_con_permisos();
+
+-- ---------------------------------------------------------------------
+-- A14. La fecha de lanzamiento de un producto no puede ser futura: una
+-- muñeca no se lanza en un año que todavia no ha llegado.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_lanzamiento_no_futuro()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.pro_lanzamientofecha > CURRENT_DATE THEN
+        RAISE EXCEPTION 'La fecha de lanzamiento (%) no puede ser futura: una muñeca no puede lanzarse en un año que aun no ha llegado.',
+            NEW.pro_lanzamientofecha;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_lanzamiento_no_futuro ON PRODUCTO;
+CREATE TRIGGER trg_lanzamiento_no_futuro
+    BEFORE INSERT OR UPDATE ON PRODUCTO
+    FOR EACH ROW EXECUTE FUNCTION fn_lanzamiento_no_futuro();

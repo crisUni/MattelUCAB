@@ -81,6 +81,8 @@ export interface MoldeRostro {
   anioPatente: number;
   /** Código de patente real (ER: Molde_Patente). Se muestra en lugar del año cuando existe. */
   patente?: string;
+  /** Personaje (Barbie, Ken, …) al que pertenece el molde — ER: Molde_Rostro.fk_per_id. */
+  personajeId?: string;
   descripcion: string;
 }
 

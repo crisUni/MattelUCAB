@@ -140,9 +140,15 @@ class ProductoService{
                 // se usa sql.unsafe con placeholders posicionales, igual que callProcedure.
                 const colIds = Array.isArray(b.colIds) && b.colIds.length ? b.colIds.join(',') : null;
                 const zonas = Array.isArray(b.zonas) && b.zonas.length ? b.zonas.join(',') : null;
+                const matIds = Array.isArray(b.matIds) && b.matIds.length ? b.matIds.join(',') : null;
+                const matCants = Array.isArray(b.matCants) && b.matCants.length ? b.matCants.join(',') : null;
                 try {
-                    const q = `SELECT crear_muneca($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, COALESCE(string_to_array($12, ','), '{}')::int[], COALESCE(string_to_array($13, ','), '{}')::varchar[], $14, $15) AS pro_id`;
-                    const params = [b.nombre, b.precio, b.fecha, b.molros, b.tipcue, b.era, b.dis, b.cat, b.edi, b.lote, b.exc, colIds, zonas, b.prof ?? null, b.profAno ?? null];
+                    const q = `SELECT crear_muneca($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,`
+                        + ` COALESCE(string_to_array($12, ','), '{}')::int[], COALESCE(string_to_array($13, ','), '{}')::varchar[],`
+                        + ` COALESCE(string_to_array($14, ','), '{}')::int[], COALESCE(string_to_array($15, ','), '{}')::int[],`
+                        + ` $16, $17, $18, $19) AS pro_id`;
+                    const params = [b.nombre, b.precio, b.fecha, b.molros, b.tipcue, b.era, b.dis, b.cat, b.edi, b.lote, b.exc,
+                        colIds, zonas, matIds, matCants, b.stock ?? 0, b.alm ?? null, b.prof ?? null, b.profAno ?? null];
                     const rows = await sql.unsafe(q, params) as any[];
                     return Response.json({ pro_id: rows[0].pro_id }, { status: 201, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } })
                 } catch (e) {

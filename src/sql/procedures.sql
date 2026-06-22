@@ -3277,11 +3277,16 @@ $$;
 -- Crea, en una sola transacción: el JUGUETE (genoma) con ADN autogenerado,
 -- sus colores por zona, el PRODUCTO con SKU autogenerado y (opcional) su
 -- profesión en el multiverso. Devuelve el id del producto creado.
+-- Se elimina la firma anterior (15 args) para que la nueva no quede como
+-- una sobrecarga separada al recrearla.
+DROP FUNCTION IF EXISTS crear_muneca(VARCHAR, FLOAT, DATE, INT, INT, INT, INT, INT, INT, INT, INT, INT[], VARCHAR[], INT, VARCHAR);
 CREATE OR REPLACE FUNCTION crear_muneca (
     pNombre VARCHAR(100), pPrecio FLOAT, pFecha DATE,
     pMolros INT, pTipcue INT, pEra INT, pDis INT,
     pCat INT, pEdi INT, pLote INT, pExc INT,
     pColIds INT[], pZonas VARCHAR[],
+    pMatIds INT[], pMatCants INT[],
+    pStock INT DEFAULT 0, pAlm INT DEFAULT NULL,
     pProf INT DEFAULT NULL, pProfAno VARCHAR(4) DEFAULT NULL
 )
 RETURNS INT
@@ -3314,12 +3319,28 @@ BEGIN
         END LOOP;
     END IF;
 
+    -- Receta de materiales (BOM): material + cantidad por genoma.
+    IF pMatIds IS NOT NULL THEN
+        FOR i IN 1 .. COALESCE(array_length(pMatIds, 1), 0) LOOP
+            IF pMatIds[i] IS NOT NULL THEN
+                INSERT INTO MATERIAL_PRODUCTO (fk_mat_id, fk_jug_id, matpro_cantidad)
+                VALUES (pMatIds[i], vJug, COALESCE(pMatCants[i], 1));
+            END IF;
+        END LOOP;
+    END IF;
+
     SELECT COALESCE(MAX(pro_sku), 100000) + 1 INTO vSku FROM PRODUCTO;
 
     INSERT INTO PRODUCTO (fk_jug_id, pro_sku, pro_nombre, pro_preciobase, pro_lanzamientofecha,
                           pro_tipo, fk_catpro_id, fk_lotpro_id, fk_edi_id, fk_exc_id)
     VALUES (vJug, vSku, pNombre, pPrecio, pFecha, 'INDIVIDUAL', pCat, pLote, pEdi, pExc)
     RETURNING pro_id INTO vPro;
+
+    -- Stock inicial en un almacen (INVENTARIO), si se indico.
+    IF pStock IS NOT NULL AND pStock > 0 AND pAlm IS NOT NULL THEN
+        INSERT INTO INVENTARIO (fk_pro_id, fk_alm_id, inv_stockdisponible, inv_cantidad, inv_fecha_actualizacion)
+        VALUES (vPro, pAlm, pStock, pStock, CURRENT_DATE);
+    END IF;
 
     IF pProf IS NOT NULL THEN
         INSERT INTO HISTORICO_PROFESION (hispro_anoasignacion, fk_prof_id, fk_pro_id)

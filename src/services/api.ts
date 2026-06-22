@@ -182,6 +182,7 @@ export async function getMoldesRostro(): Promise<MoldeRostro[]> {
     nombre: m.molros_nombre,
     anioPatente: m.molros_anopatente ?? 0,
     patente: m.molros_patente,
+    personajeId: sid(m.fk_per_id),
     descripcion: "",
   }));
 }
@@ -500,12 +501,14 @@ export async function getProfesionesOpc(): Promise<Opcion[]> {
   return rows.map((p: any) => ({ id: sid(p.prof_id), nombre: p.prof_nombre }));
 }
 
-/** Alta completa de una muñeca (genoma + colores + producto + profesión), todo en la BD. */
+/** Alta completa de una muñeca (genoma + colores + receta + stock + profesión), todo en la BD. */
 export interface NuevaMuneca {
   nombre: string; precio: number; fecha: string;
   molros: string; tipcue: string; era: string; dis: string;
   cat: string; edi: string; lote: string; exc: string;
   colores: { colId: string; zona: string }[];
+  materiales: { matId: string; cantidad: number }[];
+  stock?: number; almId?: string;
   profId?: string; profAno?: string;
 }
 export async function crearMuneca(m: NuevaMuneca): Promise<void> {
@@ -514,8 +517,39 @@ export async function crearMuneca(m: NuevaMuneca): Promise<void> {
     molros: Number(m.molros), tipcue: Number(m.tipcue), era: Number(m.era), dis: Number(m.dis),
     cat: Number(m.cat), edi: Number(m.edi), lote: Number(m.lote), exc: Number(m.exc),
     colIds: m.colores.map((c) => Number(c.colId)), zonas: m.colores.map((c) => c.zona),
+    matIds: m.materiales.map((x) => Number(x.matId)), matCants: m.materiales.map((x) => Number(x.cantidad)),
+    stock: m.stock ?? 0, alm: m.almId ? Number(m.almId) : null,
     prof: m.profId ? Number(m.profId) : null, profAno: m.profAno || null,
   });
+}
+
+/** Almacenes para asignar stock inicial (etiquetados por tipo de instalación). */
+export async function getAlmacenesOpc(): Promise<Opcion[]> {
+  const rows = await getList("/almacen");
+  return rows.map((a: any) => ({ id: sid(a.alm_id), nombre: `${a.alm_tipoinstalacion} #${a.alm_id}` }));
+}
+
+/* ----------------------------- Patentes (Diseño) ----------------------------- */
+
+export interface Patente { id: string; codigo: string; disenadorId?: string; disenador: string }
+
+/** Lista de patentes (DISEÑO) con el empleado de I+D que la registró. */
+export async function getPatentes(): Promise<Patente[]> {
+  const [disenos, empleados] = await Promise.all([getList("/diseno"), getList("/empleado")]);
+  return disenos.map((d: any): Patente => {
+    const e = empleados.find((x: any) => x.emp_id === d.fk_emp_id);
+    return {
+      id: sid(d.dis_id),
+      codigo: d.dis_patentecod,
+      disenadorId: d.fk_emp_id != null ? sid(d.fk_emp_id) : undefined,
+      disenador: e ? `${e.emp_pnombre} ${e.emp_papellido}` : "—",
+    };
+  });
+}
+
+/** Registra una nueva patente/diseño (código + empleado diseñador). */
+export async function crearPatente(codigo: string, empId?: string): Promise<void> {
+  await send("POST", "/diseno", { dis_patentecod: codigo, fk_emp_id: empId ? Number(empId) : null });
 }
 
 /** Crea un set/pack (par de productos compatibles) — aparece en la pestaña de Sets. */
