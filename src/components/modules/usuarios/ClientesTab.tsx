@@ -86,7 +86,7 @@ function ClienteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () 
 
   async function submit() {
     setError(null);
-    if (!lug) { setError("Selecciona el estado de registro."); return; }
+    if (!lug) { setError("Selecciona la parroquia de registro."); return; }
     if (tipo === "NATURAL") {
       if (!cedula.trim() || !pnombre.trim() || !papellido.trim() || !direccion.trim()) { setError("Cédula, nombre, apellido y dirección son obligatorios."); return; }
     } else {
@@ -123,7 +123,7 @@ function ClienteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () 
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Estado de registro">
+        <Field label="Parroquia de registro">
           <Select value={lug} onChange={(e) => setLug(e.target.value)}>
             <option value="">— Selecciona —</option>
             {(lugares ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}

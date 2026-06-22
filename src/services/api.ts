@@ -588,10 +588,10 @@ export async function eliminarCliente(id: string): Promise<void> {
   await send("DELETE", `/cliente/${id}`);
 }
 
-/** Estados de Venezuela para el lugar de registro del cliente. */
+/** Parroquias de Venezuela para el lugar de registro del cliente. */
 export async function getLugaresOpc(): Promise<Opcion[]> {
   const rows = await getList("/lugar");
-  return rows.filter((l: any) => l.lug_tipo === "ESTADO").map((l: any) => ({ id: sid(l.lug_id), nombre: l.lug_nombre }));
+  return rows.filter((l: any) => l.lug_tipo === "PARROQUIA").map((l: any) => ({ id: sid(l.lug_id), nombre: l.lug_nombre }));
 }
 
 /** Solo empleados adscritos al departamento de Diseño (I+D) — diseñadores de ADN/patentes. */
