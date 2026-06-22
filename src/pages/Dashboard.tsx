@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSession } from "../context/SessionContext";
 import { Sidebar, type NavItem } from "../components/layout/Sidebar";
-import { Footer } from "../components/layout/Footer";
 import { Card, EmptyState } from "../components/ui/primitives";
 import { IconUsers, IconDna, IconReport, IconHome, IconLock, IconMenu } from "../components/ui/icons";
 import { UsuariosModule } from "../components/modules/usuarios/UsuariosModule";
@@ -96,7 +95,6 @@ export function Dashboard() {
               </Card>
             )}
           </div>
-          <Footer />
         </main>
       </div>
     </div>
