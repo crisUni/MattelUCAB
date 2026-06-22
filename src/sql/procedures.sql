@@ -1285,13 +1285,41 @@ BEGIN
     WHERE pro_id = proId;
 END
 $$;
+-- Borrado en cascada total de un producto: elimina todo lo que lo referencia
+-- (subastas + pujas, lineas de compra, inventario, sets, profesiones) y, si el
+-- genoma (juguete) no lo usa otro producto, tambien el juguete y sus colores/
+-- materiales/compatibilidades.
 CREATE OR REPLACE PROCEDURE deleteProducto (
     proId INT
 )
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    vJug INT;
 BEGIN
+    SELECT fk_jug_id INTO vJug FROM PRODUCTO WHERE pro_id = proId;
+
+    -- Subastas del producto y sus pujas.
+    DELETE FROM PUJA_SUBASTA WHERE fk_sub_id IN (SELECT sub_id FROM SUBASTA WHERE fk_pro_id = proId);
+    DELETE FROM SUBASTA WHERE fk_pro_id = proId;
+
+    -- Historial de ventas e inventario del producto.
+    DELETE FROM DETALLE_COMPRA WHERE fk_pro_id = proId;
+    DELETE FROM INVENTARIO WHERE fk_pro_id = proId;
+
+    -- Sets que lo incluyen y profesiones del multiverso.
+    DELETE FROM DETALLE_SET WHERE fk_pro1 = proId OR fk_pro2 = proId;
+    DELETE FROM HISTORICO_PROFESION WHERE fk_pro_id = proId;
+
     DELETE FROM PRODUCTO WHERE pro_id = proId;
+
+    -- El genoma (juguete) solo se borra si ningun otro producto lo usa.
+    IF vJug IS NOT NULL AND NOT EXISTS (SELECT 1 FROM PRODUCTO WHERE fk_jug_id = vJug) THEN
+        DELETE FROM COLOR_PRODUCTO WHERE fk_jug_id = vJug;
+        DELETE FROM MATERIAL_PRODUCTO WHERE fk_jug_id = vJug;
+        DELETE FROM COMPATIBILIDAD_JUGUETE WHERE fk_juguete1 = vJug OR fk_juguete2 = vJug;
+        DELETE FROM JUGUETE WHERE jug_id = vJug;
+    END IF;
 END
 $$;
 
@@ -2167,12 +2195,24 @@ BEGIN
     WHERE usu_id = usuId;
 END
 $$;
+-- Borrado en cascada total de un usuario: elimina sus pujas y todas sus compras
+-- con sus dependientes (detalle, pagos, descuentos, historial de estatus).
 CREATE OR REPLACE PROCEDURE deleteUsuario (
     usuId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    -- Pujas del usuario en subastas.
+    DELETE FROM PUJA_SUBASTA WHERE fk_usu_id = usuId;
+
+    -- Compras del usuario y todo lo que cuelga de cada compra.
+    DELETE FROM HISTORICO_ESTATUS WHERE fk_com_id IN (SELECT com_id FROM COMPRA WHERE fk_usu_id = usuId);
+    DELETE FROM DESCUENTO_COMPRA WHERE fk_com_id IN (SELECT com_id FROM COMPRA WHERE fk_usu_id = usuId);
+    DELETE FROM PAGO WHERE fk_com_id IN (SELECT com_id FROM COMPRA WHERE fk_usu_id = usuId);
+    DELETE FROM DETALLE_COMPRA WHERE fk_com_id IN (SELECT com_id FROM COMPRA WHERE fk_usu_id = usuId);
+    DELETE FROM COMPRA WHERE fk_usu_id = usuId;
+
     DELETE FROM USUARIO WHERE usu_id = usuId;
 END
 $$;
