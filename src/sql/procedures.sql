@@ -2053,6 +2053,32 @@ BEGIN
 END
 $$;
 
+-- Actualiza un cliente completo (CLIENTE + su persona natural o juridica).
+CREATE OR REPLACE FUNCTION actualizar_cliente (
+    pCliId INT,
+    pLug INT,
+    pTipo VARCHAR,
+    pCedula VARCHAR(20), pPnombre VARCHAR(50), pSnombre VARCHAR(50), pPapellido VARCHAR(50), pSapellido VARCHAR(50), pFechanac DATE, pDireccion TEXT,
+    pRif VARCHAR(20), pRazon VARCHAR(100), pRepre VARCHAR(100)
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE CLIENTE SET fk_lug_id = pLug WHERE cli_id = pCliId;
+    DELETE FROM PERSONA_NATURAL WHERE fk_cli_id = pCliId;
+    DELETE FROM PERSONA_JURIDICA WHERE fk_cli_id = pCliId;
+    IF pTipo = 'JURIDICA' THEN
+        INSERT INTO PERSONA_JURIDICA (fk_cli_id, perjur_rif, perjur_razonsocial, perjur_reprelegal)
+        VALUES (pCliId, pRif, pRazon, pRepre);
+    ELSE
+        INSERT INTO PERSONA_NATURAL (fk_cli_id, pernat_cedula, pernat_pnombre, pernat_snombre, pernat_papellido, pernat_sapellido, pernat_fechanac, pernat_direccion)
+        VALUES (pCliId, pCedula, pPnombre, NULLIF(pSnombre, ''), pPapellido, NULLIF(pSapellido, ''), pFechanac, pDireccion);
+    END IF;
+    RETURN pCliId;
+END
+$$;
+
 -- Borra un cliente en cascada (su persona y membresias). Bloquea si tiene
 -- una cuenta de usuario (eliminarla aparte preserva su historial de compras).
 CREATE OR REPLACE PROCEDURE deleteCliente (

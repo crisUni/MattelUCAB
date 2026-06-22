@@ -264,6 +264,8 @@ export interface Pack {
   precioUsd: number;
   productosIds: string[];
   descripcion: string;
+  /** Raw FK pairs for CRUD when packs are grouped by name. */
+  _proPairs?: [string, string][];
 }
 
 /** Lote de producción (manufactura) con su inspección de calidad y defectos. */

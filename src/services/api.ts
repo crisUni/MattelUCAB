@@ -366,14 +366,29 @@ export async function getPacks(): Promise<Pack[]> {
   ]);
   const precio = (id: number) =>
     productos.find((p: any) => p.pro_id === id)?.pro_preciobase ?? 0;
-  return sets.map((s: any): Pack => ({
-    id: `${s.fk_pro1}-${s.fk_pro2}`,
-    sku: `SET-${s.fk_pro1}-${s.fk_pro2}`,
-    nombre: s.detset_nombre,
-    precioUsd: precio(s.fk_pro1) + precio(s.fk_pro2),
-    productosIds: [sid(s.fk_pro1), sid(s.fk_pro2)],
-    descripcion: "Set de regalo que agrupa varios productos bajo un SKU.",
-  }));
+  const byName = new Map<string, { pairs: [number, number][]; proIds: Set<number> }>();
+  for (const s of sets as any[]) {
+    const name = s.detset_nombre;
+    if (!byName.has(name)) byName.set(name, { pairs: [], proIds: new Set() });
+    const g = byName.get(name)!;
+    g.pairs.push([s.fk_pro1, s.fk_pro2]);
+    g.proIds.add(s.fk_pro1);
+    g.proIds.add(s.fk_pro2);
+  }
+  return [...byName.entries()].map(([name, g]) => {
+    const proIds = [...g.proIds];
+    const prodIds = proIds.map(sid);
+    const total = proIds.reduce((s, id) => s + precio(id), 0);
+    return {
+      id: `group-${encodeURIComponent(name)}`,
+      sku: `SET-${proIds.join("-")}`,
+      nombre: name,
+      precioUsd: total,
+      productosIds: prodIds,
+      descripcion: "Set de regalo que agrupa varios productos bajo un SKU.",
+      _proPairs: g.pairs.map(([a, b]) => [sid(a), sid(b)]),
+    };
+  });
 }
 
 /* ===================================================================== *
@@ -583,15 +598,38 @@ export async function crearCliente(c: NuevoCliente): Promise<void> {
   });
 }
 
+export interface ClienteDetalle {
+  cli_id: number; cli_fecharegis: string; fk_lug_id: number;
+  natural: { pernat_cedula: string; pernat_pnombre: string; pernat_snombre: string | null; pernat_papellido: string; pernat_sapellido: string | null; pernat_fechanac: string; pernat_direccion: string } | null;
+  juridica: { perjur_rif: string; perjur_razonsocial: string; perjur_reprelegal: string } | null;
+}
+
+/** Datos completos de un cliente (con su persona natural o jurídica). */
+export async function getClienteDetalle(id: string): Promise<ClienteDetalle> {
+  const res = await fetch(`${API_URL}/cliente/${id}`);
+  if (!res.ok) throw new Error(`Cliente ${id} → ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+/** Actualiza un cliente completo (persona natural o jurídica). */
+export async function actualizarCliente(id: string, c: NuevoCliente): Promise<void> {
+  await send("PUT", `/cliente_full/${id}`, {
+    tipo: c.tipo, lug: Number(c.lug),
+    cedula: c.cedula ?? "", pnombre: c.pnombre ?? "", snombre: c.snombre ?? "", papellido: c.papellido ?? "", sapellido: c.sapellido ?? "",
+    fechanac: c.fechanac || null, direccion: c.direccion ?? "",
+    rif: c.rif ?? "", razon: c.razon ?? "", repre: c.repre ?? "",
+  });
+}
+
 /** Elimina un cliente (cascada de su persona y membresías; bloquea si tiene usuario). */
 export async function eliminarCliente(id: string): Promise<void> {
   await send("DELETE", `/cliente/${id}`);
 }
 
-/** Estados de Venezuela para el lugar de registro del cliente. */
+/** Parroquias de Venezuela para el lugar de registro del cliente. */
 export async function getLugaresOpc(): Promise<Opcion[]> {
   const rows = await getList("/lugar");
-  return rows.filter((l: any) => l.lug_tipo === "ESTADO").map((l: any) => ({ id: sid(l.lug_id), nombre: l.lug_nombre }));
+  return rows.filter((l: any) => l.lug_tipo === "PARROQUIA").map((l: any) => ({ id: sid(l.lug_id), nombre: l.lug_nombre }));
 }
 
 /** Solo empleados adscritos al departamento de Diseño (I+D) — diseñadores de ADN/patentes. */
@@ -728,6 +766,16 @@ export async function actualizarPatente(id: string, codigo: string, empId: strin
 /** Crea un set/pack (par de productos compatibles) — aparece en la pestaña de Sets. */
 export async function crearSet(nombre: string, pro1: string, pro2: string): Promise<void> {
   await send("POST", "/detalle_set", { fk_pro1: Number(pro1), fk_pro2: Number(pro2), detset_nombre: nombre });
+}
+
+/** Actualiza el nombre de un set/pack. */
+export async function actualizarSet(pro1: string, pro2: string, nombre: string): Promise<void> {
+  await send("PUT", "/detalle_set", { fk_pro1: Number(pro1), fk_pro2: Number(pro2), detset_nombre: nombre });
+}
+
+/** Elimina un set/pack. */
+export async function eliminarSet(pro1: string, pro2: string): Promise<void> {
+  await send("DELETE", "/detalle_set", { fk_pro1: Number(pro1), fk_pro2: Number(pro2) });
 }
 
 /* --------------------- Reportes analíticos (lógica en la BD) --------------------- */
