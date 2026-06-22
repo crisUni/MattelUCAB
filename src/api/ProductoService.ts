@@ -142,12 +142,6 @@ class ProductoService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateExclusividad", [id, body.exc_nombre, body.exc_limiteproducto])
-            },
-            DELETE: async (req: Bun.BunRequest<"/api/exclusividad/:id">) => {
-                const id = Number(req.params.id);
-                if (!Number.isInteger(id))
-                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
-                return callDelete("deleteExclusividad", [id])
             }
         },
         // Catálogo resuelto (vista VW_PRODUCTO_ADN): joins + stock + costo calculados en la BD.
@@ -202,12 +196,6 @@ class ProductoService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateProducto", [id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_jug_id, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
-            },
-            DELETE: async (req: Bun.BunRequest<"/api/producto/:id">) => {
-                const id = Number(req.params.id);
-                if (!Number.isInteger(id))
-                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
-                return callDelete("deleteProducto", [id])
             }
         },
         "/api/detalle_set": {

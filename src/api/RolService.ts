@@ -42,12 +42,6 @@ class RolService{
                 const body = await req.json();
                 return callUpdate("updateRol", [id, body.rol_nombre])
             },
-            DELETE: async (req: Bun.BunRequest<"/api/rol/:id">) => {
-                const id = Number(req.params.id);
-                if (!Number.isInteger(id))
-                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
-                return callDelete("deleteRol", [id])
-            },
 			GET: async (req: Bun.BunRequest<"/api/rol/:id">) => {
 				let found: Permiso_Rol[]
 
