@@ -456,6 +456,49 @@ export async function getEmpleadosOpc(): Promise<Opcion[]> {
   return rows.map((e: any) => ({ id: sid(e.emp_id), nombre: `${e.emp_pnombre} ${e.emp_papellido}` }));
 }
 
+/* ------------------------------ Empleados ------------------------------ */
+
+export interface Empleado { id: string; nombre: string; departamento: string; cargo: string; direccion: string }
+
+/** Empleados con su departamento y cargo actuales (vía DEP_EMP). */
+export async function getEmpleados(): Promise<Empleado[]> {
+  const [emps, depEmp, deps, cargos] = await Promise.all([
+    getList("/empleado"), getList("/dep_emp"), getList("/departamento"), getList("/cargo"),
+  ]);
+  return emps.map((e: any): Empleado => {
+    const de = depEmp.find((x: any) => x.fk_emp_id === e.emp_id);
+    const dep = de && deps.find((d: any) => d.dep_id === de.fk_dep_id);
+    const car = de && cargos.find((c: any) => c.car_id === de.fk_car_id);
+    return {
+      id: sid(e.emp_id),
+      nombre: [e.emp_pnombre, e.emp_papellido].filter(Boolean).join(" "),
+      departamento: dep?.dep_nombre ?? "—",
+      cargo: car?.car_nombre ?? "—",
+      direccion: e.emp_direccion ?? "",
+    };
+  });
+}
+
+export interface NuevoEmpleado { pnombre: string; snombre?: string; papellido: string; sapellido: string; direccion: string; dep: string; car: string }
+
+/** Alta de empleado + adscripción (departamento y cargo) en la BD. */
+export async function crearEmpleado(e: NuevoEmpleado): Promise<void> {
+  await send("POST", "/empleado_full", {
+    pnombre: e.pnombre, snombre: e.snombre ?? "", papellido: e.papellido, sapellido: e.sapellido,
+    direccion: e.direccion, dep: Number(e.dep), car: Number(e.car),
+  });
+}
+
+export async function getDepartamentosOpc(): Promise<Opcion[]> {
+  const rows = await getList("/departamento");
+  return rows.map((d: any) => ({ id: sid(d.dep_id), nombre: d.dep_nombre }));
+}
+
+export async function getCargosOpc(): Promise<Opcion[]> {
+  const rows = await getList("/cargo");
+  return rows.map((c: any) => ({ id: sid(c.car_id), nombre: c.car_nombre }));
+}
+
 /** Solo empleados adscritos al departamento de Diseño (I+D) — diseñadores de ADN/patentes. */
 export async function getDisenadoresOpc(): Promise<Opcion[]> {
   const [empleados, depEmp, departamentos] = await Promise.all([

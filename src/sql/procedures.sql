@@ -3184,6 +3184,28 @@ BEGIN
 END
 $$;
 
+-- Alta de un empleado y su adscripcion (departamento + cargo) en una transaccion.
+CREATE OR REPLACE FUNCTION crear_empleado (
+    pPnombre VARCHAR(50), pSnombre VARCHAR(50), pPapellido VARCHAR(50), pSapellido VARCHAR(50),
+    pDireccion VARCHAR(100), pDep INT, pCar INT
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vEmp INT;
+BEGIN
+    INSERT INTO EMPLEADO (emp_pnombre, emp_snombre, emp_papellido, emp_sapellido, emp_direccion)
+    VALUES (pPnombre, NULLIF(pSnombre, ''), pPapellido, pSapellido, pDireccion)
+    RETURNING emp_id INTO vEmp;
+
+    INSERT INTO DEP_EMP (depemp_fechaini, depemp_fechafin, fk_dep_id, fk_emp_id, fk_car_id)
+    VALUES (CURRENT_DATE, NULL, pDep, vEmp, pCar);
+
+    RETURN vEmp;
+END
+$$;
+
 CREATE OR REPLACE PROCEDURE createDepEmp (
     fechaIni DATE,
     fechaFin DATE,

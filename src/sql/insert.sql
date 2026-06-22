@@ -1825,7 +1825,7 @@ INSERT INTO PERSONA_JURIDICA (fk_cli_id, perjur_rif, perjur_razonsocial, perjur_
 INSERT INTO PERMISO (perm_recurso, perm_accion)
 SELECT res.r, act.a
 FROM (VALUES
-    ('USUARIO'),('ROL'),
+    ('USUARIO'),('ROL'),('EMPLEADO'),
     ('PRODUCTO'),('MOLDE_ROSTRO'),('TIPO_CUERPO'),('COLOR'),('MATERIAL'),('ERA'),('EXCLUSIVIDAD'),
     ('PERSONAJE'),('PROFESION'),('COMPATIBILIDAD'),('PACK'),('PATENTE'),
     ('LOTE'),('CALIDAD'),
@@ -2264,7 +2264,7 @@ INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id) SELECT 1, perm_id FROM PERMISO;
 -- Gerente (2): CRUD completo del genoma + ver reportes y costos.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 2, perm_id FROM PERMISO
-     WHERE perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK','PATENTE','LOTE','CALIDAD')
+     WHERE perm_recurso IN ('EMPLEADO','PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK','PATENTE','LOTE','CALIDAD')
         OR (perm_recurso IN ('REPORTE','COSTO') AND perm_accion = 'VER');
 -- Vendedor (3): ver catalogo y fichas (sin costos).
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
