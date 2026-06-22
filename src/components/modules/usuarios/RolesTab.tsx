@@ -9,7 +9,7 @@ import { Badge, Button, Field, TextInput, SectionHeader } from "../../ui/primiti
 import { IconPlus, IconEdit, IconTrash, IconShield } from "../../ui/icons";
 
 const ACCIONES: AccionPermiso[] = ["VER", "CREAR", "EDITAR", "ELIMINAR"];
-const formVacio: Rol = { id: "", nombre: "", permisosIds: [] };
+const formVacio: Rol = { id: "", nombre: "", ambito: "INTERNO", permisosIds: [] };
 
 export function RolesTab() {
   const { puede } = useSession();
@@ -39,6 +39,7 @@ export function RolesTab() {
 
   const columns: Column<Rol>[] = [
     { key: "nombre", header: "Rol", sortValue: (r) => r.nombre, searchValue: (r) => r.nombre, cell: (r) => <p className="font-semibold text-navy-700">{r.nombre}</p> },
+    { key: "ambito", header: "Ámbito", sortValue: (r) => r.ambito, cell: (r) => <Badge tone={r.ambito === "EXTERNO" ? "amber" : "brand"}>{r.ambito === "EXTERNO" ? "Externo · cliente" : "Interno · empleado"}</Badge> },
     { key: "permisos", header: "Permisos", align: "center", sortValue: (r) => r.permisosIds.length, cell: (r) => <Badge tone="brand">{r.permisosIds.length}</Badge> },
     ...(puedeEditar || puedeEliminar ? [{
       key: "acc", header: "", align: "right" as const,
@@ -147,6 +148,18 @@ function RolForm({ rol, permisos, onCancel, onSave }: { rol: Rol; permisos: Perm
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Nombre del rol"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} /></Field>
         <Field label="Buscar recurso"><TextInput value={filtro} onChange={(e) => setFiltro(e.target.value)} placeholder="ej. producto, color…" /></Field>
+      </div>
+      <div className="mt-3">
+        <Field label="Ámbito del rol" hint="Define si sus usuarios son personal interno (empleado) o externo (cliente)">
+          <div className="flex gap-2">
+            {(["INTERNO", "EXTERNO"] as const).map((a) => (
+              <button key={a} onClick={() => set({ ambito: a })}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${form.ambito === a ? "bg-navy-700 text-white" : "bg-white text-slate-500 ring-1 ring-slate-200 hover:text-navy-700"}`}>
+                {a === "INTERNO" ? "Interno (empleado)" : "Externo (cliente)"}
+              </button>
+            ))}
+          </div>
+        </Field>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

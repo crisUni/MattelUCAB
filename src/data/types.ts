@@ -38,6 +38,8 @@ export interface Usuario {
 export interface Rol {
   id: string;
   nombre: string;              // ER: Rol_Nombre
+  /** Ámbito del rol: INTERNO (empleado) o EXTERNO (cliente). ER: Rol_ambito. */
+  ambito: "INTERNO" | "EXTERNO";
   /** Ids de permisos concedidos a este rol (ER: Permiso_Rol). */
   permisosIds: string[];
   /** Roles del sistema no se pueden eliminar. Solo-frontend. */

@@ -1834,17 +1834,17 @@ FROM (VALUES
 CROSS JOIN (VALUES ('VER'),('CREAR'),('EDITAR'),('ELIMINAR')) AS act(a);
 
 -- ROL (10 filas)
-INSERT INTO ROL (rol_id, rol_nombre) VALUES
-    (1, 'Admin'),
-    (2, 'Gerente'),
-    (3, 'Vendedor'),
-    (4, 'Cliente'),
-    (5, 'Inspector'),
-    (6, 'Almacen'),
-    (7, 'Comprador'),
-    (8, 'Auditor'),
-    (9, 'Soporte'),
-    (10, 'Invitado');
+INSERT INTO ROL (rol_id, rol_nombre, rol_ambito) VALUES
+    (1, 'Admin', 'INTERNO'),
+    (2, 'Gerente', 'INTERNO'),
+    (3, 'Vendedor', 'INTERNO'),
+    (4, 'Cliente', 'EXTERNO'),
+    (5, 'Inspector', 'INTERNO'),
+    (6, 'Almacen', 'INTERNO'),
+    (7, 'Comprador', 'EXTERNO'),
+    (8, 'Auditor', 'INTERNO'),
+    (9, 'Soporte', 'INTERNO'),
+    (10, 'Invitado', 'EXTERNO');
 
 -- USUARIO (400 filas)
 INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_emp_id, fk_cli_id) VALUES

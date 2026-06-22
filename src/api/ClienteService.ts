@@ -40,6 +40,10 @@ type HistoricoMembresia = {
 
 class ClienteService{
     routes = {
+        // Lugares (estados/municipios/parroquias) para el lugar de registro del cliente.
+        "/api/lugar": {
+            GET: async (_: Bun.BunRequest<"/api/lugar">) => listAll("listLugar"),
+        },
         // Alta de cliente completo (CLIENTE + persona natural o juridica) en la BD.
         "/api/cliente_full": {
             POST: async (req: Bun.BunRequest<"/api/cliente_full">) => {

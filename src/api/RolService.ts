@@ -24,7 +24,7 @@ class RolService{
                 const body = await req.json();
                 if (!body.rol_nombre)
                     return new Response('rol_nombre is required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createRol", [body.rol_nombre])
+                return callProcedure("createRol", [body.rol_nombre, body.rol_ambito ?? 'INTERNO'])
             }
         },
 
@@ -40,7 +40,7 @@ class RolService{
                 if (!Number.isInteger(id))
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
-                return callUpdate("updateRol", [id, body.rol_nombre])
+                return callUpdate("updateRol", [id, body.rol_nombre, body.rol_ambito ?? 'INTERNO'])
             },
 			GET: async (req: Bun.BunRequest<"/api/rol/:id">) => {
 				let found: Permiso_Rol[]

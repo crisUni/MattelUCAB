@@ -120,6 +120,7 @@ export async function getRoles(): Promise<Rol[]> {
   return roles.map((r: any): Rol => ({
     id: sid(r.rol_id),
     nombre: r.rol_nombre,
+    ambito: r.rol_ambito === "EXTERNO" ? "EXTERNO" : "INTERNO",
     permisosIds: permisoRol
       .filter((pr: any) => pr.fk_rol_id === r.rol_id)
       .map((pr: any) => sid(pr.fk_perm_id)),
@@ -771,7 +772,7 @@ const writers: Record<Recurso, Writer> = {
 
   rol: {
     create: async (r: Rol) => {
-      await send("POST", "/rol", { rol_nombre: r.nombre });
+      await send("POST", "/rol", { rol_nombre: r.nombre, rol_ambito: r.ambito });
       // Recupera el id del rol recién creado para sincronizar sus permisos.
       const roles = await getList("/rol");
       const nuevoRolId = roles
@@ -781,7 +782,7 @@ const writers: Record<Recurso, Writer> = {
       if (nuevoRolId && r.permisosIds.length) await syncPermisosRol(String(nuevoRolId), r.permisosIds);
     },
     update: async (r: Rol) => {
-      await send("PUT", `/rol/${r.id}`, { rol_nombre: r.nombre });
+      await send("PUT", `/rol/${r.id}`, { rol_nombre: r.nombre, rol_ambito: r.ambito });
       await syncPermisosRol(r.id, r.permisosIds);
     },
     remove: (id) => send("DELETE", `/rol/${id}`),

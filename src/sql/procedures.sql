@@ -2209,13 +2209,14 @@ END
 $$;
 CREATE OR REPLACE PROCEDURE updateRol (
     rolId INT,
-    rolNombre VARCHAR(50)
+    rolNombre VARCHAR(50),
+    ambitoRol VARCHAR(10) DEFAULT 'INTERNO'
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     UPDATE ROL
-    SET rol_nombre = rolNombre
+    SET rol_nombre = rolNombre, rol_ambito = ambitoRol
     WHERE rol_id = rolId;
 END
 $$;
@@ -3810,13 +3811,14 @@ $$;
 
 
 CREATE OR REPLACE PROCEDURE createRol (
-    nombreRol VARCHAR(50)
+    nombreRol VARCHAR(50),
+    ambitoRol VARCHAR(10) DEFAULT 'INTERNO'
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO ROL (rol_nombre)
-    VALUES (nombreRol);
+    INSERT INTO ROL (rol_nombre, rol_ambito)
+    VALUES (nombreRol, ambitoRol);
 END
 $$;
 

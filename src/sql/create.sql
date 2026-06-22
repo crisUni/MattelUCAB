@@ -422,7 +422,10 @@ CREATE TABLE IF NOT EXISTS PERMISO (
 
 CREATE TABLE IF NOT EXISTS ROL (
     rol_id SERIAL PRIMARY KEY,
-    rol_nombre VARCHAR(50) NOT NULL
+    rol_nombre VARCHAR(50) NOT NULL,
+    -- Ambito del rol: INTERNO (empleado) o EXTERNO (cliente). Determina si el
+    -- usuario con ese rol se vincula a un empleado o a un cliente.
+    rol_ambito VARCHAR(10) NOT NULL DEFAULT 'INTERNO' CHECK (rol_ambito IN ('INTERNO', 'EXTERNO'))
 );
 
 CREATE TABLE IF NOT EXISTS USUARIO (
