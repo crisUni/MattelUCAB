@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type Descuento = {
     id: number
@@ -18,6 +18,12 @@ class DescuentoService{
             }
         },
         "/api/descuento/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/descuento/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteDescuento", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/descuento/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))

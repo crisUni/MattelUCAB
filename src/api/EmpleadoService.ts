@@ -1,5 +1,5 @@
 import {sql} from "bun";
-import { CORS_HEADERS, callProcedure, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type Departamento = {
     id: number
@@ -72,6 +72,12 @@ class RolService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateDepartamento", [id, body.dep_nombre, body.dep_descripcion])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/departamento/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteDepartamento", [id])
             }
         },
 
@@ -85,6 +91,12 @@ class RolService{
             }
         },
         "/api/cargo/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/cargo/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteCargo", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/cargo/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -104,6 +116,12 @@ class RolService{
             }
         },
         "/api/empleado/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/empleado/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteEmpleado", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/empleado/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -143,6 +161,12 @@ class RolService{
             }
         },
         "/api/turno/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/turno/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteTurno", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/turno/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
@@ -162,6 +186,10 @@ class RolService{
             PUT: async (req: Bun.BunRequest<"/api/dep_emp">) => {
                 const body = await req.json();
                 return callUpdate("updateDepEmp", [body.fk_dep_id, body.fk_emp_id, body.depemp_fechaini, body.depemp_fechafin])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/dep_emp">) => {
+                const body = await req.json();
+                return callDelete("deleteDepEmp", [body.fk_dep_id, body.fk_emp_id])
             }
         },
         "/api/emp_turno": {
@@ -171,6 +199,10 @@ class RolService{
                 if (body.fk_emp_id === undefined || body.fk_tur_id === undefined)
                     return new Response('fk_emp_id, fk_tur_id are required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createEmpTurno", [body.fk_emp_id, body.fk_tur_id])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/emp_turno">) => {
+                const body = await req.json();
+                return callDelete("deleteEmpTurno", [body.fk_emp_id, body.fk_tur_id])
             }
         }
 

@@ -29,6 +29,12 @@ class RolService{
         },
 
         "/api/rol/:id": {
+            DELETE: async (req: Bun.BunRequest<"/api/rol/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteRol", [id])
+            },
             PUT: async (req: Bun.BunRequest<"/api/rol/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
