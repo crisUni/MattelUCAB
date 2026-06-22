@@ -3859,7 +3859,8 @@ BEGIN
     SELECT u.usu_id, u.usu_nombre, r.rol_id, r.rol_nombre
     FROM USUARIO u
     JOIN ROL r ON r.rol_id = u.fk_rol_id
-    WHERE u.usu_nombre = pUsuario AND u.usu_clave = pClave;
+    -- Usuario sin distinción de mayúsculas/minúsculas; la clave sí es exacta.
+    WHERE LOWER(u.usu_nombre) = LOWER(pUsuario) AND u.usu_clave = pClave;
 END
 $$;
 

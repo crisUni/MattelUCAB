@@ -38,10 +38,22 @@ interface SessionValue {
 
 const INVITADO: Sesion = { usuario: null, rolNombre: "Cliente", permisos: [] };
 
+// La sesión autenticada se guarda en localStorage para sobrevivir a un refresco.
+const STORAGE_KEY = "mattel.sesion";
+function leerSesionGuardada(): Sesion | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as Sesion;
+    return s && s.usuario ? s : null;
+  } catch { return null; }
+}
+
 const SessionContext = createContext<SessionValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [sesion, setSesion] = useState<Sesion>(INVITADO);
+  // Restaura la sesión guardada (si la hay) para mantener al usuario logueado.
+  const [sesion, setSesion] = useState<Sesion>(() => leerSesionGuardada() ?? INVITADO);
 
   // Carga los permisos del rol Cliente para la sesión de invitado por defecto.
   useEffect(() => {
@@ -63,14 +75,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       iniciarSesion: async (usuario: string, clave: string) => {
         const r = await apiLogin(usuario, clave);
         if (!r) return false;
-        setSesion({ usuario: r.usuario, rolNombre: r.rol.nombre, permisos: r.permisos });
+        const nueva: Sesion = { usuario: r.usuario, rolNombre: r.rol.nombre, permisos: r.permisos };
+        setSesion(nueva);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(nueva)); } catch { /* almacenamiento no disponible */ }
         return true;
       },
       entrarComoInvitado: async () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
         const permisos = await getPermisosDeRol("Cliente");
         setSesion({ ...INVITADO, permisos });
       },
       cerrarSesion: () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
         getPermisosDeRol("Cliente").then((permisos) => setSesion({ ...INVITADO, permisos }));
       },
       puede,
