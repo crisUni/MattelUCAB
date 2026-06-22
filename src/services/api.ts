@@ -488,6 +488,105 @@ export async function registrarInspeccion(loteId: string, resultado: string, emp
   });
 }
 
+export interface InspeccionRow {
+  inscal_id: number;
+  inscal_fecha: string;
+  inscal_resultado: string;
+  fk_lotpro_id: number;
+  fk_emp_id: number;
+}
+
+/** Obtiene todas las inspecciones de calidad. */
+export async function getInspecciones(): Promise<InspeccionRow[]> {
+  return getList("/inspeccion_calidad");
+}
+
+/** Actualiza una inspección de calidad. */
+export async function actualizarInspeccion(id: string, fecha: string, resultado: string, loteId: string): Promise<void> {
+  await send("PUT", `/inspeccion_calidad/${id}`, {
+    inscal_fecha: (fecha || "").slice(0, 10),
+    inscal_resultado: resultado,
+    fk_lotpro_id: Number(loteId),
+  });
+}
+
+/** Elimina una inspección de calidad. */
+export async function eliminarInspeccion(id: string): Promise<void> {
+  await send("DELETE", `/inspeccion_calidad/${id}`);
+}
+
+/** Actualiza un lote de producción (fechas). */
+export async function actualizarLote(id: string, fechaInicio: string, fechaFin: string | null): Promise<void> {
+  await send("PUT", `/lote_produccion/${id}`, {
+    lotpro_fechaini: (fechaInicio || "").slice(0, 10),
+    lotpro_fechafin: fechaFin ? fechaFin.slice(0, 10) : null,
+  });
+}
+
+/** Elimina un lote de producción. */
+export async function eliminarLote(id: string): Promise<void> {
+  await send("DELETE", `/lote_produccion/${id}`);
+}
+
+/** Lista todos los tipos de defecto. */
+export async function getDefectos(): Promise<{ id: string; nombre: string }[]> {
+  const rows = await getList("/defecto");
+  return rows.map((d: any) => ({ id: sid(d.def_id), nombre: d.def_nombre }));
+}
+
+/** Crea un nuevo tipo de defecto. */
+export async function crearDefecto(nombre: string): Promise<void> {
+  await send("POST", "/defecto", { def_nombre: nombre });
+}
+
+/** Actualiza un tipo de defecto. */
+export async function actualizarDefecto(id: string, nombre: string): Promise<void> {
+  await send("PUT", `/defecto/${id}`, { def_nombre: nombre });
+}
+
+/** Elimina un tipo de defecto. */
+export async function eliminarDefecto(id: string): Promise<void> {
+  await send("DELETE", `/defecto/${id}`);
+}
+
+/** Datos crudos de defecto_lote (con fk_def_id numérico). */
+export interface DefectoLoteRaw {
+  fk_def_id: number;
+  fk_lotpro_id: number;
+  deflot_cantidadafectada: number;
+}
+
+/** Lista defecto_lote con ids numéricos. */
+export async function getDefectosLoteRaw(): Promise<DefectoLoteRaw[]> {
+  return getList("/defecto_lote");
+}
+
+/** Asocia un defecto a un lote (o actualiza la cantidad). */
+export async function crearDefectoLote(cantidad: number, defId: string, loteId: string): Promise<void> {
+  await send("POST", "/defecto_lote", {
+    deflot_cantidadafectada: cantidad,
+    fk_def_id: Number(defId),
+    fk_lotpro_id: Number(loteId),
+  });
+}
+
+/** Actualiza la cantidad de un defecto en un lote. */
+export async function actualizarDefectoLote(defId: string, loteId: string, cantidad: number): Promise<void> {
+  await send("PUT", "/defecto_lote", {
+    fk_def_id: Number(defId),
+    fk_lotpro_id: Number(loteId),
+    deflot_cantidadafectada: cantidad,
+  });
+}
+
+/** Elimina un defecto de un lote. */
+export async function eliminarDefectoLote(defId: string, loteId: string): Promise<void> {
+  await send("DELETE", "/defecto_lote", {
+    fk_def_id: Number(defId),
+    fk_lotpro_id: Number(loteId),
+  });
+}
+
 /* ===================================================================== *
  * LECTURAS — Listas de opciones para formularios de alta               *
  * ===================================================================== */
