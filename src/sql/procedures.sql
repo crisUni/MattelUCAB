@@ -988,6 +988,8 @@ CREATE OR REPLACE PROCEDURE deleteLoteProduccion (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    DELETE FROM INSPECCION_CALIDAD WHERE fk_lotpro_id = lotproId;
+    DELETE FROM DEFECTO_LOTE WHERE fk_lotpro_id = lotproId;
     DELETE FROM LOTE_PRODUCCION WHERE lotpro_id = lotproId;
 END
 $$;
