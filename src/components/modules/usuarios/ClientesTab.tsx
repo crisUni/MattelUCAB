@@ -139,7 +139,7 @@ function ClienteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () 
           <Field label="Primer nombre"><TextInput value={pnombre} onChange={(e) => setPnombre(e.target.value)} /></Field>
           <Field label="Segundo nombre" hint="Opcional"><TextInput value={snombre} onChange={(e) => setSnombre(e.target.value)} /></Field>
           <Field label="Primer apellido"><TextInput value={papellido} onChange={(e) => setPapellido(e.target.value)} /></Field>
-          <Field label="Segundo apellido" hint="Opcional"><TextInput value={sapellido} onChange={(e) => setSapellido(e.target.value)} /></Field>
+          <Field label="Segundo apellido"><TextInput value={sapellido} onChange={(e) => setSapellido(e.target.value)} /></Field>
           <Field label="Dirección"><TextInput value={direccion} onChange={(e) => setDireccion(e.target.value)} /></Field>
         </div>
       ) : (
