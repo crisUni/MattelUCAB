@@ -816,12 +816,26 @@ BEGIN
     WHERE emp_id = empId;
 END
 $$;
+-- Borra un empleado en cascada de sus registros propios (turnos, adscripcion).
+-- Bloquea con mensaje claro si esta vinculado a datos compartidos (usuario,
+-- patentes o inspecciones) que se romperian al borrarlo.
 CREATE OR REPLACE PROCEDURE deleteEmpleado (
     empId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM USUARIO WHERE fk_emp_id = empId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el empleado %: tiene una cuenta de usuario. Elimina ese usuario primero.', empId;
+    END IF;
+    IF EXISTS (SELECT 1 FROM DISENO WHERE fk_emp_id = empId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el empleado %: es disenador de una o mas patentes. Reasigna esas patentes primero.', empId;
+    END IF;
+    IF EXISTS (SELECT 1 FROM INSPECCION_CALIDAD WHERE fk_emp_id = empId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el empleado %: firmo una o mas inspecciones de calidad.', empId;
+    END IF;
+    DELETE FROM EMP_TURNO WHERE fk_emp_id = empId;
+    DELETE FROM DEP_EMP WHERE fk_emp_id = empId;
     DELETE FROM EMPLEADO WHERE emp_id = empId;
 END
 $$;
@@ -1987,12 +2001,44 @@ BEGIN
     WHERE cli_id = cliId;
 END
 $$;
+-- Alta de cliente (CLIENTE + su persona natural o juridica) en una transaccion.
+CREATE OR REPLACE FUNCTION crear_cliente (
+    pTipo VARCHAR, pLug INT,
+    pCedula VARCHAR(20), pPnombre VARCHAR(50), pSnombre VARCHAR(50), pPapellido VARCHAR(50), pSapellido VARCHAR(50), pFechanac DATE, pDireccion TEXT,
+    pRif VARCHAR(20), pRazon VARCHAR(100), pRepre VARCHAR(100)
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vCli INT;
+BEGIN
+    INSERT INTO CLIENTE (cli_fecharegis, fk_lug_id) VALUES (CURRENT_DATE, pLug) RETURNING cli_id INTO vCli;
+    IF pTipo = 'JURIDICA' THEN
+        INSERT INTO PERSONA_JURIDICA (fk_cli_id, perjur_rif, perjur_razonsocial, perjur_reprelegal)
+        VALUES (vCli, pRif, pRazon, pRepre);
+    ELSE
+        INSERT INTO PERSONA_NATURAL (fk_cli_id, pernat_cedula, pernat_pnombre, pernat_snombre, pernat_papellido, pernat_sapellido, pernat_fechanac, pernat_direccion)
+        VALUES (vCli, pCedula, pPnombre, NULLIF(pSnombre, ''), pPapellido, NULLIF(pSapellido, ''), pFechanac, pDireccion);
+    END IF;
+    RETURN vCli;
+END
+$$;
+
+-- Borra un cliente en cascada (su persona y membresias). Bloquea si tiene
+-- una cuenta de usuario (eliminarla aparte preserva su historial de compras).
 CREATE OR REPLACE PROCEDURE deleteCliente (
     cliId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM USUARIO WHERE fk_cli_id = cliId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el cliente %: tiene una cuenta de usuario. Elimina ese usuario primero.', cliId;
+    END IF;
+    DELETE FROM HISTORICO_MEMBRESIA WHERE fk_cli_id = cliId;
+    DELETE FROM PERSONA_NATURAL WHERE fk_cli_id = cliId;
+    DELETE FROM PERSONA_JURIDICA WHERE fk_cli_id = cliId;
     DELETE FROM CLIENTE WHERE cli_id = cliId;
 END
 $$;
@@ -3203,6 +3249,26 @@ BEGIN
     VALUES (CURRENT_DATE, NULL, pDep, vEmp, pCar);
 
     RETURN vEmp;
+END
+$$;
+
+-- Edita un empleado y reemplaza su adscripcion (departamento + cargo).
+CREATE OR REPLACE FUNCTION actualizar_empleado (
+    pEmp INT, pPnombre VARCHAR(50), pSnombre VARCHAR(50), pPapellido VARCHAR(50), pSapellido VARCHAR(50),
+    pDireccion VARCHAR(100), pDep INT, pCar INT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE EMPLEADO
+       SET emp_pnombre = pPnombre, emp_snombre = NULLIF(pSnombre, ''),
+           emp_papellido = pPapellido, emp_sapellido = pSapellido, emp_direccion = pDireccion
+     WHERE emp_id = pEmp;
+    -- DEP_EMP tiene PK por (departamento, empleado); para cambiar de depto se reemplaza la fila.
+    DELETE FROM DEP_EMP WHERE fk_emp_id = pEmp;
+    INSERT INTO DEP_EMP (depemp_fechaini, depemp_fechafin, fk_dep_id, fk_emp_id, fk_car_id)
+    VALUES (CURRENT_DATE, NULL, pDep, pEmp, pCar);
 END
 $$;
 

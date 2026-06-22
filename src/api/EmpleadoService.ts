@@ -132,6 +132,25 @@ class RolService{
                 }
             }
         },
+        "/api/empleado_full/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/empleado_full/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const b = await req.json();
+                if (!b.pnombre || !b.papellido || !b.sapellido || !b.direccion || b.dep === undefined || b.car === undefined)
+                    return new Response('pnombre, papellido, sapellido, direccion, dep, car son requeridos', { status: 400, headers: CORS_HEADERS })
+                try {
+                    await sql.unsafe(
+                        `SELECT actualizar_empleado($1,$2,$3,$4,$5,$6,$7,$8)`,
+                        [id, b.pnombre, b.snombre ?? '', b.papellido, b.sapellido, b.direccion, b.dep, b.car]
+                    );
+                    return new Response('Updated', { status: 200, headers: CORS_HEADERS })
+                } catch (e) {
+                    return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+                }
+            }
+        },
         "/api/empleado/:id": {
             DELETE: async (req: Bun.BunRequest<"/api/empleado/:id">) => {
                 const id = Number(req.params.id);

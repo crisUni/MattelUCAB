@@ -458,7 +458,10 @@ export async function getEmpleadosOpc(): Promise<Opcion[]> {
 
 /* ------------------------------ Empleados ------------------------------ */
 
-export interface Empleado { id: string; nombre: string; departamento: string; cargo: string; direccion: string }
+export interface Empleado {
+  id: string; nombre: string; departamento: string; cargo: string; direccion: string;
+  pnombre: string; snombre: string; papellido: string; sapellido: string; depId: string; cargoId: string;
+}
 
 /** Empleados con su departamento y cargo actuales (vía DEP_EMP). */
 export async function getEmpleados(): Promise<Empleado[]> {
@@ -475,6 +478,9 @@ export async function getEmpleados(): Promise<Empleado[]> {
       departamento: dep?.dep_nombre ?? "—",
       cargo: car?.car_nombre ?? "—",
       direccion: e.emp_direccion ?? "",
+      pnombre: e.emp_pnombre ?? "", snombre: e.emp_snombre ?? "",
+      papellido: e.emp_papellido ?? "", sapellido: e.emp_sapellido ?? "",
+      depId: de ? sid(de.fk_dep_id) : "", cargoId: de ? sid(de.fk_car_id) : "",
     };
   });
 }
@@ -489,6 +495,19 @@ export async function crearEmpleado(e: NuevoEmpleado): Promise<void> {
   });
 }
 
+/** Edita un empleado (datos + departamento/cargo). */
+export async function actualizarEmpleado(id: string, e: NuevoEmpleado): Promise<void> {
+  await send("PUT", `/empleado_full/${id}`, {
+    pnombre: e.pnombre, snombre: e.snombre ?? "", papellido: e.papellido, sapellido: e.sapellido,
+    direccion: e.direccion, dep: Number(e.dep), car: Number(e.car),
+  });
+}
+
+/** Elimina un empleado (cascada de sus turnos/adscripción; bloquea si está vinculado). */
+export async function eliminarEmpleado(id: string): Promise<void> {
+  await send("DELETE", `/empleado/${id}`);
+}
+
 export async function getDepartamentosOpc(): Promise<Opcion[]> {
   const rows = await getList("/departamento");
   return rows.map((d: any) => ({ id: sid(d.dep_id), nombre: d.dep_nombre }));
@@ -497,6 +516,53 @@ export async function getDepartamentosOpc(): Promise<Opcion[]> {
 export async function getCargosOpc(): Promise<Opcion[]> {
   const rows = await getList("/cargo");
   return rows.map((c: any) => ({ id: sid(c.car_id), nombre: c.car_nombre }));
+}
+
+/* ------------------------------ Clientes ------------------------------ */
+
+export interface ClienteRow { id: string; nombre: string; tipo: "NATURAL" | "JURIDICA"; documento: string; lugar: string; registro: string }
+
+/** Clientes (persona natural o jurídica) con su documento y lugar de registro. */
+export async function getClientes(): Promise<ClienteRow[]> {
+  const [clientes, naturales, juridicas, lugares] = await Promise.all([
+    getList("/cliente"), getList("/persona_natural"), getList("/persona_juridica"), getList("/lugar"),
+  ]);
+  return clientes.map((c: any): ClienteRow => {
+    const n = naturales.find((x: any) => x.fk_cli_id === c.cli_id);
+    const j = juridicas.find((x: any) => x.fk_cli_id === c.cli_id);
+    const lugar = lugares.find((l: any) => l.lug_id === c.fk_lug_id)?.lug_nombre ?? "—";
+    const registro = (c.cli_fecharegis || "").slice(0, 10);
+    if (j) return { id: sid(c.cli_id), nombre: j.perjur_razonsocial, tipo: "JURIDICA", documento: `RIF ${j.perjur_rif}`, lugar, registro };
+    if (n) return { id: sid(c.cli_id), nombre: `${n.pernat_pnombre} ${n.pernat_papellido}`, tipo: "NATURAL", documento: `CI ${n.pernat_cedula}`, lugar, registro };
+    return { id: sid(c.cli_id), nombre: `Cliente #${c.cli_id}`, tipo: "NATURAL", documento: "—", lugar, registro };
+  });
+}
+
+export interface NuevoCliente {
+  tipo: "NATURAL" | "JURIDICA"; lug: string;
+  cedula?: string; pnombre?: string; snombre?: string; papellido?: string; sapellido?: string; fechanac?: string; direccion?: string;
+  rif?: string; razon?: string; repre?: string;
+}
+
+/** Alta de cliente (persona natural o jurídica) en la BD. */
+export async function crearCliente(c: NuevoCliente): Promise<void> {
+  await send("POST", "/cliente_full", {
+    tipo: c.tipo, lug: Number(c.lug),
+    cedula: c.cedula ?? "", pnombre: c.pnombre ?? "", snombre: c.snombre ?? "", papellido: c.papellido ?? "", sapellido: c.sapellido ?? "",
+    fechanac: c.fechanac || null, direccion: c.direccion ?? "",
+    rif: c.rif ?? "", razon: c.razon ?? "", repre: c.repre ?? "",
+  });
+}
+
+/** Elimina un cliente (cascada de su persona y membresías; bloquea si tiene usuario). */
+export async function eliminarCliente(id: string): Promise<void> {
+  await send("DELETE", `/cliente/${id}`);
+}
+
+/** Estados de Venezuela para el lugar de registro del cliente. */
+export async function getLugaresOpc(): Promise<Opcion[]> {
+  const rows = await getList("/lugar");
+  return rows.filter((l: any) => l.lug_tipo === "ESTADO").map((l: any) => ({ id: sid(l.lug_id), nombre: l.lug_nombre }));
 }
 
 /** Solo empleados adscritos al departamento de Diseño (I+D) — diseñadores de ADN/patentes. */

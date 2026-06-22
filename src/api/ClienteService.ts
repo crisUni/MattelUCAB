@@ -1,3 +1,4 @@
+import { sql } from "bun";
 import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
 
 type Cliente = {
@@ -39,6 +40,30 @@ type HistoricoMembresia = {
 
 class ClienteService{
     routes = {
+        // Alta de cliente completo (CLIENTE + persona natural o juridica) en la BD.
+        "/api/cliente_full": {
+            POST: async (req: Bun.BunRequest<"/api/cliente_full">) => {
+                const b = await req.json();
+                if (!b.tipo || b.lug === undefined)
+                    return new Response('tipo y lug son requeridos', { status: 400, headers: CORS_HEADERS })
+                if (b.tipo === 'JURIDICA') {
+                    if (!b.rif || !b.razon || !b.repre)
+                        return new Response('rif, razon y repre son requeridos para persona juridica', { status: 400, headers: CORS_HEADERS })
+                } else {
+                    if (!b.cedula || !b.pnombre || !b.papellido || !b.fechanac || !b.direccion)
+                        return new Response('cedula, pnombre, papellido, fechanac y direccion son requeridos para persona natural', { status: 400, headers: CORS_HEADERS })
+                }
+                try {
+                    const rows = await sql.unsafe(
+                        `SELECT crear_cliente($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) AS cli_id`,
+                        [b.tipo, b.lug, b.cedula ?? '', b.pnombre ?? '', b.snombre ?? '', b.papellido ?? '', b.sapellido ?? '', b.fechanac ?? null, b.direccion ?? '', b.rif ?? '', b.razon ?? '', b.repre ?? '']
+                    ) as any[];
+                    return Response.json({ cli_id: rows[0].cli_id }, { status: 201, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } })
+                } catch (e) {
+                    return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+                }
+            }
+        },
         "/api/cliente": {
             GET: async (_: Bun.BunRequest<"/api/cliente">) => listAll<Cliente>("listCliente"),
             POST: async (req: Bun.BunRequest<"/api/cliente">) => {
