@@ -43,17 +43,33 @@ export function MasterCrud<T extends { id: string }>({
   const puedeEliminar = puede(permRecurso, "ELIMINAR");
   const [editing, setEditing] = useState<T | null>(null);
   const [confirm, setConfirm] = useState<T | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSave(item: T) {
-    const isNew = !item.id;
-    const saved = await guardar(resource, { ...item, id: item.id || nuevoId(idPrefix) });
-    setRows((prev) => { const l = prev ?? []; return isNew ? [saved, ...l] : l.map((x) => x.id === saved.id ? saved : x); });
-    setEditing(null);
+    setError(null);
+    try {
+      const isNew = !item.id;
+      const saved = await guardar(resource, { ...item, id: item.id || nuevoId(idPrefix) });
+      setRows((prev) => { const l = prev ?? []; return isNew ? [saved, ...l] : l.map((x) => x.id === saved.id ? saved : x); });
+      setEditing(null);
+    } catch (e) {
+      setError(e instanceof Error ? limpiarError(e.message) : String(e));
+    }
   }
   async function handleDelete(item: T) {
-    await eliminar(resource, item.id);
-    setRows((prev) => (prev ?? []).filter((x) => x.id !== item.id));
-    setConfirm(null);
+    setError(null);
+    try {
+      await eliminar(resource, item.id);
+      setRows((prev) => (prev ?? []).filter((x) => x.id !== item.id));
+      setConfirm(null);
+    } catch (e) {
+      setError(e instanceof Error ? limpiarError(e.message) : String(e));
+      setConfirm(null);
+    }
+  }
+
+  function limpiarError(msg: string): string {
+    return msg.replace(/^PostgresError:\s*/i, "");
   }
 
   const cols: Column<T>[] = [
@@ -71,6 +87,7 @@ export function MasterCrud<T extends { id: string }>({
 
   return (
     <div>
+      {error && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
       {puedeCrear && (
         <div className="mb-3 flex justify-end">
           <Button onClick={() => setEditing(blank())}><IconPlus className="h-4 w-4" />Nuevo</Button>

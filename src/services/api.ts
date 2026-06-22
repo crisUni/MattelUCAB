@@ -43,9 +43,14 @@ async function send(method: "POST" | "PUT" | "DELETE", path: string, body?: unkn
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    const detail = await res.text();
-    // Se relanza para que el handler del componente no aplique el cambio optimista.
-    throw new Error(`${method} ${path} → ${res.status} ${detail}`);
+    let detail: string;
+    try {
+      const json = await res.json();
+      detail = json.error ?? JSON.stringify(json);
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(detail);
   }
 }
 

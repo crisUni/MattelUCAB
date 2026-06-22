@@ -7,6 +7,12 @@ export const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400"
 };
 
+function errorResponse(e: unknown): Response {
+  const msg = e instanceof Error ? e.message : String(e);
+  const clean = msg.replace(/^PostgresError:\s*/i, "");
+  return Response.json({ error: clean }, { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
+}
+
 export async function fetchAll<T>(table: string): Promise<Response> {
     try {
         const found = await sql`SELECT * FROM ${sql(table)}` as T[];
@@ -14,7 +20,7 @@ export async function fetchAll<T>(table: string): Promise<Response> {
             return new Response('No resources found', { status: 404, headers: CORS_HEADERS })
         return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
     } catch (e) {
-        return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+        return errorResponse(e);
     }
 }
 
@@ -27,7 +33,7 @@ export async function insertOne(table: string, data: Record<string, unknown>): P
         const result = await sql.unsafe(query, values) as Record<string, unknown>[];
         return Response.json(result[0], { status: 201, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
     } catch (e) {
-        return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+        return errorResponse(e);
     }
 }
 
@@ -38,7 +44,7 @@ export async function listAll<T>(funcName: string): Promise<Response> {
             return new Response('No resources found', { status: 404, headers: CORS_HEADERS })
         return Response.json(found, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json"} })
     } catch (e) {
-        return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+        return errorResponse(e);
     }
 }
 
@@ -48,7 +54,7 @@ export async function callProcedure(procName: string, params: unknown[]): Promis
         await sql.unsafe(`CALL ${procName}(${placeholders})`, params);
         return new Response('Created', { status: 201, headers: CORS_HEADERS })
     } catch (e) {
-        return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+        return errorResponse(e);
     }
 }
 
@@ -58,7 +64,7 @@ export async function callUpdate(procName: string, params: unknown[]): Promise<R
         await sql.unsafe(`CALL ${procName}(${placeholders})`, params);
         return new Response('Updated', { status: 200, headers: CORS_HEADERS })
     } catch (e) {
-        return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+        return errorResponse(e);
     }
 }
 
@@ -68,6 +74,6 @@ export async function callDelete(procName: string, params: unknown[]): Promise<R
         await sql.unsafe(`CALL ${procName}(${placeholders})`, params);
         return new Response('Deleted', { status: 200, headers: CORS_HEADERS })
     } catch (e) {
-        return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+        return errorResponse(e);
     }
 }
