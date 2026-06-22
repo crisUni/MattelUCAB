@@ -700,19 +700,39 @@ export interface NuevaMuneca {
   cat: string; edi: string; lote: string; exc: string;
   colores: { colId: string; zona: string }[];
   materiales: { matId: string; cantidad: number }[];
-  stock?: number; almId?: string;
+  /** Stock inicial repartido por almacén (cada almacén pertenece a un hub regional). */
+  inventario?: { almId: string; cantidad: number }[];
   profId?: string; profAno?: string;
 }
 export async function crearMuneca(m: NuevaMuneca): Promise<void> {
-  await send("POST", "/muneca", {
-    nombre: m.nombre, precio: m.precio, fecha: (m.fecha || "").slice(0, 10),
-    molros: Number(m.molros), tipcue: Number(m.tipcue), era: Number(m.era), dis: Number(m.dis),
-    cat: Number(m.cat), edi: Number(m.edi), lote: Number(m.lote), exc: Number(m.exc),
-    colIds: m.colores.map((c) => Number(c.colId)), zonas: m.colores.map((c) => c.zona),
-    matIds: m.materiales.map((x) => Number(x.matId)), matCants: m.materiales.map((x) => Number(x.cantidad)),
-    stock: m.stock ?? 0, alm: m.almId ? Number(m.almId) : null,
-    prof: m.profId ? Number(m.profId) : null, profAno: m.profAno || null,
+  // El genoma + producto + profesión se crean en una transacción (crear_muneca);
+  // el stock inicial NO se pasa aquí porque una muñeca puede tener existencias en
+  // varios almacenes: se insertan después como filas de INVENTARIO.
+  const res = await fetch(`${API_URL}/muneca`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nombre: m.nombre, precio: m.precio, fecha: (m.fecha || "").slice(0, 10),
+      molros: Number(m.molros), tipcue: Number(m.tipcue), era: Number(m.era), dis: Number(m.dis),
+      cat: Number(m.cat), edi: Number(m.edi), lote: Number(m.lote), exc: Number(m.exc),
+      colIds: m.colores.map((c) => Number(c.colId)), zonas: m.colores.map((c) => c.zona),
+      matIds: m.materiales.map((x) => Number(x.matId)), matCants: m.materiales.map((x) => Number(x.cantidad)),
+      stock: 0, alm: null,
+      prof: m.profId ? Number(m.profId) : null, profAno: m.profAno || null,
+    }),
   });
+  if (!res.ok) throw new Error(`POST /muneca → ${res.status} ${await res.text()}`);
+  const { pro_id } = await res.json();
+  const hoy = new Date().toISOString().slice(0, 10);
+  for (const inv of m.inventario ?? []) {
+    if (inv.almId && inv.cantidad > 0) {
+      await send("POST", "/inventario", {
+        fk_pro_id: pro_id, fk_alm_id: Number(inv.almId),
+        inv_stockdisponible: inv.cantidad, inv_cantidad: inv.cantidad,
+        inv_fecha_actualizacion: hoy,
+      });
+    }
+  }
 }
 
 /** Mapea la zona de color del front (enum) al texto que guarda la BD. */
@@ -733,6 +753,90 @@ export async function actualizarGenoma(
 export async function getAlmacenesOpc(): Promise<Opcion[]> {
   const rows = await getList("/almacen");
   return rows.map((a: any) => ({ id: sid(a.alm_id), nombre: `${a.alm_tipoinstalacion} #${a.alm_id}` }));
+}
+
+/* ===================================================================== *
+ * INVENTARIO — stock de cada producto por almacén / hub regional        *
+ * ===================================================================== */
+
+export interface InventarioRow {
+  /** Clave compuesta producto+almacén (no hay id propio en la tabla puente). */
+  id: string;
+  proId: string; almId: string;
+  sku: string; producto: string;
+  hubId: string; hub: string;
+  almacenTipo: string; ubicacion: string;
+  disponible: number; cantidad: number; reservado: number;
+  actualizado: string;
+}
+
+/** Inventario resuelto (vista VW_INVENTARIO): dónde reside el stock de cada producto. */
+export async function getInventario(): Promise<InventarioRow[]> {
+  const rows = await getList("/inventario_detalle");
+  return rows.map((r: any): InventarioRow => ({
+    id: `${r.fk_pro_id}-${r.fk_alm_id}`,
+    proId: sid(r.fk_pro_id), almId: sid(r.fk_alm_id),
+    sku: String(r.pro_sku ?? ""), producto: r.pro_nombre ?? `Producto ${r.fk_pro_id}`,
+    hubId: sid(r.fk_hubreg_id), hub: r.hubreg_nombre ?? "—",
+    almacenTipo: r.alm_tipoinstalacion ?? "—", ubicacion: r.ubicacion ?? "—",
+    disponible: Number(r.inv_stockdisponible ?? 0),
+    cantidad: Number(r.inv_cantidad ?? 0),
+    reservado: Number(r.inv_reservado ?? 0),
+    actualizado: (r.inv_fecha_actualizacion ?? "").slice(0, 10),
+  }));
+}
+
+/** Hubs regionales como opciones {id, nombre} para filtros y selects. */
+export async function getHubsOpc(): Promise<Opcion[]> {
+  const rows = await getList("/hub_regional");
+  return rows.map((h: any) => ({ id: sid(h.hubreg_id), nombre: h.hubreg_nombre }));
+}
+
+export interface AlmacenOpcion { id: string; nombre: string; hubId: string; hubNombre: string; tipo: string }
+
+/** Almacenes con su hub regional resuelto, para elegir dónde colocar el stock. */
+export async function getAlmacenesDetalle(): Promise<AlmacenOpcion[]> {
+  const [alm, hubs] = await Promise.all([getList("/almacen"), getList("/hub_regional")]);
+  return alm.map((a: any): AlmacenOpcion => {
+    const h = hubs.find((x: any) => x.hubreg_id === a.fk_hubreg_id);
+    const hubNombre = h?.hubreg_nombre ?? `Hub ${a.fk_hubreg_id}`;
+    return {
+      id: sid(a.alm_id), tipo: a.alm_tipoinstalacion,
+      hubId: sid(a.fk_hubreg_id), hubNombre,
+      nombre: `${hubNombre} · ${a.alm_tipoinstalacion} #${a.alm_id}`,
+    };
+  });
+}
+
+/** Productos como opciones {id, nombre} (SKU · nombre) para el alta de inventario. */
+export async function getProductosOpc(): Promise<Opcion[]> {
+  const rows = await getList("/producto");
+  return rows.map((p: any) => ({ id: sid(p.pro_id), nombre: `${p.pro_sku} · ${p.pro_nombre}` }));
+}
+
+export interface NuevoInventario { proId: string; almId: string; disponible: number; cantidad: number }
+
+/** Crea una existencia (producto en un almacén). La fecha se fija a hoy. */
+export async function crearInventario(n: NuevoInventario): Promise<void> {
+  await send("POST", "/inventario", {
+    fk_pro_id: Number(n.proId), fk_alm_id: Number(n.almId),
+    inv_stockdisponible: n.disponible, inv_cantidad: n.cantidad,
+    inv_fecha_actualizacion: new Date().toISOString().slice(0, 10),
+  });
+}
+
+/** Actualiza el stock de una existencia (clave producto+almacén inmutable). */
+export async function actualizarInventario(n: NuevoInventario): Promise<void> {
+  await send("PUT", "/inventario", {
+    fk_pro_id: Number(n.proId), fk_alm_id: Number(n.almId),
+    inv_stockdisponible: n.disponible, inv_cantidad: n.cantidad,
+    inv_fecha_actualizacion: new Date().toISOString().slice(0, 10),
+  });
+}
+
+/** Elimina una existencia (producto en un almacén). */
+export async function eliminarInventario(proId: string, almId: string): Promise<void> {
+  await send("DELETE", "/inventario", { fk_pro_id: Number(proId), fk_alm_id: Number(almId) });
 }
 
 /* ----------------------------- Patentes (Diseño) ----------------------------- */

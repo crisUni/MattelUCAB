@@ -658,3 +658,31 @@ SELECT
 FROM LOTE_PRODUCCION l
 LEFT JOIN INSPECCION_CALIDAD ic ON ic.fk_lotpro_id = l.lotpro_id
 LEFT JOIN EMPLEADO e            ON e.emp_id        = ic.fk_emp_id;
+
+-- ---------------------------------------------------------------------
+-- VISTA: inventario resuelto. Para cada fila de INVENTARIO (producto en un
+-- almacen) trae el nombre/SKU del producto, el tipo de almacen, su HUB
+-- regional y la ubicacion (LUGAR), y deriva las unidades reservadas
+-- (cantidad total - stock disponible). El front sólo lee la vista para
+-- mostrar "dónde reside el stock de cada producto" por hub regional.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE VIEW VW_INVENTARIO AS
+SELECT
+    i.fk_pro_id,
+    i.fk_alm_id,
+    i.inv_stockdisponible,
+    i.inv_cantidad,
+    (i.inv_cantidad - i.inv_stockdisponible) AS inv_reservado,
+    i.inv_fecha_actualizacion,
+    p.pro_sku,
+    p.pro_nombre,
+    a.alm_tipoinstalacion,
+    a.fk_hubreg_id,
+    h.hubreg_nombre,
+    COALESCE(la.lug_nombre, lh.lug_nombre) AS ubicacion
+FROM INVENTARIO i
+JOIN PRODUCTO p     ON p.pro_id    = i.fk_pro_id
+JOIN ALMACEN a      ON a.alm_id    = i.fk_alm_id
+JOIN HUB_REGIONAL h ON h.hubreg_id = a.fk_hubreg_id
+LEFT JOIN LUGAR la  ON la.lug_id   = a.fk_lug_id
+LEFT JOIN LUGAR lh  ON lh.lug_id   = h.fk_lug_id;

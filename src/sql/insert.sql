@@ -1827,6 +1827,7 @@ FROM (VALUES
     ('PRODUCTO'),('MOLDE_ROSTRO'),('TIPO_CUERPO'),('COLOR'),('MATERIAL'),('ERA'),('EXCLUSIVIDAD'),
     ('PERSONAJE'),('PROFESION'),('COMPATIBILIDAD'),('PACK'),('PATENTE'),
     ('LOTE'),('CALIDAD'),
+    ('INVENTARIO'),
     ('REPORTE'),('COSTO')
 ) AS res(r)
 CROSS JOIN (VALUES ('VER'),('CREAR'),('EDITAR'),('ELIMINAR')) AS act(a);
@@ -2259,10 +2260,10 @@ INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_em
 -- Matriz de permisos por rol (compuesta con permisos granulares).
 -- Admin (1): acceso total.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id) SELECT 1, perm_id FROM PERMISO;
--- Gerente (2): CRUD completo del genoma + ver reportes y costos.
+-- Gerente (2): CRUD completo del genoma + inventario + ver reportes y costos.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 2, perm_id FROM PERMISO
-     WHERE perm_recurso IN ('EMPLEADO','CLIENTE','PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK','PATENTE','LOTE','CALIDAD')
+     WHERE perm_recurso IN ('EMPLEADO','CLIENTE','PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK','PATENTE','LOTE','CALIDAD','INVENTARIO')
         OR (perm_recurso IN ('REPORTE','COSTO') AND perm_accion = 'VER');
 -- Vendedor (3): ver catalogo y fichas (sin costos).
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
@@ -2277,15 +2278,17 @@ INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 5, perm_id FROM PERMISO
      WHERE (perm_recurso = 'LOTE' AND perm_accion IN ('VER','CREAR'))
         OR (perm_recurso = 'CALIDAD' AND perm_accion IN ('VER','CREAR'));
--- Almacen (6): ver catalogo.
+-- Almacen (6): ver catalogo + CRUD completo de inventario (rol de almacen).
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
-    SELECT 6, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
+    SELECT 6, perm_id FROM PERMISO
+     WHERE (perm_accion='VER' AND perm_recurso='PRODUCTO')
+        OR perm_recurso='INVENTARIO';
 -- Comprador (7): ver catalogo.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 7, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
--- Auditor (8): ver reportes, costos y catalogo (solo lectura).
+-- Auditor (8): ver reportes, costos, catalogo e inventario (solo lectura).
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
-    SELECT 8, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('REPORTE','COSTO','PRODUCTO');
+    SELECT 8, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('REPORTE','COSTO','PRODUCTO','INVENTARIO');
 -- Soporte (9): administrar usuarios (ver/editar) y ver roles.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 9, perm_id FROM PERMISO

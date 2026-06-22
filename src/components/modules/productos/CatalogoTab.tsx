@@ -5,6 +5,7 @@ import type {
 import {
   getProductos, getMoldesRostro, getTiposCuerpo, getColores,
   getEras, getExclusividades, getMateriales, getPersonajes, guardar, eliminar, nuevoId, actualizarGenoma,
+  getInventario, type InventarioRow,
 } from "../../../services/api";
 import { NuevoProductoForm } from "./NuevoProductoForm";
 import { costoVigente } from "../../../data/costing";
@@ -39,6 +40,7 @@ export function CatalogoTab() {
   const { data: excl } = useAsyncData<Exclusividad[]>(getExclusividades);
   const { data: materiales } = useAsyncData<Material[]>(getMateriales);
   const { data: personajes } = useAsyncData<Personaje[]>(getPersonajes);
+  const { data: inventario } = useAsyncData<InventarioRow[]>(getInventario);
 
   const [detail, setDetail] = useState<Producto | null>(null);
   const [editing, setEditing] = useState<Producto | null>(null);
@@ -128,7 +130,7 @@ export function CatalogoTab() {
       )}
       <DataTable columns={columns} rows={productos ?? []} rowKey={(p) => p.id} loading={loading} onRowClick={(p) => setDetail(p)} searchPlaceholder="Buscar por SKU o nombre…" emptyTitle="No hay productos" pageSize={8} />
 
-      {detail && <FichaADN producto={detail} lookups={lookups} materiales={materiales ?? []} puedeVerCostos={puedeVerCostos} puedeEditar={puedeEditar} onClose={() => setDetail(null)} onEdit={() => { setEditing(detail); setDetail(null); }} />}
+      {detail && <FichaADN producto={detail} lookups={lookups} materiales={materiales ?? []} inventario={(inventario ?? []).filter((i) => i.proId === detail.id)} puedeVerCostos={puedeVerCostos} puedeEditar={puedeEditar} onClose={() => setDetail(null)} onEdit={() => { setEditing(detail); setDetail(null); }} />}
       {editing && <ProductoForm producto={editing} moldes={moldes ?? []} cuerpos={cuerpos ?? []} colores={colores ?? []} eras={eras ?? []} excl={excl ?? []} personajes={personajes ?? []} onCancel={() => setEditing(null)} onSave={handleSave} />}
       <ConfirmDialog open={!!confirm} title="Eliminar producto" message={`¿Eliminar ${confirm?.nombre} (${confirm?.sku})?`} onCancel={() => setConfirm(null)} onConfirm={() => confirm && handleDelete(confirm)} />
       {nuevo && <NuevoProductoForm onCancel={() => setNuevo(false)} onSaved={async () => { setNuevo(false); setData(await getProductos()); }} />}
@@ -137,8 +139,8 @@ export function CatalogoTab() {
 }
 
 /* ------------------------------ Ficha ADN ------------------------------ */
-function FichaADN({ producto, lookups, materiales, puedeVerCostos, puedeEditar, onClose, onEdit }: {
-  producto: Producto; lookups: any; materiales: Material[]; puedeVerCostos: boolean; puedeEditar: boolean; onClose: () => void; onEdit: () => void;
+function FichaADN({ producto, lookups, materiales, inventario, puedeVerCostos, puedeEditar, onClose, onEdit }: {
+  producto: Producto; lookups: any; materiales: Material[]; inventario: InventarioRow[]; puedeVerCostos: boolean; puedeEditar: boolean; onClose: () => void; onEdit: () => void;
 }) {
   const colorEnZona = (z: ZonaColor) => {
     const aplicado = producto.colores.find((c) => c.zona === z);
@@ -256,6 +258,29 @@ function FichaADN({ producto, lookups, materiales, puedeVerCostos, puedeEditar, 
           </>
         ) : (
           <div className="mt-2 flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600"><IconLock className="h-3.5 w-3.5" />Costo de producción oculto para tu rol.</div>
+        )}
+      </div>
+
+      {/* Distribución de stock por hub regional */}
+      <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+        <p className="mb-3 flex items-center gap-2 text-sm font-bold text-navy-700"><IconBox className="h-4 w-4 text-brand-500" />Stock por hub regional</p>
+        {inventario.length === 0 ? (
+          <p className="text-sm text-slate-400">Este producto no tiene existencias registradas en ningún almacén.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {inventario.map((i) => (
+              <div key={i.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                <span className="leading-tight text-navy-700">
+                  {i.hub}
+                  <span className="block text-xs text-slate-400">{i.almacenTipo} #{i.almId} · {i.ubicacion}</span>
+                </span>
+                <span className="text-right leading-tight">
+                  <span className="block font-semibold text-navy-700">{i.disponible} disp.</span>
+                  <span className="block text-xs text-slate-400">{i.cantidad} total</span>
+                </span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </Modal>

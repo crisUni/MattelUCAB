@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll, fetchAll } from "./CorsHeaders";
 
 type HubRegional = {
     hubreg_id: number
@@ -71,6 +71,10 @@ class AlmacenService{
                 return callUpdate("updateAlmacen", [id, body.alm_tipoinstalacion, body.fk_hubreg_id, body.fk_lug_id])
             }
         },
+        // Inventario resuelto (vista VW_INVENTARIO): producto, almacen, hub y ubicacion.
+        "/api/inventario_detalle": {
+            GET: async (_: Bun.BunRequest<"/api/inventario_detalle">) => fetchAll("vw_inventario"),
+        },
         "/api/inventario": {
             GET: async (_: Bun.BunRequest<"/api/inventario">) => listAll<Inventario>("listInventario"),
             POST: async (req: Bun.BunRequest<"/api/inventario">) => {
@@ -81,10 +85,14 @@ class AlmacenService{
             },
             PUT: async (req: Bun.BunRequest<"/api/inventario">) => {
                 const body = await req.json();
+                if (body.fk_pro_id === undefined || body.fk_alm_id === undefined || body.inv_stockdisponible === undefined || body.inv_cantidad === undefined || !body.inv_fecha_actualizacion)
+                    return new Response('fk_pro_id, fk_alm_id, inv_stockdisponible, inv_cantidad, inv_fecha_actualizacion are required', { status: 400, headers: CORS_HEADERS })
                 return callUpdate("updateInventario", [body.fk_pro_id, body.fk_alm_id, body.inv_stockdisponible, body.inv_cantidad, body.inv_fecha_actualizacion])
             },
             DELETE: async (req: Bun.BunRequest<"/api/inventario">) => {
                 const body = await req.json();
+                if (body.fk_pro_id === undefined || body.fk_alm_id === undefined)
+                    return new Response('fk_pro_id, fk_alm_id are required', { status: 400, headers: CORS_HEADERS })
                 return callDelete("deleteInventario", [body.fk_pro_id, body.fk_alm_id])
             }
         }

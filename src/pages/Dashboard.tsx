@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useSession } from "../context/SessionContext";
 import { Sidebar, type NavItem } from "../components/layout/Sidebar";
 import { Card, EmptyState } from "../components/ui/primitives";
-import { IconUsers, IconDna, IconReport, IconHome, IconLock, IconMenu } from "../components/ui/icons";
+import { IconUsers, IconDna, IconReport, IconHome, IconLock, IconMenu, IconBox } from "../components/ui/icons";
 import { UsuariosModule } from "../components/modules/usuarios/UsuariosModule";
 import { ProductosModule } from "../components/modules/productos/ProductosModule";
+import { InventarioModule } from "../components/modules/inventario/InventarioModule";
 import { ReportesModule } from "../components/modules/reportes/ReportesModule";
 import { InicioView } from "./InicioView";
 
@@ -21,6 +22,7 @@ const MODULES: ModuleDef[] = [
   { id: "inicio", label: "Inicio", icon: <IconHome className="h-5 w-5" />, scope: "AMBOS", render: () => <InicioView />, titulo: "Panel principal", subtitulo: "Resumen del sistema Dream Legacy" },
   { id: "usuarios", label: "Usuarios & Seguridad", icon: <IconUsers className="h-5 w-5" />, scope: "BACK_OFFICE", recurso: "USUARIO", render: () => <UsuariosModule />, titulo: "Gestión de Usuarios, Roles y Privilegios", subtitulo: "Hermeticidad de la información según el perfil" },
   { id: "productos", label: "Genoma Barbie", icon: <IconDna className="h-5 w-5" />, scope: "AMBOS", recurso: "PRODUCTO", render: () => <ProductosModule />, titulo: "Catálogo y Diseño de Productos", subtitulo: "El ADN de cada muñeca y sus reglas de compatibilidad" },
+  { id: "inventario", label: "Inventario", icon: <IconBox className="h-5 w-5" />, scope: "AMBOS", recurso: "INVENTARIO", render: () => <InventarioModule />, titulo: "Inventario por Hub Regional", subtitulo: "Stock de cada producto distribuido por almacén y hub" },
   { id: "reportes", label: "Reportes", icon: <IconReport className="h-5 w-5" />, scope: "AMBOS", recurso: "REPORTE", render: () => <ReportesModule />, titulo: "Reportes", subtitulo: "Visores tipo JasperReports" },
 ];
 

@@ -3,8 +3,8 @@ import type { MoldeRostro, TipoCuerpo, Era, Exclusividad, Color, Producto, Perso
 import {
   getMoldesRostro, getTiposCuerpo, getEras, getExclusividades, getColores,
   getCategoriasOpc, getEdicionesOpc, getLotesOpc, getDisenosOpc, getProfesionesOpc,
-  getProductos, getPersonajes, getMateriales, getAlmacenesOpc, getCompatibilidadesRaw, getPacks,
-  crearMuneca, crearSet, type Opcion,
+  getProductos, getPersonajes, getMateriales, getAlmacenesDetalle, getCompatibilidadesRaw, getPacks,
+  crearMuneca, crearSet, type Opcion, type AlmacenOpcion,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { Modal } from "../../ui/Modal";
@@ -48,8 +48,9 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
   const [profAno, setProfAno] = useState(String(new Date().getFullYear()));
   const [colores, setColores] = useState<Record<string, string>>({});
   const [materiales, setMateriales] = useState<{ matId: string; cantidad: number }[]>([]);
-  const [stock, setStock] = useState(0);
-  const [almId, setAlmId] = useState("");
+  // Stock inicial repartido por almacén: una muñeca puede tener existencias en
+  // varios hubs/almacenes con cantidades distintas.
+  const [inventario, setInventario] = useState<{ almId: string; cantidad: number }[]>([]);
 
   // set
   const [pro1, setPro1] = useState("");
@@ -62,7 +63,7 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
   const { data: excl } = useAsyncData<Exclusividad[]>(getExclusividades);
   const { data: cols } = useAsyncData<Color[]>(getColores);
   const { data: mats } = useAsyncData<Material[]>(getMateriales);
-  const { data: almacenes } = useAsyncData<Opcion[]>(getAlmacenesOpc);
+  const { data: almacenes } = useAsyncData<AlmacenOpcion[]>(getAlmacenesDetalle);
   const { data: categorias } = useAsyncData<Opcion[]>(getCategoriasOpc);
   const { data: ediciones } = useAsyncData<Opcion[]>(getEdicionesOpc);
   const { data: lotes } = useAsyncData<Opcion[]>(getLotesOpc);
@@ -101,13 +102,15 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
         if (!per) throw new Error("Elige el personaje (Barbie, Ken, …).");
         if (!molros || !tipcue || !era || !dis) throw new Error("Completa el genoma (molde, cuerpo, era y diseño).");
         if (!cat || !edi || !lote || !exc) throw new Error("Completa la clasificación (categoría, exclusividad, edición y lote).");
-        if (stock > 0 && !almId) throw new Error("Indica el almacén para el stock inicial.");
+        const invFilas = inventario.filter((x) => x.almId);
+        if (invFilas.some((x) => x.cantidad <= 0)) throw new Error("Cada almacén con stock inicial debe tener una cantidad mayor que cero.");
+        if (new Set(invFilas.map((x) => x.almId)).size !== invFilas.length) throw new Error("No repitas el mismo almacén en el stock inicial.");
         setGuardando(true);
         await crearMuneca({
           nombre, precio, fecha, molros, tipcue, era, dis, cat, edi, lote, exc,
           colores: zonas.map((z) => ({ colId: colores[z] ?? "", zona: z })).filter((c) => c.colId),
           materiales: materiales.filter((x) => x.matId && x.cantidad > 0),
-          stock, almId: almId || undefined,
+          inventario: invFilas,
           profId: prof || undefined, profAno: profAno || undefined,
         });
       } else {
@@ -216,13 +219,32 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
             </div>
           )}
 
-          <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-wide text-brand-600">Stock inicial (opcional)</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Unidades en stock"><NumberInput min={0} value={stock} onChange={setStock} /></Field>
-            <Field label="Almacén" hint={stock > 0 ? "Requerido si hay stock" : "Opcional"}>
-              <Sel value={almId} set={setAlmId} opts={almacenes ?? []} placeholder="— Sin asignar —" />
-            </Field>
+          <div className="mb-2 mt-4 flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-600">Stock inicial por almacén (opcional)</p>
+            <Button variant="outline" onClick={() => setInventario((inv) => [...inv, { almId: "", cantidad: 0 }])}>
+              <IconPlus className="h-4 w-4" />Añadir almacén
+            </Button>
           </div>
+          {inventario.length === 0 ? (
+            <p className="text-xs text-slate-400">Sin stock inicial. Puedes repartir unidades entre varios hubs/almacenes; el catálogo sumará el stock disponible.</p>
+          ) : (
+            <div className="space-y-2">
+              {inventario.map((row, idx) => (
+                <div key={idx} className="grid grid-cols-[1fr_7rem_auto] items-end gap-2">
+                  <Field label="Almacén (hub · tipo)">
+                    <Select value={row.almId} onChange={(e) => setInventario((inv) => inv.map((r, i) => i === idx ? { ...r, almId: e.target.value } : r))}>
+                      <option value="">— Selecciona —</option>
+                      {(almacenes ?? []).map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+                    </Select>
+                  </Field>
+                  <Field label="Unidades">
+                    <NumberInput min={1} value={row.cantidad} onChange={(n) => setInventario((inv) => inv.map((r, i) => i === idx ? { ...r, cantidad: n } : r))} />
+                  </Field>
+                  <Button variant="ghost" onClick={() => setInventario((inv) => inv.filter((_, i) => i !== idx))}>Quitar</Button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-wide text-brand-600">Multiverso laboral (opcional)</p>
           <div className="grid gap-4 sm:grid-cols-2">
