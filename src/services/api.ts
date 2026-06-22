@@ -725,10 +725,18 @@ export async function eliminarCliente(id: string): Promise<void> {
   await send("DELETE", `/cliente/${id}`);
 }
 
-/** Parroquias de Venezuela para el lugar de registro del cliente. */
+/** Parroquias de Venezuela para el lugar de registro del cliente, mostrando también el estado al que pertenecen. */
 export async function getLugaresOpc(): Promise<Opcion[]> {
-  const rows = await getList("/lugar");
-  return rows.filter((l: any) => l.lug_tipo === "PARROQUIA").map((l: any) => ({ id: sid(l.lug_id), nombre: l.lug_nombre }));
+  const rows: any[] = await getList("/lugar");
+  const map = new Map<number, any>(rows.map((r) => [r.lug_id, r]));
+  return rows
+    .filter((l: any) => l.lug_tipo === "PARROQUIA")
+    .map((l: any) => {
+      const mun = map.get(l.fk_lug_id);
+      const est = mun ? map.get(mun.fk_lug_id) : null;
+      const estado = est?.lug_nombre ?? "";
+      return { id: sid(l.lug_id), nombre: estado ? `${l.lug_nombre} (${estado})` : l.lug_nombre };
+    });
 }
 
 /** Solo empleados adscritos al departamento de Diseño (I+D) — diseñadores de ADN/patentes. */
@@ -936,6 +944,67 @@ export async function actualizarInventario(n: NuevoInventario): Promise<void> {
 /** Elimina una existencia (producto en un almacén). */
 export async function eliminarInventario(proId: string, almId: string): Promise<void> {
   await send("DELETE", "/inventario", { fk_pro_id: Number(proId), fk_alm_id: Number(almId) });
+}
+
+/* ----------------------------- Hubs regionales ----------------------------- */
+
+export interface HubRow { id: string; nombre: string; lugar: string; fkLugId: string }
+
+/** Hubs regionales con su lugar resuelto. */
+export async function getHubsDetalle(): Promise<HubRow[]> {
+  const [hubs, lugares] = await Promise.all([getList("/hub_regional"), getList("/lugar")]);
+  return hubs.map((h: any): HubRow => {
+    const l = lugares.find((x: any) => x.lug_id === h.fk_lug_id);
+    return { id: sid(h.hubreg_id), nombre: h.hubreg_nombre, lugar: l?.lug_nombre ?? "—", fkLugId: sid(h.fk_lug_id) };
+  });
+}
+
+/** Crea un hub regional. */
+export async function crearHub(nombre: string, lugarId: string): Promise<void> {
+  await send("POST", "/hub_regional", { hubreg_nombre: nombre, fk_lug_id: Number(lugarId) });
+}
+
+/** Actualiza un hub regional. */
+export async function actualizarHub(id: string, nombre: string, lugarId: string): Promise<void> {
+  await send("PUT", `/hub_regional/${id}`, { hubreg_nombre: nombre, fk_lug_id: Number(lugarId) });
+}
+
+/** Elimina un hub regional. */
+export async function eliminarHub(id: string): Promise<void> {
+  await send("DELETE", `/hub_regional/${id}`);
+}
+
+/* ----------------------------- Almacenes ----------------------------- */
+
+export interface AlmacenRow { id: string; tipo: string; hubId: string; hubNombre: string; lugar: string; fkLugId: string }
+
+/** Almacenes con su hub y lugar resueltos. */
+export async function getAlmacenesDetalleFull(): Promise<AlmacenRow[]> {
+  const [alm, hubs, lugares] = await Promise.all([getList("/almacen"), getList("/hub_regional"), getList("/lugar")]);
+  return alm.map((a: any): AlmacenRow => {
+    const h = hubs.find((x: any) => x.hubreg_id === a.fk_hubreg_id);
+    const l = lugares.find((x: any) => x.lug_id === a.fk_lug_id);
+    return {
+      id: sid(a.alm_id), tipo: a.alm_tipoinstalacion,
+      hubId: sid(a.fk_hubreg_id), hubNombre: h?.hubreg_nombre ?? `Hub ${a.fk_hubreg_id}`,
+      lugar: l?.lug_nombre ?? "—", fkLugId: sid(a.fk_lug_id),
+    };
+  });
+}
+
+/** Crea un almacén. */
+export async function crearAlmacen(tipo: string, hubId: string, lugarId: string): Promise<void> {
+  await send("POST", "/almacen", { alm_tipoinstalacion: tipo, fk_hubreg_id: Number(hubId), fk_lug_id: Number(lugarId) });
+}
+
+/** Actualiza un almacén. */
+export async function actualizarAlmacen(id: string, tipo: string, hubId: string, lugarId: string): Promise<void> {
+  await send("PUT", `/almacen/${id}`, { alm_tipoinstalacion: tipo, fk_hubreg_id: Number(hubId), fk_lug_id: Number(lugarId) });
+}
+
+/** Elimina un almacén. */
+export async function eliminarAlmacen(id: string): Promise<void> {
+  await send("DELETE", `/almacen/${id}`);
 }
 
 /* ----------------------------- Patentes (Diseño) ----------------------------- */

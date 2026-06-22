@@ -1,24 +1,43 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   getInventario, getProductosOpc, getAlmacenesDetalle, getHubsOpc,
+  getHubsDetalle, getAlmacenesDetalleFull, getLugaresOpc,
   crearInventario, actualizarInventario, eliminarInventario,
+  crearHub, actualizarHub, eliminarHub,
+  crearAlmacen, actualizarAlmacen, eliminarAlmacen,
   type InventarioRow, type AlmacenOpcion, type Opcion,
+  type HubRow, type AlmacenRow,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { useSession } from "../../../context/SessionContext";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
 import {
-  Badge, Button, Card, Field, NumberInput, Select, SectionHeader, StatCard, fmtNum,
+  Badge, Button, Card, Field, NumberInput, Select,
+  SectionHeader, StatCard, SubTabs, TextInput,
+  type SubTab, fmtNum,
 } from "../../ui/primitives";
-import { IconPlus, IconEdit, IconTrash, IconBox, IconHome } from "../../ui/icons";
+import { IconPlus, IconEdit, IconTrash, IconBox, IconHome, IconLayers } from "../../ui/icons";
 
-/**
- * Módulo de Inventario: muestra, para cada hub regional, dónde reside el stock
- * de cada producto (en qué almacén y cuántas unidades). CRUD completo de las
- * existencias, controlado por el permiso INVENTARIO (VER/CREAR/EDITAR/ELIMINAR).
- */
+const TABS: SubTab[] = [
+  { id: "inventario", label: "Inventario", icon: <IconBox className="h-4 w-4" /> },
+  { id: "hubs", label: "Hubs regionales", icon: <IconHome className="h-4 w-4" /> },
+  { id: "almacenes", label: "Almacenes", icon: <IconLayers className="h-4 w-4" /> },
+];
+
 export function InventarioModule() {
+  const [tab, setTab] = useState("inventario");
+  return (
+    <div>
+      <SubTabs tabs={TABS} active={tab} onChange={setTab} />
+      {tab === "inventario" && <InventarioTab />}
+      {tab === "hubs" && <HubsTab />}
+      {tab === "almacenes" && <AlmacenesTab />}
+    </div>
+  );
+}
+
+function InventarioTab() {
   const { puede } = useSession();
   const puedeCrear = puede("INVENTARIO", "CREAR");
   const puedeEditar = puede("INVENTARIO", "EDITAR");
@@ -38,7 +57,6 @@ export function InventarioModule() {
   const rows = inventario ?? [];
   const recargar = async () => setData(await getInventario());
 
-  // Resumen de existencias por hub regional (sobre todo el inventario, no el filtrado).
   const porHub = useMemo(() => {
     const map = new Map<string, { hub: string; disponible: number; total: number; skus: Set<string> }>();
     for (const r of rows) {
@@ -58,7 +76,6 @@ export function InventarioModule() {
     [rows, hubFiltro],
   );
 
-  // Totales globales (o del hub seleccionado) para las tarjetas superiores.
   const totales = useMemo(() => {
     const disponible = filtradas.reduce((s, r) => s + r.disponible, 0);
     const total = filtradas.reduce((s, r) => s + r.cantidad, 0);
@@ -114,35 +131,25 @@ export function InventarioModule() {
         subtitle="Existencias de cada producto distribuidas por almacén y hub. El catálogo suma el stock disponible de todos los hubs."
         action={puedeCrear ? <Button onClick={() => { setError(null); setCreando(true); }}><IconPlus className="h-4 w-4" />Nueva existencia</Button> : undefined}
       />
-
       {error && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
-
-      {/* Totales (globales o del hub seleccionado) */}
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Unidades disponibles" value={fmtNum(totales.disponible)} tone="brand" icon={<IconBox className="h-5 w-5" />} hint={hubFiltro ? "En el hub seleccionado" : "En todos los hubs"} />
         <StatCard label="Unidades totales" value={fmtNum(totales.total)} tone="navy" hint={`${fmtNum(totales.reservado)} reservadas`} />
         <StatCard label="Productos (SKU)" value={fmtNum(totales.skus)} tone="green" hint={`${fmtNum(totales.existencias)} existencias`} />
         <StatCard label="Hubs activos" value={fmtNum(porHub.length)} tone="amber" icon={<IconHome className="h-5 w-5" />} hint="Con stock registrado" />
       </div>
-
-      {/* Resumen por hub: clic para filtrar la tabla por ese hub. */}
       {porHub.length > 0 && (
         <Card className="mb-5 p-4">
           <p className="mb-3 text-xs font-bold uppercase tracking-wide text-brand-600">Stock disponible por hub</p>
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setHubFiltro("")}
-              className={`rounded-xl px-3 py-2 text-left text-sm transition ${hubFiltro === "" ? "bg-gradient-to-r from-brand-500 to-grape-500 text-white shadow-brand" : "bg-slate-50 text-navy-700 ring-1 ring-slate-200 hover:ring-brand-300"}`}
-            >
+            <button onClick={() => setHubFiltro("")}
+              className={`rounded-xl px-3 py-2 text-left text-sm transition ${hubFiltro === "" ? "bg-gradient-to-r from-brand-500 to-grape-500 text-white shadow-brand" : "bg-slate-50 text-navy-700 ring-1 ring-slate-200 hover:ring-brand-300"}`}>
               <span className="block font-semibold">Todos</span>
               <span className={`block text-xs ${hubFiltro === "" ? "text-white/80" : "text-slate-400"}`}>{fmtNum(rows.reduce((s, r) => s + r.disponible, 0))} u.</span>
             </button>
             {porHub.map((h) => (
-              <button
-                key={h.hubId}
-                onClick={() => setHubFiltro(h.hubId)}
-                className={`rounded-xl px-3 py-2 text-left text-sm transition ${hubFiltro === h.hubId ? "bg-gradient-to-r from-brand-500 to-grape-500 text-white shadow-brand" : "bg-slate-50 text-navy-700 ring-1 ring-slate-200 hover:ring-brand-300"}`}
-              >
+              <button key={h.hubId} onClick={() => setHubFiltro(h.hubId)}
+                className={`rounded-xl px-3 py-2 text-left text-sm transition ${hubFiltro === h.hubId ? "bg-gradient-to-r from-brand-500 to-grape-500 text-white shadow-brand" : "bg-slate-50 text-navy-700 ring-1 ring-slate-200 hover:ring-brand-300"}`}>
                 <span className="block font-semibold">{h.hub}</span>
                 <span className={`block text-xs ${hubFiltro === h.hubId ? "text-white/80" : "text-slate-400"}`}>{fmtNum(h.disponible)} u. · {h.skus} SKU</span>
               </button>
@@ -150,34 +157,195 @@ export function InventarioModule() {
           </div>
         </Card>
       )}
-
-      <DataTable
-        columns={columns} rows={filtradas} rowKey={(r) => r.id} loading={loading}
+      <DataTable columns={columns} rows={filtradas} rowKey={(r) => r.id} loading={loading}
         searchPlaceholder="Buscar por SKU, producto o hub…"
-        emptyTitle={hubFiltro ? "Este hub no tiene existencias" : "No hay inventario registrado"}
-        pageSize={10}
-      />
-
+        emptyTitle={hubFiltro ? "Este hub no tiene existencias" : "No hay inventario registrado"} pageSize={10} />
       {creando && (
-        <InventarioForm
-          productos={productos ?? []} almacenes={almacenes ?? []} existentes={rows}
-          onCancel={() => setCreando(false)}
-          onSaved={async () => { setCreando(false); await recargar(); }}
-        />
+        <InventarioForm productos={productos ?? []} almacenes={almacenes ?? []} existentes={rows}
+          onCancel={() => setCreando(false)} onSaved={async () => { setCreando(false); await recargar(); }} />
       )}
       {editando && (
-        <InventarioForm
-          editar={editando} productos={productos ?? []} almacenes={almacenes ?? []} existentes={rows}
-          onCancel={() => setEditando(null)}
-          onSaved={async () => { setEditando(null); await recargar(); }}
-        />
+        <InventarioForm editar={editando} productos={productos ?? []} almacenes={almacenes ?? []} existentes={rows}
+          onCancel={() => setEditando(null)} onSaved={async () => { setEditando(null); await recargar(); }} />
       )}
-      <ConfirmDialog
-        open={!!confirm} title="Eliminar existencia"
+      <ConfirmDialog open={!!confirm} title="Eliminar existencia"
         message={`¿Eliminar el stock de "${confirm?.producto}" en ${confirm?.hub} (${confirm?.almacenTipo} #${confirm?.almId})?`}
-        onCancel={() => setConfirm(null)} onConfirm={() => confirm && borrar(confirm)}
-      />
+        onCancel={() => setConfirm(null)} onConfirm={() => confirm && borrar(confirm)} />
     </div>
+  );
+}
+
+function HubsTab() {
+  const { puede } = useSession();
+  const puedeCrear = puede("INVENTARIO", "CREAR");
+  const puedeEditar = puede("INVENTARIO", "EDITAR");
+  const puedeEliminar = puede("INVENTARIO", "ELIMINAR");
+  const { data: hubs, setData, loading } = useAsyncData<HubRow[]>(getHubsDetalle);
+  const { data: lugares } = useAsyncData<Opcion[]>(getLugaresOpc);
+  const [form, setForm] = useState<HubRow | "new" | null>(null);
+  const [confirm, setConfirm] = useState<HubRow | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const recargar = async () => setData(await getHubsDetalle());
+
+  const columns: Column<HubRow>[] = [
+    { key: "nombre", header: "Hub regional", sortValue: (h) => h.nombre, cell: (h) => <span className="font-semibold text-navy-700">{h.nombre}</span> },
+    { key: "lugar", header: "Ubicación", cell: (h) => <span className="text-slate-500">{h.lugar}</span> },
+    ...(puedeEditar || puedeEliminar ? [{
+      key: "acc", header: "", align: "right" as const,
+      cell: (h: HubRow) => (
+        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          {puedeEditar && <button title="Editar" onClick={() => setForm(h)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-navy-700"><IconEdit className="h-4 w-4" /></button>}
+          {puedeEliminar && <button title="Eliminar" onClick={() => setConfirm(h)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"><IconTrash className="h-4 w-4" /></button>}
+        </div>
+      ),
+    }] : []),
+  ];
+
+  return (
+    <div className="animate-fade-in">
+      <SectionHeader icon={<IconHome className="h-5 w-5" />} title="Hubs Regionales" subtitle="Centros de distribución que agrupan almacenes."
+        action={puedeCrear ? <Button onClick={() => setForm("new")}><IconPlus className="h-4 w-4" />Nuevo hub</Button> : undefined} />
+      {error && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+      <DataTable columns={columns} rows={hubs ?? []} rowKey={(h) => h.id} loading={loading} emptyTitle="No hay hubs registrados" />
+      {form && (
+        <HubForm hub={form === "new" ? null : form} lugares={lugares ?? []}
+          onCancel={() => setForm(null)} onSaved={async () => { setForm(null); await recargar(); }} />
+      )}
+      <ConfirmDialog open={!!confirm} title="Eliminar hub" message={`¿Eliminar el hub "${confirm?.nombre}"?`}
+        onCancel={() => setConfirm(null)} onConfirm={async () => { if (!confirm) return; try { await eliminarHub(confirm.id); setConfirm(null); await recargar(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); setConfirm(null); } }} />
+    </div>
+  );
+}
+
+function HubForm({ hub, lugares, onCancel, onSaved }: { hub: HubRow | null; lugares: Opcion[]; onCancel: () => void; onSaved: () => void }) {
+  const esNuevo = !hub;
+  const [nombre, setNombre] = useState(hub?.nombre ?? "");
+  const [lugarId, setLugarId] = useState(hub?.fkLugId ?? "");
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setError(null);
+    if (!nombre.trim()) { setError("El nombre del hub es obligatorio."); return; }
+    if (!lugarId) { setError("Selecciona la ubicación."); return; }
+    setGuardando(true);
+    try {
+      if (esNuevo) await crearHub(nombre.trim(), lugarId);
+      else await actualizarHub(hub!.id, nombre.trim(), lugarId);
+      onSaved();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setGuardando(false); }
+  }
+
+  return (
+    <Modal open onClose={onCancel} title={esNuevo ? "Nuevo hub regional" : "Editar hub regional"}
+      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit} disabled={guardando}>{guardando ? "Guardando…" : esNuevo ? "Crear" : "Guardar"}</Button></>}>
+      <div className="grid gap-4">
+        <Field label="Nombre del hub"><TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Hub Centro" /></Field>
+        <Field label="Ubicación (parroquia)">
+          <Select value={lugarId} onChange={(e) => setLugarId(e.target.value)}>
+            <option value="">— Selecciona —</option>
+            {(lugares ?? []).map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+          </Select>
+        </Field>
+      </div>
+      {error && <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+    </Modal>
+  );
+}
+
+function AlmacenesTab() {
+  const { puede } = useSession();
+  const puedeCrear = puede("INVENTARIO", "CREAR");
+  const puedeEditar = puede("INVENTARIO", "EDITAR");
+  const puedeEliminar = puede("INVENTARIO", "ELIMINAR");
+  const { data: almacenes, setData, loading } = useAsyncData<AlmacenRow[]>(getAlmacenesDetalleFull);
+  const { data: hubs } = useAsyncData<Opcion[]>(getHubsOpc);
+  const { data: lugares } = useAsyncData<Opcion[]>(getLugaresOpc);
+  const [form, setForm] = useState<AlmacenRow | "new" | null>(null);
+  const [confirm, setConfirm] = useState<AlmacenRow | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const recargar = async () => setData(await getAlmacenesDetalleFull());
+
+  const columns: Column<AlmacenRow>[] = [
+    { key: "tipo", header: "Tipo", sortValue: (a) => a.tipo, cell: (a) => <Badge tone="brand">{a.tipo}</Badge> },
+    { key: "hub", header: "Hub regional", sortValue: (a) => a.hubNombre, cell: (a) => <span className="text-navy-700">{a.hubNombre}</span> },
+    { key: "lugar", header: "Ubicación", cell: (a) => <span className="text-slate-500">{a.lugar}</span> },
+    ...(puedeEditar || puedeEliminar ? [{
+      key: "acc", header: "", align: "right" as const,
+      cell: (a: AlmacenRow) => (
+        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          {puedeEditar && <button title="Editar" onClick={() => setForm(a)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-navy-700"><IconEdit className="h-4 w-4" /></button>}
+          {puedeEliminar && <button title="Eliminar" onClick={() => setConfirm(a)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"><IconTrash className="h-4 w-4" /></button>}
+        </div>
+      ),
+    }] : []),
+  ];
+
+  return (
+    <div className="animate-fade-in">
+      <SectionHeader icon={<IconLayers className="h-5 w-5" />} title="Almacenes" subtitle="Instalaciones de almacenaje agrupadas por hub regional."
+        action={puedeCrear ? <Button onClick={() => setForm("new")}><IconPlus className="h-4 w-4" />Nuevo almacén</Button> : undefined} />
+      {error && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+      <DataTable columns={columns} rows={almacenes ?? []} rowKey={(a) => a.id} loading={loading} emptyTitle="No hay almacenes registrados" />
+      {form && (
+        <AlmacenForm almacen={form === "new" ? null : form} hubs={hubs ?? []} lugares={lugares ?? []}
+          onCancel={() => setForm(null)} onSaved={async () => { setForm(null); await recargar(); }} />
+      )}
+      <ConfirmDialog open={!!confirm} title="Eliminar almacén" message={`¿Eliminar el almacén "${confirm?.tipo} #${confirm?.id}" del hub ${confirm?.hubNombre}?`}
+        onCancel={() => setConfirm(null)} onConfirm={async () => { if (!confirm) return; try { await eliminarAlmacen(confirm.id); setConfirm(null); await recargar(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); setConfirm(null); } }} />
+    </div>
+  );
+}
+
+function AlmacenForm({ almacen, hubs, lugares, onCancel, onSaved }: { almacen: AlmacenRow | null; hubs: Opcion[]; lugares: Opcion[]; onCancel: () => void; onSaved: () => void }) {
+  const esNuevo = !almacen;
+  const [tipo, setTipo] = useState(almacen?.tipo ?? "");
+  const [hubId, setHubId] = useState(almacen?.hubId ?? "");
+  const [lugarId, setLugarId] = useState(almacen?.fkLugId ?? "");
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setError(null);
+    if (!tipo.trim()) { setError("El tipo de instalación es obligatorio."); return; }
+    if (!hubId) { setError("Selecciona el hub regional."); return; }
+    if (!lugarId) { setError("Selecciona la ubicación."); return; }
+    setGuardando(true);
+    try {
+      if (esNuevo) await crearAlmacen(tipo.trim(), hubId, lugarId);
+      else await actualizarAlmacen(almacen!.id, tipo.trim(), hubId, lugarId);
+      onSaved();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setGuardando(false); }
+  }
+
+  return (
+    <Modal open onClose={onCancel} title={esNuevo ? "Nuevo almacén" : "Editar almacén"}
+      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit} disabled={guardando}>{guardando ? "Guardando…" : esNuevo ? "Crear" : "Guardar"}</Button></>}>
+      <div className="grid gap-4">
+        <Field label="Tipo de instalación">
+          <Select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="">— Selecciona —</option>
+            <option value="CENTRAL">CENTRAL</option>
+            <option value="REGIONAL">REGIONAL</option>
+          </Select>
+        </Field>
+        <Field label="Hub regional">
+          <Select value={hubId} onChange={(e) => setHubId(e.target.value)}>
+            <option value="">— Selecciona —</option>
+            {(hubs ?? []).map((h) => <option key={h.id} value={h.id}>{h.nombre}</option>)}
+          </Select>
+        </Field>
+        <Field label="Ubicación (parroquia)">
+          <Select value={lugarId} onChange={(e) => setLugarId(e.target.value)}>
+            <option value="">— Selecciona —</option>
+            {(lugares ?? []).map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+          </Select>
+        </Field>
+      </div>
+      {error && <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+    </Modal>
   );
 }
 
