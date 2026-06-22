@@ -124,9 +124,12 @@ function UsuarioForm({ usuario, roles, onCancel, onSave }: { usuario: Usuario; r
   const esNuevo = !usuario.id;
   const set = (patch: Partial<Usuario>) => setForm((f) => ({ ...f, ...patch }));
 
-  function cambiarTipo(t: "EMPLEADO" | "CLIENTE") {
+  // El tipo (interno/externo) lo determina el ámbito del rol elegido.
+  function elegirRol(rid: string) {
+    const rol = roles.find((r) => r.id === rid);
+    const t: "EMPLEADO" | "CLIENTE" = rol?.ambito === "EXTERNO" ? "CLIENTE" : "EMPLEADO";
     setTipo(t);
-    set(t === "EMPLEADO" ? { clienteId: undefined } : { empleadoId: undefined });
+    setForm((f) => ({ ...f, rolesIds: rid ? [rid] : [], ...(t === "EMPLEADO" ? { clienteId: undefined } : { empleadoId: undefined }) }));
   }
 
   async function submit() {
@@ -149,21 +152,20 @@ function UsuarioForm({ usuario, roles, onCancel, onSave }: { usuario: Usuario; r
         <Field label="Contraseña" hint={esNuevo ? "Requerida" : "Dejar en blanco para no cambiarla"}>
           <TextInput type="password" value={form.password ?? ""} onChange={(e) => set({ password: e.target.value })} placeholder="••••••••" />
         </Field>
-        <Field label="Rol">
-          <Select value={form.rolesIds[0] ?? ""} onChange={(e) => set({ rolesIds: e.target.value ? [e.target.value] : [] })}>
+        <Field label="Rol" hint="Su ámbito define si el usuario es empleado o cliente">
+          <Select value={form.rolesIds[0] ?? ""} onChange={(e) => elegirRol(e.target.value)}>
             <option value="">— Selecciona —</option>
-            {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+            {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre} · {r.ambito === "EXTERNO" ? "externo" : "interno"}</option>)}
           </Select>
         </Field>
       </div>
 
       {esNuevo ? (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label="Tipo de usuario">
-            <Select value={tipo} onChange={(e) => cambiarTipo(e.target.value as "EMPLEADO" | "CLIENTE")}>
-              <option value="EMPLEADO">Interno (empleado)</option>
-              <option value="CLIENTE">Externo (cliente)</option>
-            </Select>
+          <Field label="Tipo de usuario" hint="Derivado del ámbito del rol">
+            <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-navy-700">
+              {tipo === "EMPLEADO" ? "Interno · empleado" : "Externo · cliente"}
+            </div>
           </Field>
           {tipo === "EMPLEADO" ? (
             <Field label="Empleado vinculado">

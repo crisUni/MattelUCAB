@@ -781,17 +781,15 @@ INSERT INTO PRODUCTO (pro_id, pro_sku, pro_nombre, pro_preciobase, pro_lanzamien
     (10, 100009, 'Nikki Atleta', 899.99, '2024-10-01', 'INDIVIDUAL', 10, 1, 10, 10, 10);
 
 -- DETALLE_SET (10 filas)
+-- Solo algunos pares compatibles se sirven como sets, dejando otros pares
+-- compatibles libres para crear sets nuevos desde la app (pares compatibles:
+-- el anillo 1-2-3-…-10-1).
 INSERT INTO DETALLE_SET (fk_pro1, fk_pro2, detset_nombre) VALUES
     (1, 2, 'Set Profesiones'),
-    (2, 3, 'Pack Aventuras'),
     (3, 4, 'Set Carreras'),
-    (4, 5, 'Pack Familia'),
     (5, 6, 'Set Duo Estelar'),
-    (6, 7, 'Pack Coleccionista'),
     (7, 8, 'Set Heroinas'),
-    (8, 9, 'Pack Suenos'),
-    (9, 10, 'Set Hermanas'),
-    (10, 1, 'Pack Fiesta');
+    (9, 10, 'Set Hermanas');
 
 -- HISTORICO_PROFESION (10 filas)
 INSERT INTO HISTORICO_PROFESION (hispro_anoasignacion, fk_prof_id, fk_pro_id) VALUES
@@ -1825,7 +1823,7 @@ INSERT INTO PERSONA_JURIDICA (fk_cli_id, perjur_rif, perjur_razonsocial, perjur_
 INSERT INTO PERMISO (perm_recurso, perm_accion)
 SELECT res.r, act.a
 FROM (VALUES
-    ('USUARIO'),('ROL'),
+    ('USUARIO'),('ROL'),('EMPLEADO'),('CLIENTE'),
     ('PRODUCTO'),('MOLDE_ROSTRO'),('TIPO_CUERPO'),('COLOR'),('MATERIAL'),('ERA'),('EXCLUSIVIDAD'),
     ('PERSONAJE'),('PROFESION'),('COMPATIBILIDAD'),('PACK'),('PATENTE'),
     ('LOTE'),('CALIDAD'),
@@ -1834,17 +1832,17 @@ FROM (VALUES
 CROSS JOIN (VALUES ('VER'),('CREAR'),('EDITAR'),('ELIMINAR')) AS act(a);
 
 -- ROL (10 filas)
-INSERT INTO ROL (rol_id, rol_nombre) VALUES
-    (1, 'Admin'),
-    (2, 'Gerente'),
-    (3, 'Vendedor'),
-    (4, 'Cliente'),
-    (5, 'Inspector'),
-    (6, 'Almacen'),
-    (7, 'Comprador'),
-    (8, 'Auditor'),
-    (9, 'Soporte'),
-    (10, 'Invitado');
+INSERT INTO ROL (rol_id, rol_nombre, rol_ambito) VALUES
+    (1, 'Admin', 'INTERNO'),
+    (2, 'Gerente', 'INTERNO'),
+    (3, 'Vendedor', 'INTERNO'),
+    (4, 'Cliente', 'EXTERNO'),
+    (5, 'Inspector', 'INTERNO'),
+    (6, 'Almacen', 'INTERNO'),
+    (7, 'Comprador', 'EXTERNO'),
+    (8, 'Auditor', 'INTERNO'),
+    (9, 'Soporte', 'INTERNO'),
+    (10, 'Invitado', 'EXTERNO');
 
 -- USUARIO (400 filas)
 INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_emp_id, fk_cli_id) VALUES
@@ -2264,7 +2262,7 @@ INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id) SELECT 1, perm_id FROM PERMISO;
 -- Gerente (2): CRUD completo del genoma + ver reportes y costos.
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     SELECT 2, perm_id FROM PERMISO
-     WHERE perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK','PATENTE','LOTE','CALIDAD')
+     WHERE perm_recurso IN ('EMPLEADO','CLIENTE','PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK','PATENTE','LOTE','CALIDAD')
         OR (perm_recurso IN ('REPORTE','COSTO') AND perm_accion = 'VER');
 -- Vendedor (3): ver catalogo y fichas (sin costos).
 INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)

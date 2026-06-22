@@ -120,6 +120,7 @@ export async function getRoles(): Promise<Rol[]> {
   return roles.map((r: any): Rol => ({
     id: sid(r.rol_id),
     nombre: r.rol_nombre,
+    ambito: r.rol_ambito === "EXTERNO" ? "EXTERNO" : "INTERNO",
     permisosIds: permisoRol
       .filter((pr: any) => pr.fk_rol_id === r.rol_id)
       .map((pr: any) => sid(pr.fk_perm_id)),
@@ -266,6 +267,28 @@ export async function getPersonajes(): Promise<Personaje[]> {
   });
 }
 
+export interface NuevoPersonaje {
+  nombre: string; moldeNombre: string; moldePatente: string; moldeAno?: number;
+  vinculos: { personajeId: string; tipo: string }[];
+}
+
+/** Alta de personaje + su molde de rostro, y sus vínculos con personajes existentes. */
+export async function crearPersonaje(p: NuevoPersonaje): Promise<void> {
+  await send("POST", "/personaje_full", {
+    nombre: p.nombre, moldeNombre: p.moldeNombre, moldePatente: p.moldePatente, moldeAno: p.moldeAno ?? null,
+  });
+  const pers = await getList("/personaje");
+  const nuevoId = pers.reduce((m: number, r: any) => Math.max(m, Number(r.per_id) || 0), 0);
+  for (const v of p.vinculos) {
+    if (v.personajeId) await send("POST", "/vinculo_personaje", { fk_personaje1: nuevoId, fk_personaje2: Number(v.personajeId), vinper_tipo_relacion: v.tipo });
+  }
+}
+
+/** Elimina un personaje en cascada (vínculos + moldes; bloquea si un molde está en uso). */
+export async function eliminarPersonaje(id: string): Promise<void> {
+  await send("DELETE", `/personaje/${id}`);
+}
+
 export async function getProfesiones(): Promise<Profesion[]> {
   const [historico, profesiones, productos, juguetes, moldes] = await Promise.all([
     getList("/historico_profesion"),
@@ -328,6 +351,12 @@ export async function getJuguetesConProductoOpc(): Promise<Opcion[]> {
 /** Registra un par de juguetes (genomas) como compatibles entre sí. */
 export async function crearCompatibilidad(jug1: string, jug2: string): Promise<void> {
   await send("POST", "/compatibilidad_juguete", { fk_juguete1: Number(jug1), fk_juguete2: Number(jug2) });
+}
+
+/** Pares de juguetes compatibles (ids), para filtrar las opciones de un set nuevo. */
+export async function getCompatibilidadesRaw(): Promise<{ jug1: string; jug2: string }[]> {
+  const rows = await getList("/compatibilidad_juguete");
+  return rows.map((c: any) => ({ jug1: sid(c.fk_juguete1), jug2: sid(c.fk_juguete2) }));
 }
 
 export async function getPacks(): Promise<Pack[]> {
@@ -456,6 +485,115 @@ export async function getEmpleadosOpc(): Promise<Opcion[]> {
   return rows.map((e: any) => ({ id: sid(e.emp_id), nombre: `${e.emp_pnombre} ${e.emp_papellido}` }));
 }
 
+/* ------------------------------ Empleados ------------------------------ */
+
+export interface Empleado {
+  id: string; nombre: string; departamento: string; cargo: string; direccion: string;
+  pnombre: string; snombre: string; papellido: string; sapellido: string; depId: string; cargoId: string;
+}
+
+/** Empleados con su departamento y cargo actuales (vía DEP_EMP). */
+export async function getEmpleados(): Promise<Empleado[]> {
+  const [emps, depEmp, deps, cargos] = await Promise.all([
+    getList("/empleado"), getList("/dep_emp"), getList("/departamento"), getList("/cargo"),
+  ]);
+  return emps.map((e: any): Empleado => {
+    const de = depEmp.find((x: any) => x.fk_emp_id === e.emp_id);
+    const dep = de && deps.find((d: any) => d.dep_id === de.fk_dep_id);
+    const car = de && cargos.find((c: any) => c.car_id === de.fk_car_id);
+    return {
+      id: sid(e.emp_id),
+      nombre: [e.emp_pnombre, e.emp_papellido].filter(Boolean).join(" "),
+      departamento: dep?.dep_nombre ?? "—",
+      cargo: car?.car_nombre ?? "—",
+      direccion: e.emp_direccion ?? "",
+      pnombre: e.emp_pnombre ?? "", snombre: e.emp_snombre ?? "",
+      papellido: e.emp_papellido ?? "", sapellido: e.emp_sapellido ?? "",
+      depId: de ? sid(de.fk_dep_id) : "", cargoId: de ? sid(de.fk_car_id) : "",
+    };
+  });
+}
+
+export interface NuevoEmpleado { pnombre: string; snombre?: string; papellido: string; sapellido: string; direccion: string; dep: string; car: string }
+
+/** Alta de empleado + adscripción (departamento y cargo) en la BD. */
+export async function crearEmpleado(e: NuevoEmpleado): Promise<void> {
+  await send("POST", "/empleado_full", {
+    pnombre: e.pnombre, snombre: e.snombre ?? "", papellido: e.papellido, sapellido: e.sapellido,
+    direccion: e.direccion, dep: Number(e.dep), car: Number(e.car),
+  });
+}
+
+/** Edita un empleado (datos + departamento/cargo). */
+export async function actualizarEmpleado(id: string, e: NuevoEmpleado): Promise<void> {
+  await send("PUT", `/empleado_full/${id}`, {
+    pnombre: e.pnombre, snombre: e.snombre ?? "", papellido: e.papellido, sapellido: e.sapellido,
+    direccion: e.direccion, dep: Number(e.dep), car: Number(e.car),
+  });
+}
+
+/** Elimina un empleado (cascada de sus turnos/adscripción; bloquea si está vinculado). */
+export async function eliminarEmpleado(id: string): Promise<void> {
+  await send("DELETE", `/empleado/${id}`);
+}
+
+export async function getDepartamentosOpc(): Promise<Opcion[]> {
+  const rows = await getList("/departamento");
+  return rows.map((d: any) => ({ id: sid(d.dep_id), nombre: d.dep_nombre }));
+}
+
+export async function getCargosOpc(): Promise<Opcion[]> {
+  const rows = await getList("/cargo");
+  return rows.map((c: any) => ({ id: sid(c.car_id), nombre: c.car_nombre }));
+}
+
+/* ------------------------------ Clientes ------------------------------ */
+
+export interface ClienteRow { id: string; nombre: string; tipo: "NATURAL" | "JURIDICA"; documento: string; lugar: string; registro: string }
+
+/** Clientes (persona natural o jurídica) con su documento y lugar de registro. */
+export async function getClientes(): Promise<ClienteRow[]> {
+  const [clientes, naturales, juridicas, lugares] = await Promise.all([
+    getList("/cliente"), getList("/persona_natural"), getList("/persona_juridica"), getList("/lugar"),
+  ]);
+  return clientes.map((c: any): ClienteRow => {
+    const n = naturales.find((x: any) => x.fk_cli_id === c.cli_id);
+    const j = juridicas.find((x: any) => x.fk_cli_id === c.cli_id);
+    const lugar = lugares.find((l: any) => l.lug_id === c.fk_lug_id)?.lug_nombre ?? "—";
+    const registro = (c.cli_fecharegis || "").slice(0, 10);
+    if (j) return { id: sid(c.cli_id), nombre: j.perjur_razonsocial, tipo: "JURIDICA", documento: `RIF ${j.perjur_rif}`, lugar, registro };
+    if (n) return { id: sid(c.cli_id), nombre: `${n.pernat_pnombre} ${n.pernat_papellido}`, tipo: "NATURAL", documento: `CI ${n.pernat_cedula}`, lugar, registro };
+    return { id: sid(c.cli_id), nombre: `Cliente #${c.cli_id}`, tipo: "NATURAL", documento: "—", lugar, registro };
+  });
+}
+
+export interface NuevoCliente {
+  tipo: "NATURAL" | "JURIDICA"; lug: string;
+  cedula?: string; pnombre?: string; snombre?: string; papellido?: string; sapellido?: string; fechanac?: string; direccion?: string;
+  rif?: string; razon?: string; repre?: string;
+}
+
+/** Alta de cliente (persona natural o jurídica) en la BD. */
+export async function crearCliente(c: NuevoCliente): Promise<void> {
+  await send("POST", "/cliente_full", {
+    tipo: c.tipo, lug: Number(c.lug),
+    cedula: c.cedula ?? "", pnombre: c.pnombre ?? "", snombre: c.snombre ?? "", papellido: c.papellido ?? "", sapellido: c.sapellido ?? "",
+    fechanac: c.fechanac || null, direccion: c.direccion ?? "",
+    rif: c.rif ?? "", razon: c.razon ?? "", repre: c.repre ?? "",
+  });
+}
+
+/** Elimina un cliente (cascada de su persona y membresías; bloquea si tiene usuario). */
+export async function eliminarCliente(id: string): Promise<void> {
+  await send("DELETE", `/cliente/${id}`);
+}
+
+/** Estados de Venezuela para el lugar de registro del cliente. */
+export async function getLugaresOpc(): Promise<Opcion[]> {
+  const rows = await getList("/lugar");
+  return rows.filter((l: any) => l.lug_tipo === "ESTADO").map((l: any) => ({ id: sid(l.lug_id), nombre: l.lug_nombre }));
+}
+
 /** Solo empleados adscritos al departamento de Diseño (I+D) — diseñadores de ADN/patentes. */
 export async function getDisenadoresOpc(): Promise<Opcion[]> {
   const [empleados, depEmp, departamentos] = await Promise.all([
@@ -539,6 +677,20 @@ export async function crearMuneca(m: NuevaMuneca): Promise<void> {
   });
 }
 
+/** Mapea la zona de color del front (enum) al texto que guarda la BD. */
+const ZONA_DB: Record<string, string> = { PIEL: "Piel", OJOS: "Ojos", CABELLO: "Cabello", LABIOS: "Labios", VESTUARIO: "Vestuario" };
+
+/** Edita el genoma (ADN) de un producto: molde, cuerpo, era y colores por zona. */
+export async function actualizarGenoma(
+  proId: string, molros: string, tipcue: string, era: string, colores: { colorId: string; zona: string }[],
+): Promise<void> {
+  await send("POST", "/genoma", {
+    pro: Number(proId), molros: Number(molros), tipcue: Number(tipcue), era: Number(era),
+    colIds: colores.filter((c) => c.colorId).map((c) => Number(c.colorId)),
+    zonas: colores.filter((c) => c.colorId).map((c) => ZONA_DB[c.zona] ?? c.zona),
+  });
+}
+
 /** Almacenes para asignar stock inicial (etiquetados por tipo de instalación). */
 export async function getAlmacenesOpc(): Promise<Opcion[]> {
   const rows = await getList("/almacen");
@@ -603,7 +755,7 @@ export function reportePdfUrl(id: string): string {
 export type Recurso =
   | "usuario" | "rol"
   | "producto" | "molde_rostro" | "tipo_cuerpo" | "color"
-  | "material" | "era_historico" | "exclusividad";
+  | "material" | "era_historico" | "exclusividad" | "profesion";
 
 /** Devuelve la fila cruda de una colección por id numérico (para preservar FKs en edición). */
 async function rawById(path: string, idField: string, id: string): Promise<any | undefined> {
@@ -662,7 +814,7 @@ const writers: Record<Recurso, Writer> = {
 
   rol: {
     create: async (r: Rol) => {
-      await send("POST", "/rol", { rol_nombre: r.nombre });
+      await send("POST", "/rol", { rol_nombre: r.nombre, rol_ambito: r.ambito });
       // Recupera el id del rol recién creado para sincronizar sus permisos.
       const roles = await getList("/rol");
       const nuevoRolId = roles
@@ -672,7 +824,7 @@ const writers: Record<Recurso, Writer> = {
       if (nuevoRolId && r.permisosIds.length) await syncPermisosRol(String(nuevoRolId), r.permisosIds);
     },
     update: async (r: Rol) => {
-      await send("PUT", `/rol/${r.id}`, { rol_nombre: r.nombre });
+      await send("PUT", `/rol/${r.id}`, { rol_nombre: r.nombre, rol_ambito: r.ambito });
       await syncPermisosRol(r.id, r.permisosIds);
     },
     remove: (id) => send("DELETE", `/rol/${id}`),
@@ -778,6 +930,12 @@ const writers: Record<Recurso, Writer> = {
       send("PUT", `/exclusividad/${x.id}`, { exc_nombre: x.nombre, exc_limiteproducto: x.tiradaMax }),
     remove: (id) => send("DELETE", `/exclusividad/${id}`),
   },
+
+  profesion: {
+    create: (p: { id: string; nombre: string }) => send("POST", "/profesion", { prof_nombre: p.nombre }),
+    update: (p: { id: string; nombre: string }) => send("PUT", `/profesion/${p.id}`, { prof_nombre: p.nombre }),
+    remove: (id) => send("DELETE", `/profesion/${id}`),
+  },
 };
 
 /** Id temporal en memoria para filas recién creadas (se reconcilia al recargar). */
@@ -796,6 +954,7 @@ const idLookup: Record<Recurso, { path: string; idField: string }> = {
   material: { path: "/material", idField: "mat_id" },
   era_historico: { path: "/era_historico", idField: "erahis_id" },
   exclusividad: { path: "/exclusividad", idField: "exc_id" },
+  profesion: { path: "/profesion", idField: "prof_id" },
 };
 
 /** Crea (si el id es temporal/vacío) o actualiza una entidad del recurso indicado. */

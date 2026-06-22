@@ -4,6 +4,7 @@ import type {
 } from "../../../data/types";
 import {
   getMoldesRostro, getTiposCuerpo, getColores, getMateriales, getEras, getExclusividades,
+  getProfesionesOpc, type Opcion,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { MasterCrud, type FieldDef } from "./MasterCrud";
@@ -17,6 +18,7 @@ const SUBS = [
   { id: "materiales", label: "Materiales (BOM)" },
   { id: "eras", label: "Eras" },
   { id: "exclusividades", label: "Exclusividades" },
+  { id: "profesiones", label: "Profesiones" },
 ];
 
 export function MaestrosTab() {
@@ -39,8 +41,18 @@ export function MaestrosTab() {
       {sub === "materiales" && <Materiales />}
       {sub === "eras" && <Eras />}
       {sub === "exclusividades" && <Exclusividades />}
+      {sub === "profesiones" && <Profesiones />}
     </div>
   );
+}
+
+function Profesiones() {
+  const { data, setData, loading } = useAsyncData<Opcion[]>(getProfesionesOpc);
+  const fields: FieldDef[] = [{ key: "nombre", label: "Nombre de la profesión" }];
+  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Profesión" idPrefix="prof" resource="profesion" permRecurso="PROFESION" blank={(): Opcion => ({ id: "", nombre: "" })} fields={fields}
+    columns={[
+      { key: "nombre", header: "Profesión", sortValue: (p) => p.nombre, searchValue: (p) => p.nombre, cell: (p) => <span className="font-semibold text-navy-700">{p.nombre}</span> },
+    ]} />;
 }
 
 function Moldes() {

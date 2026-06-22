@@ -4,7 +4,7 @@ import type {
 } from "../../../data/types";
 import {
   getProductos, getMoldesRostro, getTiposCuerpo, getColores,
-  getEras, getExclusividades, getMateriales, getPersonajes, guardar, eliminar, nuevoId,
+  getEras, getExclusividades, getMateriales, getPersonajes, guardar, eliminar, nuevoId, actualizarGenoma,
 } from "../../../services/api";
 import { NuevoProductoForm } from "./NuevoProductoForm";
 import { costoVigente } from "../../../data/costing";
@@ -13,7 +13,7 @@ import { useSession } from "../../../context/SessionContext";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
 import {
-  Button, Field, TextInput, Select, SectionHeader, fmtUsd, fmtFecha,
+  Button, Field, TextInput, NumberInput, Select, SectionHeader, fmtUsd, fmtFecha,
 } from "../../ui/primitives";
 import { IconPlus, IconEdit, IconTrash, IconDna, IconLock, IconBox } from "../../ui/icons";
 import { BarbieConfetti } from "../../ui/Decor";
@@ -56,9 +56,13 @@ export function CatalogoTab() {
   }), [moldes, cuerpos, colores, eras, excl, materiales, personajes]);
 
   async function handleSave(p: Producto) {
-    const isNew = !p.id;
-    const saved = await guardar("producto", { ...p, id: p.id || nuevoId("prod") });
-    setData((prev) => { const l = prev ?? []; return isNew ? [saved, ...l] : l.map((x) => x.id === saved.id ? saved : x); });
+    await guardar("producto", { ...p, id: p.id || nuevoId("prod") });
+    // El genoma (molde/cuerpo/era/colores) vive en JUGUETE/COLOR_PRODUCTO: se
+    // persiste aparte y regenera el ADN. Refrescamos desde la BD para reflejarlo.
+    if (p.id && p.moldeRostroId && p.tipoCuerpoId && p.eraId) {
+      await actualizarGenoma(p.id, p.moldeRostroId, p.tipoCuerpoId, p.eraId, p.colores);
+    }
+    setData(await getProductos());
     setEditing(null);
   }
   async function handleDelete(p: Producto) {
@@ -299,13 +303,13 @@ function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personaj
   return (
     <Modal open onClose={onCancel} size="lg"
       title="Editar producto"
-      subtitle="Edita los datos comerciales. El genoma (ADN) —molde, cuerpo, era, colores— es fijo: cambiarlo implica crear un SKU nuevo."
+      subtitle="Edita los datos comerciales y el genoma (ADN). Cambiar molde/cuerpo/era/colores regenera el ADN del juguete."
       footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit}>Guardar cambios</Button></>}
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="SKU"><TextInput value={form.sku} onChange={(e) => set({ sku: e.target.value })} placeholder="BRB-AAAA-XXX" /></Field>
         <Field label="Nombre comercial"><TextInput value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} /></Field>
-        <Field label="Precio base (USD)"><TextInput type="number" value={form.precioBaseUsd} onChange={(e) => set({ precioBaseUsd: +e.target.value })} /></Field>
+        <Field label="Precio base (USD)"><NumberInput value={form.precioBaseUsd} onChange={(n) => set({ precioBaseUsd: n })} /></Field>
         <Field label="Costo de producción" hint="Calculado desde la receta de materiales"><TextInput type="number" value={form.costoProduccionUsd} disabled /></Field>
         <Field label="Fecha de lanzamiento"><TextInput type="date" value={form.fechaLanzamiento.slice(0, 10)} onChange={(e) => set({ fechaLanzamiento: new Date(e.target.value).toISOString() })} /></Field>
         <Field label="Tipo">
@@ -322,32 +326,30 @@ function ProductoForm({ producto, moldes, cuerpos, colores, eras, excl, personaj
         </Field>
       </div>
 
-      <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-brand-600">
-        Taxonomía / ADN <span className="font-normal normal-case text-slate-400">— fijo, solo lectura</span>
-      </p>
+      <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-brand-600">Taxonomía / ADN</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Molde de rostro">
-          <Select value={opt(form.moldeRostroId)} disabled>
+          <Select value={opt(form.moldeRostroId)} onChange={(e) => set({ moldeRostroId: e.target.value || undefined })}>
             <option value="">—</option>{moldes.map((m) => <option key={m.id} value={m.id}>{m.nombre} ({m.patente ?? m.anioPatente})</option>)}
           </Select>
         </Field>
         <Field label="Tipo de cuerpo">
-          <Select value={opt(form.tipoCuerpoId)} disabled>
+          <Select value={opt(form.tipoCuerpoId)} onChange={(e) => set({ tipoCuerpoId: e.target.value || undefined })}>
             <option value="">—</option>{cuerpos.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </Select>
         </Field>
         <Field label="Color de piel" hint="Zona PIEL">
-          <Select value={colorEnZona("PIEL")} disabled>
+          <Select value={colorEnZona("PIEL")} onChange={(e) => setColorZona("PIEL", e.target.value)}>
             <option value="">—</option>{colores.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </Select>
         </Field>
         <Field label="Color de ojos" hint="Zona OJOS">
-          <Select value={colorEnZona("OJOS")} disabled>
+          <Select value={colorEnZona("OJOS")} onChange={(e) => setColorZona("OJOS", e.target.value)}>
             <option value="">—</option>{colores.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </Select>
         </Field>
         <Field label="Era histórica">
-          <Select value={opt(form.eraId)} disabled>
+          <Select value={opt(form.eraId)} onChange={(e) => set({ eraId: e.target.value || undefined })}>
             <option value="">—</option>{eras.map((e2) => <option key={e2.id} value={e2.id}>{e2.nombre}</option>)}
           </Select>
         </Field>

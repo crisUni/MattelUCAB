@@ -216,12 +216,40 @@ BEGIN
     WHERE per_id = perId;
 END
 $$;
+-- Alta de personaje con un molde de rostro asociado (un personaje siempre tiene
+-- al menos un molde). Devuelve el id del personaje.
+CREATE OR REPLACE FUNCTION crear_personaje (
+    pNombre VARCHAR(100), pMoldeNombre VARCHAR(100), pMoldePatente VARCHAR(100), pMoldeAno INT
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vPer INT;
+BEGIN
+    INSERT INTO PERSONAJE (per_nombre) VALUES (pNombre) RETURNING per_id INTO vPer;
+    INSERT INTO MOLDE_ROSTRO (molros_nombre, molros_patente, molros_anopatente, fk_per_id)
+    VALUES (pMoldeNombre, pMoldePatente, pMoldeAno, vPer);
+    RETURN vPer;
+END
+$$;
+
+-- Borrado en cascada de un personaje: sus vinculos y sus moldes. Se bloquea si
+-- alguno de sus moldes esta en uso por un juguete (romperia productos).
 CREATE OR REPLACE PROCEDURE deletePersonaje (
     perId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (
+        SELECT 1 FROM JUGUETE j JOIN MOLDE_ROSTRO m ON m.molros_id = j.fk_molros_id
+        WHERE m.fk_per_id = perId
+    ) THEN
+        RAISE EXCEPTION 'No se puede eliminar el personaje %: uno de sus moldes de rostro esta en uso por juguetes.', perId;
+    END IF;
+    DELETE FROM VINCULO_PERSONAJE WHERE fk_personaje1 = perId OR fk_personaje2 = perId;
+    DELETE FROM MOLDE_ROSTRO WHERE fk_per_id = perId;
     DELETE FROM PERSONAJE WHERE per_id = perId;
 END
 $$;
@@ -816,12 +844,26 @@ BEGIN
     WHERE emp_id = empId;
 END
 $$;
+-- Borra un empleado en cascada de sus registros propios (turnos, adscripcion).
+-- Bloquea con mensaje claro si esta vinculado a datos compartidos (usuario,
+-- patentes o inspecciones) que se romperian al borrarlo.
 CREATE OR REPLACE PROCEDURE deleteEmpleado (
     empId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM USUARIO WHERE fk_emp_id = empId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el empleado %: tiene una cuenta de usuario. Elimina ese usuario primero.', empId;
+    END IF;
+    IF EXISTS (SELECT 1 FROM DISENO WHERE fk_emp_id = empId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el empleado %: es disenador de una o mas patentes. Reasigna esas patentes primero.', empId;
+    END IF;
+    IF EXISTS (SELECT 1 FROM INSPECCION_CALIDAD WHERE fk_emp_id = empId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el empleado %: firmo una o mas inspecciones de calidad.', empId;
+    END IF;
+    DELETE FROM EMP_TURNO WHERE fk_emp_id = empId;
+    DELETE FROM DEP_EMP WHERE fk_emp_id = empId;
     DELETE FROM EMPLEADO WHERE emp_id = empId;
 END
 $$;
@@ -1987,12 +2029,44 @@ BEGIN
     WHERE cli_id = cliId;
 END
 $$;
+-- Alta de cliente (CLIENTE + su persona natural o juridica) en una transaccion.
+CREATE OR REPLACE FUNCTION crear_cliente (
+    pTipo VARCHAR, pLug INT,
+    pCedula VARCHAR(20), pPnombre VARCHAR(50), pSnombre VARCHAR(50), pPapellido VARCHAR(50), pSapellido VARCHAR(50), pFechanac DATE, pDireccion TEXT,
+    pRif VARCHAR(20), pRazon VARCHAR(100), pRepre VARCHAR(100)
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vCli INT;
+BEGIN
+    INSERT INTO CLIENTE (cli_fecharegis, fk_lug_id) VALUES (CURRENT_DATE, pLug) RETURNING cli_id INTO vCli;
+    IF pTipo = 'JURIDICA' THEN
+        INSERT INTO PERSONA_JURIDICA (fk_cli_id, perjur_rif, perjur_razonsocial, perjur_reprelegal)
+        VALUES (vCli, pRif, pRazon, pRepre);
+    ELSE
+        INSERT INTO PERSONA_NATURAL (fk_cli_id, pernat_cedula, pernat_pnombre, pernat_snombre, pernat_papellido, pernat_sapellido, pernat_fechanac, pernat_direccion)
+        VALUES (vCli, pCedula, pPnombre, NULLIF(pSnombre, ''), pPapellido, NULLIF(pSapellido, ''), pFechanac, pDireccion);
+    END IF;
+    RETURN vCli;
+END
+$$;
+
+-- Borra un cliente en cascada (su persona y membresias). Bloquea si tiene
+-- una cuenta de usuario (eliminarla aparte preserva su historial de compras).
 CREATE OR REPLACE PROCEDURE deleteCliente (
     cliId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM USUARIO WHERE fk_cli_id = cliId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el cliente %: tiene una cuenta de usuario. Elimina ese usuario primero.', cliId;
+    END IF;
+    DELETE FROM HISTORICO_MEMBRESIA WHERE fk_cli_id = cliId;
+    DELETE FROM PERSONA_NATURAL WHERE fk_cli_id = cliId;
+    DELETE FROM PERSONA_JURIDICA WHERE fk_cli_id = cliId;
     DELETE FROM CLIENTE WHERE cli_id = cliId;
 END
 $$;
@@ -2163,13 +2237,14 @@ END
 $$;
 CREATE OR REPLACE PROCEDURE updateRol (
     rolId INT,
-    rolNombre VARCHAR(50)
+    rolNombre VARCHAR(50),
+    ambitoRol VARCHAR(10) DEFAULT 'INTERNO'
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     UPDATE ROL
-    SET rol_nombre = rolNombre
+    SET rol_nombre = rolNombre, rol_ambito = ambitoRol
     WHERE rol_id = rolId;
 END
 $$;
@@ -3184,6 +3259,48 @@ BEGIN
 END
 $$;
 
+-- Alta de un empleado y su adscripcion (departamento + cargo) en una transaccion.
+CREATE OR REPLACE FUNCTION crear_empleado (
+    pPnombre VARCHAR(50), pSnombre VARCHAR(50), pPapellido VARCHAR(50), pSapellido VARCHAR(50),
+    pDireccion VARCHAR(100), pDep INT, pCar INT
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vEmp INT;
+BEGIN
+    INSERT INTO EMPLEADO (emp_pnombre, emp_snombre, emp_papellido, emp_sapellido, emp_direccion)
+    VALUES (pPnombre, NULLIF(pSnombre, ''), pPapellido, pSapellido, pDireccion)
+    RETURNING emp_id INTO vEmp;
+
+    INSERT INTO DEP_EMP (depemp_fechaini, depemp_fechafin, fk_dep_id, fk_emp_id, fk_car_id)
+    VALUES (CURRENT_DATE, NULL, pDep, vEmp, pCar);
+
+    RETURN vEmp;
+END
+$$;
+
+-- Edita un empleado y reemplaza su adscripcion (departamento + cargo).
+CREATE OR REPLACE FUNCTION actualizar_empleado (
+    pEmp INT, pPnombre VARCHAR(50), pSnombre VARCHAR(50), pPapellido VARCHAR(50), pSapellido VARCHAR(50),
+    pDireccion VARCHAR(100), pDep INT, pCar INT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE EMPLEADO
+       SET emp_pnombre = pPnombre, emp_snombre = NULLIF(pSnombre, ''),
+           emp_papellido = pPapellido, emp_sapellido = pSapellido, emp_direccion = pDireccion
+     WHERE emp_id = pEmp;
+    -- DEP_EMP tiene PK por (departamento, empleado); para cambiar de depto se reemplaza la fila.
+    DELETE FROM DEP_EMP WHERE fk_emp_id = pEmp;
+    INSERT INTO DEP_EMP (depemp_fechaini, depemp_fechafin, fk_dep_id, fk_emp_id, fk_car_id)
+    VALUES (CURRENT_DATE, NULL, pDep, pEmp, pCar);
+END
+$$;
+
 CREATE OR REPLACE PROCEDURE createDepEmp (
     fechaIni DATE,
     fechaFin DATE,
@@ -3424,6 +3541,48 @@ BEGIN
     END IF;
 
     RETURN vPro;
+END
+$$;
+
+-- Edita el genoma (ADN) de un producto: molde, cuerpo, era y colores por zona.
+-- Actualiza el JUGUETE (regenerando el ADN) y reemplaza sus colores.
+CREATE OR REPLACE FUNCTION actualizar_genoma (
+    pPro INT, pMolros INT, pTipcue INT, pEra INT,
+    pColIds INT[], pZonas VARCHAR[]
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vJug INT;
+    vAdn VARCHAR(50);
+    i INT;
+BEGIN
+    SELECT fk_jug_id INTO vJug FROM PRODUCTO WHERE pro_id = pPro;
+    IF vJug IS NULL THEN
+        RAISE EXCEPTION 'El producto % no tiene genoma (juguete) editable.', pPro;
+    END IF;
+
+    SELECT 'ADN-' || UPPER(LEFT(REPLACE(COALESCE(per.per_nombre, 'GEN'), ' ', ''), 12)) || '-' || UPPER(LEFT(REPLACE(COALESCE(mr.molros_nombre, 'X'), ' ', ''), 14))
+      INTO vAdn
+      FROM MOLDE_ROSTRO mr LEFT JOIN PERSONAJE per ON per.per_id = mr.fk_per_id
+     WHERE mr.molros_id = pMolros;
+
+    UPDATE JUGUETE
+       SET fk_molros_id = pMolros, fk_tipcue_id = pTipcue, fk_erahis_id = pEra,
+           jug_adn = COALESCE(vAdn, jug_adn)
+     WHERE jug_id = vJug;
+
+    -- Reemplaza los colores del genoma con el conjunto recibido.
+    IF pColIds IS NOT NULL THEN
+        DELETE FROM COLOR_PRODUCTO WHERE fk_jug_id = vJug;
+        FOR i IN 1 .. COALESCE(array_length(pColIds, 1), 0) LOOP
+            IF pColIds[i] IS NOT NULL THEN
+                INSERT INTO COLOR_PRODUCTO (fk_col_id, fk_jug_id, colpro_zonaaplicacion)
+                VALUES (pColIds[i], vJug, pZonas[i]);
+            END IF;
+        END LOOP;
+    END IF;
 END
 $$;
 
@@ -3700,7 +3859,8 @@ BEGIN
     SELECT u.usu_id, u.usu_nombre, r.rol_id, r.rol_nombre
     FROM USUARIO u
     JOIN ROL r ON r.rol_id = u.fk_rol_id
-    WHERE u.usu_nombre = pUsuario AND u.usu_clave = pClave;
+    -- Usuario sin distinción de mayúsculas/minúsculas; la clave sí es exacta.
+    WHERE LOWER(u.usu_nombre) = LOWER(pUsuario) AND u.usu_clave = pClave;
 END
 $$;
 
@@ -3722,13 +3882,14 @@ $$;
 
 
 CREATE OR REPLACE PROCEDURE createRol (
-    nombreRol VARCHAR(50)
+    nombreRol VARCHAR(50),
+    ambitoRol VARCHAR(10) DEFAULT 'INTERNO'
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO ROL (rol_nombre)
-    VALUES (nombreRol);
+    INSERT INTO ROL (rol_nombre, rol_ambito)
+    VALUES (nombreRol, ambitoRol);
 END
 $$;
 

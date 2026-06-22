@@ -1,3 +1,4 @@
+import { sql } from "bun";
 import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll } from "./CorsHeaders";
 
 type Color = {
@@ -209,6 +210,23 @@ class JugueteService{
                 if (!body.per_nombre)
                     return new Response('per_nombre is required', { status: 400, headers: CORS_HEADERS })
                 return callProcedure("createPersonaje", [body.per_nombre])
+            }
+        },
+        // Alta de personaje + su molde de rostro asociado en una transaccion.
+        "/api/personaje_full": {
+            POST: async (req: Bun.BunRequest<"/api/personaje_full">) => {
+                const b = await req.json();
+                if (!b.nombre || !b.moldeNombre || !b.moldePatente)
+                    return new Response('nombre, moldeNombre y moldePatente son requeridos', { status: 400, headers: CORS_HEADERS })
+                try {
+                    const rows = await sql.unsafe(
+                        `SELECT crear_personaje($1,$2,$3,$4) AS per_id`,
+                        [b.nombre, b.moldeNombre, b.moldePatente, b.moldeAno ?? null]
+                    ) as any[];
+                    return Response.json({ per_id: rows[0].per_id }, { status: 201, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } })
+                } catch (e) {
+                    return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+                }
             }
         },
         "/api/personaje/:id": {
