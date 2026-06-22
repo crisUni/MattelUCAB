@@ -60,16 +60,22 @@ function InventarioTab() {
   const porHub = useMemo(() => {
     const map = new Map<string, { hub: string; disponible: number; total: number; skus: Set<string> }>();
     for (const r of rows) {
-      const e = map.get(r.hubId) ?? { hub: r.hub, disponible: 0, total: 0, skus: new Set<string>() };
+      let e = map.get(r.hubId);
+      if (!e) { e = { hub: r.hub, disponible: 0, total: 0, skus: new Set<string>() }; map.set(r.hubId, e); }
       e.disponible += r.disponible;
       e.total += r.cantidad;
       e.skus.add(r.proId);
-      map.set(r.hubId, e);
+    }
+    const hubList = hubs ?? [];
+    for (const h of hubList) {
+      if (!map.has(h.id)) {
+        map.set(h.id, { hub: h.nombre, disponible: 0, total: 0, skus: new Set() });
+      }
     }
     return Array.from(map.entries())
       .map(([hubId, e]) => ({ hubId, hub: e.hub, disponible: e.disponible, total: e.total, skus: e.skus.size }))
       .sort((a, b) => b.disponible - a.disponible);
-  }, [rows]);
+  }, [rows, hubs]);
 
   const filtradas = useMemo(
     () => (hubFiltro ? rows.filter((r) => r.hubId === hubFiltro) : rows),
