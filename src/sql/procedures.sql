@@ -1606,6 +1606,15 @@ CREATE OR REPLACE PROCEDURE updateInventario (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM INVENTARIO WHERE fk_pro_id = fkProId AND fk_alm_id = fkAlmId) THEN
+        RAISE EXCEPTION 'No existe inventario del producto % en el almacen %.', fkProId, fkAlmId;
+    END IF;
+    IF invStockdisponible < 0 OR invCantidad < 0 THEN
+        RAISE EXCEPTION 'El stock disponible y la cantidad no pueden ser negativos.';
+    END IF;
+    IF invStockdisponible > invCantidad THEN
+        RAISE EXCEPTION 'El stock disponible (%) no puede superar la cantidad total (%).', invStockdisponible, invCantidad;
+    END IF;
     UPDATE INVENTARIO
     SET inv_stockdisponible = invStockdisponible,
         inv_cantidad = invCantidad,
@@ -1620,6 +1629,11 @@ CREATE OR REPLACE PROCEDURE deleteInventario (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    -- DETALLE_COMPRA referencia (producto, almacen) del inventario: no se puede
+    -- borrar una existencia que ya tiene ventas/lineas de compra asociadas.
+    IF EXISTS (SELECT 1 FROM DETALLE_COMPRA WHERE fk_pro_id = fkProId AND fk_alm_id = fkAlmId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el inventario del producto % en el almacen %: tiene lineas de compra asociadas.', fkProId, fkAlmId;
+    END IF;
     DELETE FROM INVENTARIO WHERE fk_pro_id = fkProId AND fk_alm_id = fkAlmId;
 END
 $$;
@@ -3176,6 +3190,17 @@ CREATE OR REPLACE PROCEDURE createCompatibilidadJuguete (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF fkJuguete1 = fkJuguete2 THEN
+        RAISE EXCEPTION 'Un juguete no puede ser compatible consigo mismo.';
+    END IF;
+    -- Evita duplicados en cualquier sentido (la compatibilidad es simetrica).
+    IF EXISTS (
+        SELECT 1 FROM COMPATIBILIDAD_JUGUETE
+        WHERE (fk_juguete1 = fkJuguete1 AND fk_juguete2 = fkJuguete2)
+           OR (fk_juguete1 = fkJuguete2 AND fk_juguete2 = fkJuguete1)
+    ) THEN
+        RAISE EXCEPTION 'Estos juguetes ya estan registrados como compatibles.';
+    END IF;
     INSERT INTO COMPATIBILIDAD_JUGUETE (fk_juguete1, fk_juguete2)
     VALUES (fkJuguete1, fkJuguete2);
 END
@@ -3634,6 +3659,15 @@ CREATE OR REPLACE PROCEDURE createInventario (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM INVENTARIO WHERE fk_pro_id = fkProId AND fk_alm_id = fkAlmId) THEN
+        RAISE EXCEPTION 'Ya existe inventario del producto % en el almacen %: editalo en lugar de crear uno nuevo.', fkProId, fkAlmId;
+    END IF;
+    IF stockDisponible < 0 OR cantidad < 0 THEN
+        RAISE EXCEPTION 'El stock disponible y la cantidad no pueden ser negativos.';
+    END IF;
+    IF stockDisponible > cantidad THEN
+        RAISE EXCEPTION 'El stock disponible (%) no puede superar la cantidad total (%).', stockDisponible, cantidad;
+    END IF;
     INSERT INTO INVENTARIO (fk_pro_id, fk_alm_id, inv_stockdisponible, inv_cantidad, inv_fecha_actualizacion)
     VALUES (fkProId, fkAlmId, stockDisponible, cantidad, fechaActualizacion);
 END

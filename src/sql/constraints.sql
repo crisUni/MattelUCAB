@@ -20,6 +20,8 @@ ALTER TABLE EXCLUSIVIDAD ADD CONSTRAINT chk_exc_limite_pos CHECK (exc_limiteprod
 -- INVENTARIO
 ALTER TABLE INVENTARIO ADD CONSTRAINT chk_inv_stock_nonneg CHECK (inv_stockdisponible >= 0);
 ALTER TABLE INVENTARIO ADD CONSTRAINT chk_inv_cant_nonneg CHECK (inv_cantidad >= 0);
+-- El stock disponible (no reservado) nunca puede superar la cantidad total fisica.
+ALTER TABLE INVENTARIO ADD CONSTRAINT chk_inv_disp_le_cant CHECK (inv_stockdisponible <= inv_cantidad);
 
 -- DETALLE_COMPRA
 ALTER TABLE DETALLE_COMPRA ADD CONSTRAINT chk_detcom_cant_pos CHECK (detcom_cantidad > 0);
