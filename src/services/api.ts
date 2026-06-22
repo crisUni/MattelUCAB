@@ -568,6 +568,11 @@ export async function crearPatente(codigo: string, empId: string): Promise<void>
   await send("POST", "/diseno", { dis_patentecod: codigo, fk_emp_id: Number(empId) });
 }
 
+/** Edita una patente/diseño existente (código + diseñador). */
+export async function actualizarPatente(id: string, codigo: string, empId: string): Promise<void> {
+  await send("PUT", `/diseno/${id}`, { dis_patentecod: codigo, fk_emp_id: Number(empId) });
+}
+
 /** Crea un set/pack (par de productos compatibles) — aparece en la pestaña de Sets. */
 export async function crearSet(nombre: string, pro1: string, pro2: string): Promise<void> {
   await send("POST", "/detalle_set", { fk_pro1: Number(pro1), fk_pro2: Number(pro2), detset_nombre: nombre });

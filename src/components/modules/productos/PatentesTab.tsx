@@ -1,18 +1,20 @@
 import { useState } from "react";
 import {
-  getPatentes, crearPatente, getDisenadoresOpc, type Patente, type Opcion,
+  getPatentes, crearPatente, actualizarPatente, getDisenadoresOpc, type Patente, type Opcion,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { useSession } from "../../../context/SessionContext";
 import { Card, SectionHeader, Skeleton, Button, Field, TextInput, Select } from "../../ui/primitives";
 import { Modal } from "../../ui/Modal";
-import { IconReport, IconPlus } from "../../ui/icons";
+import { IconReport, IconPlus, IconEdit } from "../../ui/icons";
 
 export function PatentesTab() {
   const { puede } = useSession();
   const puedeCrear = puede("PATENTE", "CREAR");
+  const puedeEditar = puede("PATENTE", "EDITAR");
   const { data: patentes, setData, loading } = useAsyncData<Patente[]>(getPatentes);
   const [creando, setCreando] = useState(false);
+  const [editando, setEditando] = useState<Patente | null>(null);
 
   const recargar = async () => setData(await getPatentes());
 
@@ -32,25 +34,34 @@ export function PatentesTab() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {(patentes ?? []).map((p, i) => (
-            <Card key={p.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-fade-in p-4">
-              <p className="font-mono text-sm font-bold text-navy-700">{p.codigo}</p>
-              <p className="mt-1 text-xs text-slate-400">Diseñador: {p.disenador}</p>
+            <Card key={p.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-fade-in flex items-start justify-between gap-2 p-4">
+              <div className="min-w-0">
+                <p className="truncate font-mono text-sm font-bold text-navy-700">{p.codigo}</p>
+                <p className="mt-1 text-xs text-slate-400">Diseñador: {p.disenador}</p>
+              </div>
+              {puedeEditar && (
+                <button title="Editar" onClick={() => setEditando(p)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-navy-700">
+                  <IconEdit className="h-4 w-4" />
+                </button>
+              )}
             </Card>
           ))}
         </div>
       )}
 
-      {creando && <NuevaPatenteForm onCancel={() => setCreando(false)} onSaved={async () => { setCreando(false); await recargar(); }} />}
+      {creando && <PatenteForm onCancel={() => setCreando(false)} onSaved={async () => { setCreando(false); await recargar(); }} />}
+      {editando && <PatenteForm patente={editando} onCancel={() => setEditando(null)} onSaved={async () => { setEditando(null); await recargar(); }} />}
     </div>
   );
 }
 
-function NuevaPatenteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => void }) {
+function PatenteForm({ patente, onCancel, onSaved }: { patente?: Patente; onCancel: () => void; onSaved: () => void }) {
   const { data: disenadores } = useAsyncData<Opcion[]>(getDisenadoresOpc);
-  const [codigo, setCodigo] = useState("");
-  const [empId, setEmpId] = useState("");
+  const [codigo, setCodigo] = useState(patente?.codigo ?? "");
+  const [empId, setEmpId] = useState(patente?.disenadorId ?? "");
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const esEdicion = !!patente;
 
   async function submit() {
     setError(null);
@@ -58,7 +69,8 @@ function NuevaPatenteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved
     if (!empId) { setError("Selecciona el diseñador responsable."); return; }
     setGuardando(true);
     try {
-      await crearPatente(codigo.trim(), empId);
+      if (esEdicion) await actualizarPatente(patente!.id, codigo.trim(), empId);
+      else await crearPatente(codigo.trim(), empId);
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -69,9 +81,9 @@ function NuevaPatenteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved
 
   return (
     <Modal open onClose={onCancel} size="md"
-      title="Nueva patente"
-      subtitle="Registra un código de patente y el empleado del departamento de Diseño (I+D) que diseñó el ADN."
-      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit} disabled={guardando}>{guardando ? "Creando…" : "Crear"}</Button></>}
+      title={esEdicion ? "Editar patente" : "Nueva patente"}
+      subtitle="Código de patente y empleado del departamento de Diseño (I+D) que diseñó el ADN."
+      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit} disabled={guardando}>{guardando ? "Guardando…" : esEdicion ? "Guardar cambios" : "Crear"}</Button></>}
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Código de patente"><TextInput value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="US-D-123456" /></Field>

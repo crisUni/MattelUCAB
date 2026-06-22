@@ -189,7 +189,11 @@ class JugueteService{
                 if (!Number.isInteger(id))
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
-                return callUpdate("updateDiseno", [id, body.dis_patentecod, body.fk_emp_id ?? null])
+                if (!body.dis_patentecod)
+                    return new Response('dis_patentecod is required', { status: 400, headers: CORS_HEADERS })
+                if (body.fk_emp_id === undefined || body.fk_emp_id === null)
+                    return new Response('fk_emp_id (disenador) is required', { status: 400, headers: CORS_HEADERS })
+                return callUpdate("updateDiseno", [id, body.dis_patentecod, body.fk_emp_id])
             }
         },
         "/api/personaje": {
