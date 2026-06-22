@@ -583,6 +583,29 @@ export async function crearCliente(c: NuevoCliente): Promise<void> {
   });
 }
 
+export interface ClienteDetalle {
+  cli_id: number; cli_fecharegis: string; fk_lug_id: number;
+  natural: { pernat_cedula: string; pernat_pnombre: string; pernat_snombre: string | null; pernat_papellido: string; pernat_sapellido: string | null; pernat_fechanac: string; pernat_direccion: string } | null;
+  juridica: { perjur_rif: string; perjur_razonsocial: string; perjur_reprelegal: string } | null;
+}
+
+/** Datos completos de un cliente (con su persona natural o jurídica). */
+export async function getClienteDetalle(id: string): Promise<ClienteDetalle> {
+  const res = await fetch(`${API_URL}/cliente/${id}`);
+  if (!res.ok) throw new Error(`Cliente ${id} → ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+/** Actualiza un cliente completo (persona natural o jurídica). */
+export async function actualizarCliente(id: string, c: NuevoCliente): Promise<void> {
+  await send("PUT", `/cliente_full/${id}`, {
+    tipo: c.tipo, lug: Number(c.lug),
+    cedula: c.cedula ?? "", pnombre: c.pnombre ?? "", snombre: c.snombre ?? "", papellido: c.papellido ?? "", sapellido: c.sapellido ?? "",
+    fechanac: c.fechanac || null, direccion: c.direccion ?? "",
+    rif: c.rif ?? "", razon: c.razon ?? "", repre: c.repre ?? "",
+  });
+}
+
 /** Elimina un cliente (cascada de su persona y membresías; bloquea si tiene usuario). */
 export async function eliminarCliente(id: string): Promise<void> {
   await send("DELETE", `/cliente/${id}`);

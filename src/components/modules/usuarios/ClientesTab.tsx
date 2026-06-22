@@ -1,23 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  getClientes, crearCliente, eliminarCliente, getLugaresOpc,
-  type ClienteRow, type Opcion,
+  getClientes, crearCliente, actualizarCliente, getClienteDetalle, eliminarCliente, getLugaresOpc,
+  type ClienteRow, type ClienteDetalle, type Opcion,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { useSession } from "../../../context/SessionContext";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
 import { Badge, Button, Field, TextInput, Select, SectionHeader } from "../../ui/primitives";
-import { IconPlus, IconTrash, IconUsers } from "../../ui/icons";
+import { IconEdit, IconPlus, IconTrash, IconUsers } from "../../ui/icons";
 
 const HOY = new Date().toISOString().slice(0, 10);
 
 export function ClientesTab() {
   const { puede } = useSession();
   const puedeCrear = puede("CLIENTE", "CREAR");
+  const puedeEditar = puede("CLIENTE", "EDITAR");
   const puedeEliminar = puede("CLIENTE", "ELIMINAR");
   const { data: clientes, setData, loading } = useAsyncData<ClienteRow[]>(getClientes);
-  const [creando, setCreando] = useState(false);
+  const [formOpen, setFormOpen] = useState<ClienteRow | "new" | null>(null);
   const [confirm, setConfirm] = useState<ClienteRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,11 +36,12 @@ export function ClientesTab() {
     { key: "documento", header: "Documento", cell: (c) => <span className="font-mono text-xs text-slate-500">{c.documento}</span> },
     { key: "lugar", header: "Lugar", cell: (c) => <span className="text-slate-500">{c.lugar}</span> },
     { key: "registro", header: "Registro", cell: (c) => <span className="text-xs text-slate-400">{c.registro}</span> },
-    ...(puedeEliminar ? [{
+    ...(puedeEditar || puedeEliminar ? [{
       key: "acc", header: "", align: "right" as const,
       cell: (c: ClienteRow) => (
-        <div className="flex justify-end" onClick={(ev) => ev.stopPropagation()}>
-          <button title="Eliminar" onClick={() => setConfirm(c)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"><IconTrash className="h-4 w-4" /></button>
+        <div className="flex justify-end gap-1" onClick={(ev) => ev.stopPropagation()}>
+          {puedeEditar && <button title="Editar" onClick={() => setFormOpen(c)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-navy-700"><IconEdit className="h-4 w-4" /></button>}
+          {puedeEliminar && <button title="Eliminar" onClick={() => setConfirm(c)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"><IconTrash className="h-4 w-4" /></button>}
         </div>
       ),
     }] : []),
@@ -51,7 +53,7 @@ export function ClientesTab() {
         icon={<IconUsers className="h-5 w-5" />}
         title="Clientes"
         subtitle="Compradores de Mattel: personas naturales (cédula) o jurídicas (RIF / razón social)."
-        action={puedeCrear ? <Button onClick={() => setCreando(true)}><IconPlus className="h-4 w-4" />Nuevo cliente</Button> : undefined}
+        action={puedeCrear ? <Button onClick={() => setFormOpen("new")}><IconPlus className="h-4 w-4" />Nuevo cliente</Button> : undefined}
       />
       {error && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
       <DataTable
@@ -59,13 +61,19 @@ export function ClientesTab() {
         searchPlaceholder="Buscar por nombre o documento…" emptyTitle="No hay clientes"
       />
 
-      {creando && <ClienteForm onCancel={() => setCreando(false)} onSaved={async () => { setCreando(false); await recargar(); }} />}
+      {formOpen && (
+        <ClienteForm
+          editId={formOpen === "new" ? null : formOpen.id}
+          onCancel={() => setFormOpen(null)}
+          onSaved={async () => { setFormOpen(null); await recargar(); }}
+        />
+      )}
       <ConfirmDialog open={!!confirm} title="Eliminar cliente" message={`¿Eliminar a ${confirm?.nombre}?`} onCancel={() => setConfirm(null)} onConfirm={() => confirm && borrar(confirm)} />
     </div>
   );
 }
 
-function ClienteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => void }) {
+function ClienteForm({ editId, onCancel, onSaved }: { editId: string | null; onCancel: () => void; onSaved: () => void }) {
   const { data: lugares } = useAsyncData<Opcion[]>(getLugaresOpc);
   const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const [lug, setLug] = useState("");
@@ -83,6 +91,38 @@ function ClienteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () 
   const [repre, setRepre] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [cargando, setCargando] = useState(!!editId);
+
+  const esNuevo = !editId;
+
+  useEffect(() => {
+    if (!editId) return;
+    (async () => {
+      try {
+        const det = await getClienteDetalle(editId);
+        setLug(String(det.fk_lug_id));
+        if (det.natural) {
+          setTipo("NATURAL");
+          setCedula(det.natural.pernat_cedula);
+          setPnombre(det.natural.pernat_pnombre);
+          setSnombre(det.natural.pernat_snombre ?? "");
+          setPapellido(det.natural.pernat_papellido);
+          setSapellido(det.natural.pernat_sapellido ?? "");
+          setFechanac(det.natural.pernat_fechanac.slice(0, 10));
+          setDireccion(det.natural.pernat_direccion);
+        } else if (det.juridica) {
+          setTipo("JURIDICA");
+          setRif(det.juridica.perjur_rif);
+          setRazon(det.juridica.perjur_razonsocial);
+          setRepre(det.juridica.perjur_reprelegal);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setCargando(false);
+      }
+    })();
+  }, [editId]);
 
   async function submit() {
     setError(null);
@@ -94,11 +134,16 @@ function ClienteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () 
     }
     setGuardando(true);
     try {
-      await crearCliente({
+      const payload = {
         tipo, lug,
         cedula, pnombre, snombre, papellido, sapellido, fechanac, direccion,
         rif, razon, repre,
-      });
+      };
+      if (esNuevo) {
+        await crearCliente(payload);
+      } else {
+        await actualizarCliente(editId, payload);
+      }
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -107,11 +152,19 @@ function ClienteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () 
     }
   }
 
+  if (cargando) {
+    return (
+      <Modal open onClose={onCancel} size="lg" title="Cargando…" subtitle="Obteniendo datos del cliente." footer={<Button variant="ghost" onClick={onCancel}>Cancelar</Button>}>
+        <p className="py-8 text-center text-sm text-slate-400">Cargando datos del cliente…</p>
+      </Modal>
+    );
+  }
+
   return (
     <Modal open onClose={onCancel} size="lg"
-      title="Nuevo cliente"
+      title={esNuevo ? "Nuevo cliente" : "Editar cliente"}
       subtitle="Registra una persona natural o una empresa (persona jurídica)."
-      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit} disabled={guardando}>{guardando ? "Creando…" : "Crear"}</Button></>}
+      footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit} disabled={guardando}>{guardando ? "Guardando…" : esNuevo ? "Crear" : "Guardar"}</Button></>}
     >
       <div className="mb-4 flex gap-2">
         {(["NATURAL", "JURIDICA"] as const).map((t) => (

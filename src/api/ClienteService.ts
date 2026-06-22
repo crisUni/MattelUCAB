@@ -68,6 +68,32 @@ class ClienteService{
                 }
             }
         },
+        "/api/cliente_full/:id": {
+            PUT: async (req: Bun.BunRequest<"/api/cliente_full/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                const b = await req.json();
+                if (!b.tipo || b.lug === undefined)
+                    return new Response('tipo y lug son requeridos', { status: 400, headers: CORS_HEADERS })
+                if (b.tipo === 'JURIDICA') {
+                    if (!b.rif || !b.razon || !b.repre)
+                        return new Response('rif, razon y repre son requeridos para persona juridica', { status: 400, headers: CORS_HEADERS })
+                } else {
+                    if (!b.cedula || !b.pnombre || !b.papellido || !b.fechanac || !b.direccion)
+                        return new Response('cedula, pnombre, papellido, fechanac y direccion son requeridos para persona natural', { status: 400, headers: CORS_HEADERS })
+                }
+                try {
+                    await sql.unsafe(
+                        `SELECT actualizar_cliente($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+                        [id, b.lug, b.tipo, b.cedula ?? '', b.pnombre ?? '', b.snombre ?? '', b.papellido ?? '', b.sapellido ?? '', b.fechanac ?? null, b.direccion ?? '', b.rif ?? '', b.razon ?? '', b.repre ?? '']
+                    );
+                    return new Response("Cliente actualizado", { status: 200, headers: CORS_HEADERS })
+                } catch (e) {
+                    return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+                }
+            }
+        },
         "/api/cliente": {
             GET: async (_: Bun.BunRequest<"/api/cliente">) => listAll<Cliente>("listCliente"),
             POST: async (req: Bun.BunRequest<"/api/cliente">) => {
@@ -78,6 +104,20 @@ class ClienteService{
             }
         },
         "/api/cliente/:id": {
+            GET: async (req: Bun.BunRequest<"/api/cliente/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                try {
+                    const [cliente] = await sql.unsafe(`SELECT * FROM CLIENTE WHERE cli_id = $1`, [id]) as any[];
+                    if (!cliente) return new Response("Not found", { status: 404, headers: CORS_HEADERS })
+                    const natural = await sql.unsafe(`SELECT * FROM PERSONA_NATURAL WHERE fk_cli_id = $1`, [id]) as any[];
+                    const juridica = await sql.unsafe(`SELECT * FROM PERSONA_JURIDICA WHERE fk_cli_id = $1`, [id]) as any[];
+                    return Response.json({ ...cliente, natural: natural[0] ?? null, juridica: juridica[0] ?? null }, { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } })
+                } catch (e) {
+                    return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+                }
+            },
             DELETE: async (req: Bun.BunRequest<"/api/cliente/:id">) => {
                 const id = Number(req.params.id);
                 if (!Number.isInteger(id))
