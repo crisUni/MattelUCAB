@@ -632,7 +632,7 @@ const writers: Record<Recurso, Writer> = {
       if (!u.empleadoId && !u.clienteId)
         throw new Error("Un usuario debe vincularse a un empleado (interno) o a un cliente (externo).");
       await send("POST", "/usuario", {
-        usu_nombre: u.username || u.nombre,
+        usu_nombre: u.nombre || u.username,
         usu_clave: u.password || "cambiar123",
         usu_correo: u.email,
         fk_rol_id: Number(u.rolesIds[0]),
@@ -644,7 +644,7 @@ const writers: Record<Recurso, Writer> = {
     update: async (u: Usuario) => {
       const row = await rawById("/usuario", "usu_id", u.id);
       await send("PUT", `/usuario/${u.id}`, {
-        usu_nombre: u.username || u.nombre,
+        usu_nombre: u.nombre || u.username,
         usu_clave: u.password || row?.usu_clave || "hash",
         usu_correo: u.email,
         fk_rol_id: Number(u.rolesIds[0] ?? row?.fk_rol_id),

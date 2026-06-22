@@ -2143,12 +2143,18 @@ BEGIN
     WHERE rol_id = rolId;
 END
 $$;
+-- Borra un rol y sus permisos (PERMISO_ROL). Si tiene usuarios asignados se
+-- bloquea con un mensaje claro: dejarlos sin rol violaria la integridad.
 CREATE OR REPLACE PROCEDURE deleteRol (
     rolId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM USUARIO WHERE fk_rol_id = rolId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el rol %: tiene usuarios asignados. Reasigna esos usuarios a otro rol antes de borrarlo.', rolId;
+    END IF;
+    DELETE FROM PERMISO_ROL WHERE fk_rol_id = rolId;
     DELETE FROM ROL WHERE rol_id = rolId;
 END
 $$;
