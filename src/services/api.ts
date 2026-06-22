@@ -785,13 +785,34 @@ export function nuevoId(prefijo: string): string {
   return `${prefijo}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Por recurso: endpoint de listado + campo id, para resolver el id real tras crear. */
+const idLookup: Record<Recurso, { path: string; idField: string }> = {
+  usuario: { path: "/usuario", idField: "usu_id" },
+  rol: { path: "/rol", idField: "rol_id" },
+  producto: { path: "/producto", idField: "pro_id" },
+  molde_rostro: { path: "/molde_rostro", idField: "molros_id" },
+  tipo_cuerpo: { path: "/tipo_cuerpo", idField: "tipcue_id" },
+  color: { path: "/color", idField: "col_id" },
+  material: { path: "/material", idField: "mat_id" },
+  era_historico: { path: "/era_historico", idField: "erahis_id" },
+  exclusividad: { path: "/exclusividad", idField: "exc_id" },
+};
+
 /** Crea (si el id es temporal/vacío) o actualiza una entidad del recurso indicado. */
 export async function guardar<T extends { id: string }>(recurso: Recurso, entidad: T): Promise<T> {
   const writer = writers[recurso];
   const esNuevo = !entidad.id || /-[a-z0-9]{6}$/.test(entidad.id) && !/^\d+$/.test(entidad.id);
-  if (esNuevo) await writer.create(entidad);
-  else await writer.update(entidad);
-  return entidad;
+  if (!esNuevo) {
+    await writer.update(entidad);
+    return entidad;
+  }
+  await writer.create(entidad);
+  // Resolver el id real asignado por la BD para que la UI no quede con un id
+  // temporal (que rompería un borrado/edición posterior antes de recargar).
+  const lk = idLookup[recurso];
+  const rows = await getList(lk.path);
+  const maxId = rows.reduce((m: number, r: any) => Math.max(m, Number(r[lk.idField]) || 0), 0);
+  return { ...entidad, id: maxId ? String(maxId) : entidad.id };
 }
 
 /** Elimina una entidad del recurso indicado por id. */

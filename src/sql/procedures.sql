@@ -132,6 +132,9 @@ CREATE OR REPLACE PROCEDURE deleteColor (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM COLOR_PRODUCTO WHERE fk_col_id = colId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el color %: esta en uso por uno o mas productos.', colId;
+    END IF;
     DELETE FROM COLOR WHERE col_id = colId;
 END
 $$;
@@ -174,6 +177,9 @@ CREATE OR REPLACE PROCEDURE deleteTipoCuerpo (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM JUGUETE WHERE fk_tipcue_id = tipcueId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el tipo de cuerpo %: esta en uso por uno o mas juguetes.', tipcueId;
+    END IF;
     DELETE FROM TIPO_CUERPO WHERE tipcue_id = tipcueId;
 END
 $$;
@@ -309,6 +315,9 @@ CREATE OR REPLACE PROCEDURE deleteMoldeRostro (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM JUGUETE WHERE fk_molros_id = molrosId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el molde de rostro %: esta en uso por uno o mas juguetes.', molrosId;
+    END IF;
     DELETE FROM MOLDE_ROSTRO WHERE molros_id = molrosId;
 END
 $$;
@@ -355,6 +364,9 @@ CREATE OR REPLACE PROCEDURE deleteEraHistorico (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM JUGUETE WHERE fk_erahis_id = erahisId) THEN
+        RAISE EXCEPTION 'No se puede eliminar la era %: esta en uso por uno o mas juguetes.', erahisId;
+    END IF;
     DELETE FROM ERA_HISTORICO WHERE erahis_id = erahisId;
 END
 $$;
@@ -403,6 +415,9 @@ CREATE OR REPLACE PROCEDURE deleteMaterial (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM MATERIAL_PRODUCTO WHERE fk_mat_id = matId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el material %: esta en uso por una o mas recetas.', matId;
+    END IF;
     DELETE FROM MATERIAL WHERE mat_id = matId;
 END
 $$;
@@ -447,6 +462,9 @@ CREATE OR REPLACE PROCEDURE deleteDiseno (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM JUGUETE WHERE fk_dis_id = disId) THEN
+        RAISE EXCEPTION 'No se puede eliminar la patente/diseno %: esta en uso por uno o mas juguetes.', disId;
+    END IF;
     DELETE FROM DISENO WHERE dis_id = disId;
 END
 $$;
@@ -1103,6 +1121,9 @@ CREATE OR REPLACE PROCEDURE deleteCategoriaProducto (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM PRODUCTO WHERE fk_catpro_id = catproId) THEN
+        RAISE EXCEPTION 'No se puede eliminar la categoria %: esta en uso por uno o mas productos.', catproId;
+    END IF;
     DELETE FROM CATEGORIA_PRODUCTO WHERE catpro_id = catproId;
 END
 $$;
@@ -1145,6 +1166,9 @@ CREATE OR REPLACE PROCEDURE deleteEdicion (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM PRODUCTO WHERE fk_edi_id = ediId) THEN
+        RAISE EXCEPTION 'No se puede eliminar la edicion %: esta en uso por uno o mas productos.', ediId;
+    END IF;
     DELETE FROM EDICION WHERE edi_id = ediId;
 END
 $$;
@@ -1187,6 +1211,9 @@ CREATE OR REPLACE PROCEDURE deleteProfesion (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM HISTORICO_PROFESION WHERE fk_prof_id = profId) THEN
+        RAISE EXCEPTION 'No se puede eliminar la profesion %: esta asignada en el multiverso de uno o mas productos.', profId;
+    END IF;
     DELETE FROM PROFESION WHERE prof_id = profId;
 END
 $$;
@@ -1231,6 +1258,9 @@ CREATE OR REPLACE PROCEDURE deleteExclusividad (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM PRODUCTO WHERE fk_exc_id = excId) THEN
+        RAISE EXCEPTION 'No se puede eliminar la exclusividad %: esta en uso por uno o mas productos.', excId;
+    END IF;
     DELETE FROM EXCLUSIVIDAD WHERE exc_id = excId;
 END
 $$;

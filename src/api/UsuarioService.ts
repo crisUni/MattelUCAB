@@ -39,12 +39,6 @@ class UsuarioService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateUsuario", [id, body.usu_nombre, body.usu_clave, body.usu_correo, body.fk_rol_id, body.fk_emp_id, body.fk_cli_id])
-            },
-            DELETE: async (req: Bun.BunRequest<"/api/usuario/:id">) => {
-                const id = Number(req.params.id);
-                if (!Number.isInteger(id))
-                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
-                return callDelete("deleteUsuario", [id])
             }
         },
         "/api/permiso_rol": {
