@@ -1075,7 +1075,8 @@ export function reportePdfUrl(id: string): string {
 export type Recurso =
   | "usuario" | "rol"
   | "producto" | "molde_rostro" | "tipo_cuerpo" | "color"
-  | "material" | "era_historico" | "exclusividad" | "profesion";
+  | "material" | "era_historico" | "exclusividad" | "profesion"
+  | "categoria_producto" | "edicion";
 
 /** Devuelve la fila cruda de una colección por id numérico (para preservar FKs en edición). */
 async function rawById(path: string, idField: string, id: string): Promise<any | undefined> {
@@ -1256,6 +1257,18 @@ const writers: Record<Recurso, Writer> = {
     update: (p: { id: string; nombre: string }) => send("PUT", `/profesion/${p.id}`, { prof_nombre: p.nombre }),
     remove: (id) => send("DELETE", `/profesion/${id}`),
   },
+
+  categoria_producto: {
+    create: (c: { id: string; nombre: string }) => send("POST", "/categoria_producto", { catpro_descripcion: c.nombre }),
+    update: (c: { id: string; nombre: string }) => send("PUT", `/categoria_producto/${c.id}`, { catpro_descripcion: c.nombre }),
+    remove: (id) => send("DELETE", `/categoria_producto/${id}`),
+  },
+
+  edicion: {
+    create: (e: { id: string; nombre: string }) => send("POST", "/edicion", { edi_nombre: e.nombre }),
+    update: (e: { id: string; nombre: string }) => send("PUT", `/edicion/${e.id}`, { edi_nombre: e.nombre }),
+    remove: (id) => send("DELETE", `/edicion/${id}`),
+  },
 };
 
 /** Id temporal en memoria para filas recién creadas (se reconcilia al recargar). */
@@ -1275,6 +1288,8 @@ const idLookup: Record<Recurso, { path: string; idField: string }> = {
   era_historico: { path: "/era_historico", idField: "erahis_id" },
   exclusividad: { path: "/exclusividad", idField: "exc_id" },
   profesion: { path: "/profesion", idField: "prof_id" },
+  categoria_producto: { path: "/categoria_producto", idField: "catpro_id" },
+  edicion: { path: "/edicion", idField: "edi_id" },
 };
 
 /** Crea (si el id es temporal/vacío) o actualiza una entidad del recurso indicado. */

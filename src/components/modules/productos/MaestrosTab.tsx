@@ -4,7 +4,8 @@ import type {
 } from "../../../data/types";
 import {
   getMoldesRostro, getTiposCuerpo, getColores, getMateriales, getEras, getExclusividades,
-  getProfesionesOpc, type Opcion,
+  getCategoriasOpc, getEdicionesOpc, getProfesionesOpc,
+  type Opcion,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { MasterCrud, type FieldDef } from "./MasterCrud";
@@ -17,6 +18,8 @@ const SUBS = [
   { id: "colores", label: "Colores" },
   { id: "materiales", label: "Materiales (BOM)" },
   { id: "eras", label: "Eras" },
+  { id: "categorias", label: "Categorías" },
+  { id: "ediciones", label: "Ediciones" },
   { id: "exclusividades", label: "Exclusividades" },
   { id: "profesiones", label: "Profesiones" },
 ];
@@ -40,10 +43,30 @@ export function MaestrosTab() {
       {sub === "colores" && <Colores />}
       {sub === "materiales" && <Materiales />}
       {sub === "eras" && <Eras />}
+      {sub === "categorias" && <Categorias />}
+      {sub === "ediciones" && <Ediciones />}
       {sub === "exclusividades" && <Exclusividades />}
       {sub === "profesiones" && <Profesiones />}
     </div>
   );
+}
+
+function Categorias() {
+  const { data, setData, loading } = useAsyncData<Opcion[]>(getCategoriasOpc);
+  const fields: FieldDef[] = [{ key: "nombre", label: "Descripción" }];
+  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Categoría" idPrefix="cat" resource="categoria_producto" permRecurso="PRODUCTO" blank={(): Opcion => ({ id: "", nombre: "" })} fields={fields}
+    columns={[
+      { key: "nombre", header: "Categoría", sortValue: (c) => c.nombre, searchValue: (c) => c.nombre, cell: (c) => <span className="font-semibold text-navy-700">{c.nombre}</span> },
+    ]} />;
+}
+
+function Ediciones() {
+  const { data, setData, loading } = useAsyncData<Opcion[]>(getEdicionesOpc);
+  const fields: FieldDef[] = [{ key: "nombre", label: "Nombre de la edición" }];
+  return <MasterCrud rows={data ?? []} loading={loading} setRows={setData} title="Edición" idPrefix="edi" resource="edicion" permRecurso="PRODUCTO" blank={(): Opcion => ({ id: "", nombre: "" })} fields={fields}
+    columns={[
+      { key: "nombre", header: "Edición", sortValue: (e) => e.nombre, searchValue: (e) => e.nombre, cell: (e) => <span className="font-semibold text-navy-700">{e.nombre}</span> },
+    ]} />;
 }
 
 function Profesiones() {
