@@ -368,13 +368,10 @@ function InventarioForm({
   const [almId, setAlmId] = useState(editar?.almId ?? "");
   const [cantidad, setCantidad] = useState(editar?.cantidad ?? 0);
   const [disponible, setDisponible] = useState(editar?.disponible ?? 0);
-  // Mientras el usuario no edite manualmente el disponible, lo igualamos a la cantidad.
   const [dispTocado, setDispTocado] = useState(esEdicion);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
-  // Al crear: los almacenes que ya tienen una existencia de este producto no se
-  // pueden reutilizar (la clave es producto+almacén); se ocultan del select.
   const almacenesUsados = useMemo(
     () => new Set(existentes.filter((e) => e.proId === proId).map((e) => e.almId)),
     [existentes, proId],
