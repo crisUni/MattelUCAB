@@ -216,12 +216,40 @@ BEGIN
     WHERE per_id = perId;
 END
 $$;
+-- Alta de personaje con un molde de rostro asociado (un personaje siempre tiene
+-- al menos un molde). Devuelve el id del personaje.
+CREATE OR REPLACE FUNCTION crear_personaje (
+    pNombre VARCHAR(100), pMoldeNombre VARCHAR(100), pMoldePatente VARCHAR(100), pMoldeAno INT
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vPer INT;
+BEGIN
+    INSERT INTO PERSONAJE (per_nombre) VALUES (pNombre) RETURNING per_id INTO vPer;
+    INSERT INTO MOLDE_ROSTRO (molros_nombre, molros_patente, molros_anopatente, fk_per_id)
+    VALUES (pMoldeNombre, pMoldePatente, pMoldeAno, vPer);
+    RETURN vPer;
+END
+$$;
+
+-- Borrado en cascada de un personaje: sus vinculos y sus moldes. Se bloquea si
+-- alguno de sus moldes esta en uso por un juguete (romperia productos).
 CREATE OR REPLACE PROCEDURE deletePersonaje (
     perId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (
+        SELECT 1 FROM JUGUETE j JOIN MOLDE_ROSTRO m ON m.molros_id = j.fk_molros_id
+        WHERE m.fk_per_id = perId
+    ) THEN
+        RAISE EXCEPTION 'No se puede eliminar el personaje %: uno de sus moldes de rostro esta en uso por juguetes.', perId;
+    END IF;
+    DELETE FROM VINCULO_PERSONAJE WHERE fk_personaje1 = perId OR fk_personaje2 = perId;
+    DELETE FROM MOLDE_ROSTRO WHERE fk_per_id = perId;
     DELETE FROM PERSONAJE WHERE per_id = perId;
 END
 $$;
@@ -3513,6 +3541,48 @@ BEGIN
     END IF;
 
     RETURN vPro;
+END
+$$;
+
+-- Edita el genoma (ADN) de un producto: molde, cuerpo, era y colores por zona.
+-- Actualiza el JUGUETE (regenerando el ADN) y reemplaza sus colores.
+CREATE OR REPLACE FUNCTION actualizar_genoma (
+    pPro INT, pMolros INT, pTipcue INT, pEra INT,
+    pColIds INT[], pZonas VARCHAR[]
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vJug INT;
+    vAdn VARCHAR(50);
+    i INT;
+BEGIN
+    SELECT fk_jug_id INTO vJug FROM PRODUCTO WHERE pro_id = pPro;
+    IF vJug IS NULL THEN
+        RAISE EXCEPTION 'El producto % no tiene genoma (juguete) editable.', pPro;
+    END IF;
+
+    SELECT 'ADN-' || UPPER(LEFT(REPLACE(COALESCE(per.per_nombre, 'GEN'), ' ', ''), 12)) || '-' || UPPER(LEFT(REPLACE(COALESCE(mr.molros_nombre, 'X'), ' ', ''), 14))
+      INTO vAdn
+      FROM MOLDE_ROSTRO mr LEFT JOIN PERSONAJE per ON per.per_id = mr.fk_per_id
+     WHERE mr.molros_id = pMolros;
+
+    UPDATE JUGUETE
+       SET fk_molros_id = pMolros, fk_tipcue_id = pTipcue, fk_erahis_id = pEra,
+           jug_adn = COALESCE(vAdn, jug_adn)
+     WHERE jug_id = vJug;
+
+    -- Reemplaza los colores del genoma con el conjunto recibido.
+    IF pColIds IS NOT NULL THEN
+        DELETE FROM COLOR_PRODUCTO WHERE fk_jug_id = vJug;
+        FOR i IN 1 .. COALESCE(array_length(pColIds, 1), 0) LOOP
+            IF pColIds[i] IS NOT NULL THEN
+                INSERT INTO COLOR_PRODUCTO (fk_col_id, fk_jug_id, colpro_zonaaplicacion)
+                VALUES (pColIds[i], vJug, pZonas[i]);
+            END IF;
+        END LOOP;
+    END IF;
 END
 $$;
 

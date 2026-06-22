@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
-import type { MoldeRostro, TipoCuerpo, Era, Exclusividad, Color, Producto, Personaje, Material } from "../../../data/types";
+import type { MoldeRostro, TipoCuerpo, Era, Exclusividad, Color, Producto, Personaje, Material, Pack } from "../../../data/types";
 import {
   getMoldesRostro, getTiposCuerpo, getEras, getExclusividades, getColores,
   getCategoriasOpc, getEdicionesOpc, getLotesOpc, getDisenosOpc, getProfesionesOpc,
-  getProductos, getPersonajes, getMateriales, getAlmacenesOpc, crearMuneca, crearSet, type Opcion,
+  getProductos, getPersonajes, getMateriales, getAlmacenesOpc, getCompatibilidadesRaw, getPacks,
+  crearMuneca, crearSet, type Opcion,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { Modal } from "../../ui/Modal";
-import { Button, Field, TextInput, Select } from "../../ui/primitives";
+import { Button, Field, TextInput, NumberInput, Select } from "../../ui/primitives";
 import { IconPlus } from "../../ui/icons";
 
 /** Zonas de color válidas según la categoría del producto. */
@@ -68,6 +69,21 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
   const { data: disenos } = useAsyncData<Opcion[]>(getDisenosOpc);
   const { data: profesiones } = useAsyncData<Opcion[]>(getProfesionesOpc);
   const { data: productos } = useAsyncData<Producto[]>(getProductos);
+  const { data: compat } = useAsyncData(getCompatibilidadesRaw);
+  const { data: packs } = useAsyncData<Pack[]>(getPacks);
+
+  // Para un set, el producto 2 debe ser compatible con el 1 y no formar ya un set con él.
+  const jugDe = (proId: string) => (productos ?? []).find((p) => p.id === proId)?.jugueteId;
+  const sonCompat = (j1?: string, j2?: string) =>
+    !!j1 && !!j2 && (compat ?? []).some((c) => (c.jug1 === j1 && c.jug2 === j2) || (c.jug1 === j2 && c.jug2 === j1));
+  const yaEsSet = (a: string, b: string) =>
+    (packs ?? []).some((pk) => { const [x, y] = pk.productosIds; return (x === a && y === b) || (x === b && y === a); });
+  const opcionesPro2 = useMemo(() => {
+    if (!pro1) return [];
+    const j1 = jugDe(pro1);
+    return (productos ?? []).filter((p) => p.id !== pro1 && sonCompat(j1, p.jugueteId) && !yaEsSet(pro1, p.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pro1, productos, compat, packs]);
 
   const catNombre = useMemo(() => categorias?.find((c) => c.id === cat)?.nombre ?? "", [categorias, cat]);
   const zonas = ZONAS_POR_CATEGORIA[catNombre] ?? ["Principal"];
@@ -125,7 +141,7 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nombre"><TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={modo === "MUNECA" ? "Barbie Astronauta" : "Set Aventuras"} /></Field>
-        <Field label="Precio base (USD)"><TextInput type="number" value={precio} onChange={(e) => setPrecio(+e.target.value)} /></Field>
+        <Field label="Precio base (USD)"><NumberInput value={precio} onChange={setPrecio} /></Field>
       </div>
 
       {modo === "MUNECA" ? (
@@ -192,7 +208,7 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
                     </Select>
                   </Field>
                   <Field label="Cantidad">
-                    <TextInput type="number" min={1} value={row.cantidad} onChange={(e) => setMateriales((m) => m.map((r, i) => i === idx ? { ...r, cantidad: +e.target.value } : r))} />
+                    <NumberInput min={1} value={row.cantidad} onChange={(n) => setMateriales((m) => m.map((r, i) => i === idx ? { ...r, cantidad: n } : r))} />
                   </Field>
                   <Button variant="ghost" onClick={() => setMateriales((m) => m.filter((_, i) => i !== idx))}>Quitar</Button>
                 </div>
@@ -202,7 +218,7 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
 
           <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-wide text-brand-600">Stock inicial (opcional)</p>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Unidades en stock"><TextInput type="number" min={0} value={stock} onChange={(e) => setStock(+e.target.value)} /></Field>
+            <Field label="Unidades en stock"><NumberInput min={0} value={stock} onChange={setStock} /></Field>
             <Field label="Almacén" hint={stock > 0 ? "Requerido si hay stock" : "Opcional"}>
               <Sel value={almId} set={setAlmId} opts={almacenes ?? []} placeholder="— Sin asignar —" />
             </Field>
@@ -216,11 +232,18 @@ export function NuevoProductoForm({ onCancel, onSaved }: { onCancel: () => void;
         </>
       ) : (
         <>
-          <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-wide text-brand-600">Productos del set (deben ser compatibles entre sí)</p>
+          <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-wide text-brand-600">Productos del set</p>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Producto 1"><Sel value={pro1} set={setPro1} opts={(productos ?? []).map((p) => ({ id: p.id, nombre: `${p.sku} · ${p.nombre}` }))} /></Field>
-            <Field label="Producto 2"><Sel value={pro2} set={setPro2} opts={(productos ?? []).map((p) => ({ id: p.id, nombre: `${p.sku} · ${p.nombre}` }))} /></Field>
+            <Field label="Producto 1">
+              <Sel value={pro1} set={(v) => { setPro1(v); setPro2(""); }} opts={(productos ?? []).map((p) => ({ id: p.id, nombre: `${p.sku} · ${p.nombre}` }))} />
+            </Field>
+            <Field label="Producto 2" hint={pro1 ? "Solo compatibles y sin set previo" : "Elige primero el producto 1"}>
+              <Sel value={pro2} set={setPro2} opts={opcionesPro2.map((p) => ({ id: p.id, nombre: `${p.sku} · ${p.nombre}` }))} />
+            </Field>
           </div>
+          {pro1 && opcionesPro2.length === 0 && (
+            <p className="mt-2 text-xs text-amber-600">Este producto no tiene compañeros compatibles disponibles para un set nuevo (todos sus pares compatibles ya forman un set).</p>
+          )}
         </>
       )}
 

@@ -5,7 +5,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { DataTable, type Column } from "../../ui/DataTable";
 import { Modal, ConfirmDialog } from "../../ui/Modal";
-import { Button, Field, TextInput, Select } from "../../ui/primitives";
+import { Button, Field, TextInput, NumberInput, Select } from "../../ui/primitives";
 import { IconPlus, IconEdit, IconTrash } from "../../ui/icons";
 import { guardar, eliminar, nuevoId, type Recurso } from "../../../services/api";
 import { useSession } from "../../../context/SessionContext";
@@ -110,12 +110,10 @@ function GenericForm<T extends { id: string }>({ item, fields, title, onCancel, 
                   <input type="color" value={String(value ?? "#e2237c")} onChange={(e) => set(f.key, e.target.value)} className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200" />
                   <TextInput value={String(value ?? "")} onChange={(e) => set(f.key, e.target.value)} className="font-mono" />
                 </div>
+              ) : f.type === "number" ? (
+                <NumberInput value={Number(value ?? 0)} onChange={(n) => set(f.key, n)} />
               ) : (
-                <TextInput
-                  type={f.type === "number" ? "number" : "text"}
-                  value={String(value ?? "")}
-                  onChange={(e) => set(f.key, f.type === "number" ? +e.target.value : e.target.value)}
-                />
+                <TextInput value={String(value ?? "")} onChange={(e) => set(f.key, e.target.value)} />
               )}
             </Field>
           );

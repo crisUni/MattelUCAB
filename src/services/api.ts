@@ -267,6 +267,28 @@ export async function getPersonajes(): Promise<Personaje[]> {
   });
 }
 
+export interface NuevoPersonaje {
+  nombre: string; moldeNombre: string; moldePatente: string; moldeAno?: number;
+  vinculos: { personajeId: string; tipo: string }[];
+}
+
+/** Alta de personaje + su molde de rostro, y sus vínculos con personajes existentes. */
+export async function crearPersonaje(p: NuevoPersonaje): Promise<void> {
+  await send("POST", "/personaje_full", {
+    nombre: p.nombre, moldeNombre: p.moldeNombre, moldePatente: p.moldePatente, moldeAno: p.moldeAno ?? null,
+  });
+  const pers = await getList("/personaje");
+  const nuevoId = pers.reduce((m: number, r: any) => Math.max(m, Number(r.per_id) || 0), 0);
+  for (const v of p.vinculos) {
+    if (v.personajeId) await send("POST", "/vinculo_personaje", { fk_personaje1: nuevoId, fk_personaje2: Number(v.personajeId), vinper_tipo_relacion: v.tipo });
+  }
+}
+
+/** Elimina un personaje en cascada (vínculos + moldes; bloquea si un molde está en uso). */
+export async function eliminarPersonaje(id: string): Promise<void> {
+  await send("DELETE", `/personaje/${id}`);
+}
+
 export async function getProfesiones(): Promise<Profesion[]> {
   const [historico, profesiones, productos, juguetes, moldes] = await Promise.all([
     getList("/historico_profesion"),
@@ -329,6 +351,12 @@ export async function getJuguetesConProductoOpc(): Promise<Opcion[]> {
 /** Registra un par de juguetes (genomas) como compatibles entre sí. */
 export async function crearCompatibilidad(jug1: string, jug2: string): Promise<void> {
   await send("POST", "/compatibilidad_juguete", { fk_juguete1: Number(jug1), fk_juguete2: Number(jug2) });
+}
+
+/** Pares de juguetes compatibles (ids), para filtrar las opciones de un set nuevo. */
+export async function getCompatibilidadesRaw(): Promise<{ jug1: string; jug2: string }[]> {
+  const rows = await getList("/compatibilidad_juguete");
+  return rows.map((c: any) => ({ jug1: sid(c.fk_juguete1), jug2: sid(c.fk_juguete2) }));
 }
 
 export async function getPacks(): Promise<Pack[]> {
@@ -649,6 +677,20 @@ export async function crearMuneca(m: NuevaMuneca): Promise<void> {
   });
 }
 
+/** Mapea la zona de color del front (enum) al texto que guarda la BD. */
+const ZONA_DB: Record<string, string> = { PIEL: "Piel", OJOS: "Ojos", CABELLO: "Cabello", LABIOS: "Labios", VESTUARIO: "Vestuario" };
+
+/** Edita el genoma (ADN) de un producto: molde, cuerpo, era y colores por zona. */
+export async function actualizarGenoma(
+  proId: string, molros: string, tipcue: string, era: string, colores: { colorId: string; zona: string }[],
+): Promise<void> {
+  await send("POST", "/genoma", {
+    pro: Number(proId), molros: Number(molros), tipcue: Number(tipcue), era: Number(era),
+    colIds: colores.filter((c) => c.colorId).map((c) => Number(c.colorId)),
+    zonas: colores.filter((c) => c.colorId).map((c) => ZONA_DB[c.zona] ?? c.zona),
+  });
+}
+
 /** Almacenes para asignar stock inicial (etiquetados por tipo de instalación). */
 export async function getAlmacenesOpc(): Promise<Opcion[]> {
   const rows = await getList("/almacen");
@@ -713,7 +755,7 @@ export function reportePdfUrl(id: string): string {
 export type Recurso =
   | "usuario" | "rol"
   | "producto" | "molde_rostro" | "tipo_cuerpo" | "color"
-  | "material" | "era_historico" | "exclusividad";
+  | "material" | "era_historico" | "exclusividad" | "profesion";
 
 /** Devuelve la fila cruda de una colección por id numérico (para preservar FKs en edición). */
 async function rawById(path: string, idField: string, id: string): Promise<any | undefined> {
@@ -888,6 +930,12 @@ const writers: Record<Recurso, Writer> = {
       send("PUT", `/exclusividad/${x.id}`, { exc_nombre: x.nombre, exc_limiteproducto: x.tiradaMax }),
     remove: (id) => send("DELETE", `/exclusividad/${id}`),
   },
+
+  profesion: {
+    create: (p: { id: string; nombre: string }) => send("POST", "/profesion", { prof_nombre: p.nombre }),
+    update: (p: { id: string; nombre: string }) => send("PUT", `/profesion/${p.id}`, { prof_nombre: p.nombre }),
+    remove: (id) => send("DELETE", `/profesion/${id}`),
+  },
 };
 
 /** Id temporal en memoria para filas recién creadas (se reconcilia al recargar). */
@@ -906,6 +954,7 @@ const idLookup: Record<Recurso, { path: string; idField: string }> = {
   material: { path: "/material", idField: "mat_id" },
   era_historico: { path: "/era_historico", idField: "erahis_id" },
   exclusividad: { path: "/exclusividad", idField: "exc_id" },
+  profesion: { path: "/profesion", idField: "prof_id" },
 };
 
 /** Crea (si el id es temporal/vacío) o actualiza una entidad del recurso indicado. */

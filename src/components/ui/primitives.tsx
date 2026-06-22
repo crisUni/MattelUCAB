@@ -1,4 +1,5 @@
 /** Primitivas de UI reutilizables, con la línea visual de marca. */
+import { useEffect, useState } from "react";
 import type { ReactNode, InputHTMLAttributes, SelectHTMLAttributes, CSSProperties } from "react";
 
 /* ------------------------------- Formatos ----------------------------- */
@@ -155,6 +156,23 @@ const inputCls =
   "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-navy-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100 placeholder:text-slate-300";
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${inputCls} ${props.className ?? ""}`} />;
+}
+
+/**
+ * Input numérico robusto: mantiene el texto tecleado (permite vaciar la caja y
+ * escribir libremente, sin forzar 0 en cada tecla) y reporta el número. Vacío = 0.
+ */
+export function NumberInput({ value, onChange, className, ...rest }:
+  Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> & { value: number; onChange: (n: number) => void }) {
+  const [txt, setTxt] = useState(value ? String(value) : "");
+  useEffect(() => {
+    setTxt((prev) => (Number(prev || 0) === value ? prev : value ? String(value) : ""));
+  }, [value]);
+  return (
+    <input {...rest} type="number" inputMode="decimal" value={txt}
+      onChange={(e) => { setTxt(e.target.value); onChange(e.target.value === "" ? 0 : Number(e.target.value)); }}
+      className={`${inputCls} ${className ?? ""}`} />
+  );
 }
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={`${inputCls} ${props.className ?? ""}`} />;

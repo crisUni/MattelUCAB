@@ -174,6 +174,25 @@ class ProductoService{
                 }
             }
         },
+        // Edición del genoma (ADN) de un producto: molde, cuerpo, era y colores.
+        "/api/genoma": {
+            POST: async (req: Bun.BunRequest<"/api/genoma">) => {
+                const b = await req.json();
+                if (b.pro === undefined || b.molros === undefined || b.tipcue === undefined || b.era === undefined)
+                    return new Response('pro, molros, tipcue, era son requeridos', { status: 400, headers: CORS_HEADERS })
+                const colIds = Array.isArray(b.colIds) && b.colIds.length ? b.colIds.join(',') : null;
+                const zonas = Array.isArray(b.zonas) && b.zonas.length ? b.zonas.join(',') : null;
+                try {
+                    await sql.unsafe(
+                        `SELECT actualizar_genoma($1,$2,$3,$4, COALESCE(string_to_array($5, ','), '{}')::int[], COALESCE(string_to_array($6, ','), '{}')::varchar[])`,
+                        [b.pro, b.molros, b.tipcue, b.era, colIds, zonas]
+                    );
+                    return new Response('Updated', { status: 200, headers: CORS_HEADERS })
+                } catch (e) {
+                    return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+                }
+            }
+        },
         "/api/producto": {
             GET: async (_: Bun.BunRequest<"/api/producto">) => listAll<Producto>("listProducto"),
             POST: async (req: Bun.BunRequest<"/api/producto">) => {
