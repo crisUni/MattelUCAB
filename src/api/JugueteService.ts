@@ -178,7 +178,9 @@ class JugueteService{
                 const body = await req.json();
                 if (!body.dis_patentecod)
                     return new Response('dis_patentecod is required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createDiseno", [body.dis_patentecod, body.fk_emp_id ?? null])
+                if (body.fk_emp_id === undefined || body.fk_emp_id === null)
+                    return new Response('fk_emp_id (disenador) is required', { status: 400, headers: CORS_HEADERS })
+                return callProcedure("createDiseno", [body.dis_patentecod, body.fk_emp_id])
             }
         },
         "/api/diseno/:id": {

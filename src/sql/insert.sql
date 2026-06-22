@@ -635,16 +635,19 @@ INSERT INTO EMPLEADO (emp_id, emp_pnombre, emp_snombre, emp_papellido, emp_sapel
 
 -- DEP_EMP (10 filas)
 INSERT INTO DEP_EMP (depemp_fechaini, depemp_fechafin, fk_dep_id, fk_emp_id, fk_car_id) VALUES
-    ('2022-01-01', NULL, 1, 1, 1),
-    ('2022-02-01', NULL, 2, 2, 2),
-    ('2022-03-01', NULL, 3, 3, 3),
-    ('2022-04-01', NULL, 4, 4, 4),
-    ('2022-05-01', NULL, 5, 5, 5),
-    ('2022-06-01', NULL, 6, 6, 6),
-    ('2022-07-01', NULL, 7, 7, 7),
-    ('2022-08-01', NULL, 8, 8, 8),
-    ('2022-09-01', NULL, 9, 9, 9),
-    ('2022-10-01', NULL, 10, 10, 10);
+    -- Empleados 1-5: departamento de Diseño (2) con cargo Diseñador (5).
+    -- Son el personal de I+D que firma las patentes (DISENO.fk_emp_id apunta a 1-5).
+    ('2022-01-01', NULL, 2, 1, 5),
+    ('2022-02-01', NULL, 2, 2, 5),
+    ('2022-03-01', NULL, 2, 3, 5),
+    ('2022-04-01', NULL, 2, 4, 5),
+    ('2022-05-01', NULL, 2, 5, 5),
+    -- Empleados 6-10: resto de departamentos operativos.
+    ('2022-06-01', NULL, 1, 6, 1),   -- Produccion / Gerente
+    ('2022-07-01', NULL, 3, 7, 7),   -- Calidad / Inspector
+    ('2022-08-01', NULL, 4, 8, 4),   -- Logistica / Operario
+    ('2022-09-01', NULL, 5, 9, 6),   -- Ventas / Vendedor
+    ('2022-10-01', NULL, 10, 10, 8); -- Compras / Almacenista
 
 -- CAR_EMP (10 filas)
 
@@ -676,17 +679,18 @@ INSERT INTO LOTE_PRODUCCION (lotpro_id, lotpro_fechaini, lotpro_fechafin) VALUES
     (10, '2024-10-01', '2024-10-15');
 
 -- INSPECCION_CALIDAD (10 filas)
+-- Las inspecciones las firma el inspector de Calidad (empleado 7).
 INSERT INTO INSPECCION_CALIDAD (inscal_id, inscal_fecha, inscal_resultado, fk_lotpro_id, fk_emp_id) VALUES
-    (1, '2024-01-16', 'APROBADO', 1, 1),
-    (2, '2024-02-16', 'RECHAZADO', 2, 2),
-    (3, '2024-03-16', 'APROBADO', 3, 1),
-    (4, '2024-04-16', 'RECHAZADO', 4, 3),
-    (5, '2024-05-16', 'APROBADO', 5, 1),
-    (6, '2024-06-16', 'RECHAZADO', 6, 2),
-    (7, '2024-07-16', 'APROBADO', 7, 1),
-    (8, '2024-08-16', 'RECHAZADO', 8, 1),
-    (9, '2024-09-16', 'APROBADO', 9, 1),
-    (10, '2024-10-16', 'RECHAZADO', 10, 5);
+    (1, '2024-01-16', 'APROBADO', 1, 7),
+    (2, '2024-02-16', 'RECHAZADO', 2, 7),
+    (3, '2024-03-16', 'APROBADO', 3, 7),
+    (4, '2024-04-16', 'RECHAZADO', 4, 7),
+    (5, '2024-05-16', 'APROBADO', 5, 7),
+    (6, '2024-06-16', 'RECHAZADO', 6, 7),
+    (7, '2024-07-16', 'APROBADO', 7, 7),
+    (8, '2024-08-16', 'RECHAZADO', 8, 7),
+    (9, '2024-09-16', 'APROBADO', 9, 7),
+    (10, '2024-10-16', 'RECHAZADO', 10, 7);
 
 -- DEFECTO (10 filas)
 INSERT INTO DEFECTO (def_id, def_nombre) VALUES

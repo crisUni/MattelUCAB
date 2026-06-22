@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  getPatentes, crearPatente, getEmpleadosOpc, type Patente, type Opcion,
+  getPatentes, crearPatente, getDisenadoresOpc, type Patente, type Opcion,
 } from "../../../services/api";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { useSession } from "../../../context/SessionContext";
@@ -46,7 +46,7 @@ export function PatentesTab() {
 }
 
 function NuevaPatenteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => void }) {
-  const { data: empleados } = useAsyncData<Opcion[]>(getEmpleadosOpc);
+  const { data: disenadores } = useAsyncData<Opcion[]>(getDisenadoresOpc);
   const [codigo, setCodigo] = useState("");
   const [empId, setEmpId] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -55,9 +55,10 @@ function NuevaPatenteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved
   async function submit() {
     setError(null);
     if (!codigo.trim()) { setError("Indica el código de patente."); return; }
+    if (!empId) { setError("Selecciona el diseñador responsable."); return; }
     setGuardando(true);
     try {
-      await crearPatente(codigo.trim(), empId || undefined);
+      await crearPatente(codigo.trim(), empId);
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -69,15 +70,15 @@ function NuevaPatenteForm({ onCancel, onSaved }: { onCancel: () => void; onSaved
   return (
     <Modal open onClose={onCancel} size="md"
       title="Nueva patente"
-      subtitle="Registra un código de patente y, opcionalmente, el empleado de I+D que diseñó el ADN."
+      subtitle="Registra un código de patente y el empleado del departamento de Diseño (I+D) que diseñó el ADN."
       footer={<><Button variant="ghost" onClick={onCancel}>Cancelar</Button><Button onClick={submit} disabled={guardando}>{guardando ? "Creando…" : "Crear"}</Button></>}
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Código de patente"><TextInput value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="US-D-123456" /></Field>
-        <Field label="Diseñador (opcional)">
+        <Field label="Diseñador" hint="Personal del departamento de Diseño">
           <Select value={empId} onChange={(e) => setEmpId(e.target.value)}>
-            <option value="">— Sin asignar —</option>
-            {(empleados ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+            <option value="">— Selecciona —</option>
+            {(disenadores ?? []).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
           </Select>
         </Field>
       </div>

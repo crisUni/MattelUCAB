@@ -456,6 +456,22 @@ export async function getEmpleadosOpc(): Promise<Opcion[]> {
   return rows.map((e: any) => ({ id: sid(e.emp_id), nombre: `${e.emp_pnombre} ${e.emp_papellido}` }));
 }
 
+/** Solo empleados adscritos al departamento de Diseño (I+D) — diseñadores de ADN/patentes. */
+export async function getDisenadoresOpc(): Promise<Opcion[]> {
+  const [empleados, depEmp, departamentos] = await Promise.all([
+    getList("/empleado"), getList("/dep_emp"), getList("/departamento"),
+  ]);
+  const deptDiseno = new Set(
+    departamentos.filter((d: any) => /dise/i.test(d.dep_nombre)).map((d: any) => d.dep_id),
+  );
+  const empDiseno = new Set(
+    depEmp.filter((de: any) => deptDiseno.has(de.fk_dep_id)).map((de: any) => de.fk_emp_id),
+  );
+  return empleados
+    .filter((e: any) => empDiseno.has(e.emp_id))
+    .map((e: any) => ({ id: sid(e.emp_id), nombre: `${e.emp_pnombre} ${e.emp_papellido}` }));
+}
+
 export async function getClientesOpc(): Promise<Opcion[]> {
   const [clientes, naturales, juridicas] = await Promise.all([
     getList("/cliente"), getList("/persona_natural"), getList("/persona_juridica"),
@@ -547,9 +563,9 @@ export async function getPatentes(): Promise<Patente[]> {
   });
 }
 
-/** Registra una nueva patente/diseño (código + empleado diseñador). */
-export async function crearPatente(codigo: string, empId?: string): Promise<void> {
-  await send("POST", "/diseno", { dis_patentecod: codigo, fk_emp_id: empId ? Number(empId) : null });
+/** Registra una nueva patente/diseño (código + empleado diseñador de I+D, obligatorio). */
+export async function crearPatente(codigo: string, empId: string): Promise<void> {
+  await send("POST", "/diseno", { dis_patentecod: codigo, fk_emp_id: Number(empId) });
 }
 
 /** Crea un set/pack (par de productos compatibles) — aparece en la pestaña de Sets. */
