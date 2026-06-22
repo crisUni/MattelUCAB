@@ -136,8 +136,9 @@ function PackForm({ pack, productos, onCancel, onSaved }: { pack?: Pack; product
     const filled = pairs.flat();
     if (filled.length < 2 || filled.filter(Boolean).length < 2) { setError("Completa al menos un par de productos."); return; }
     if (filled.some((p) => !p)) { setError("Todos los productos deben estar seleccionados."); return; }
-    const uniq = new Set(filled);
-    if (uniq.size !== filled.length) { setError("Los productos no pueden repetirse dentro del mismo pack."); return; }
+    for (const [a, b] of pairs) {
+      if (a === b) { setError(`El par "${a}" tiene productos repetidos.`); return; }
+    }
     setGuardando(true);
     try {
       if (esNuevo) {
