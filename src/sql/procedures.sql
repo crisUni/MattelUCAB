@@ -289,7 +289,8 @@ CREATE OR REPLACE PROCEDURE updateMoldeRostro (
     molrosId INT,
     molrosNombre VARCHAR(100),
     molrosPatente VARCHAR(100),
-    fkPerId INT
+    fkPerId INT,
+    anoPatente INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
@@ -297,7 +298,8 @@ BEGIN
     UPDATE MOLDE_ROSTRO
     SET molros_nombre = molrosNombre,
         molros_patente = molrosPatente,
-        fk_per_id = fkPerId
+        fk_per_id = fkPerId,
+        molros_anopatente = anoPatente
     WHERE molros_id = molrosId;
 END
 $$;
@@ -427,13 +429,15 @@ END
 $$;
 CREATE OR REPLACE PROCEDURE updateDiseno (
     disId INT,
-    disPatentecod VARCHAR(50)
+    disPatentecod VARCHAR(50),
+    fkEmpId INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     UPDATE DISENO
-    SET dis_patentecod = disPatentecod
+    SET dis_patentecod = disPatentecod,
+        fk_emp_id = fkEmpId
     WHERE dis_id = disId;
 END
 $$;
@@ -1281,13 +1285,41 @@ BEGIN
     WHERE pro_id = proId;
 END
 $$;
+-- Borrado en cascada total de un producto: elimina todo lo que lo referencia
+-- (subastas + pujas, lineas de compra, inventario, sets, profesiones) y, si el
+-- genoma (juguete) no lo usa otro producto, tambien el juguete y sus colores/
+-- materiales/compatibilidades.
 CREATE OR REPLACE PROCEDURE deleteProducto (
     proId INT
 )
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    vJug INT;
 BEGIN
+    SELECT fk_jug_id INTO vJug FROM PRODUCTO WHERE pro_id = proId;
+
+    -- Subastas del producto y sus pujas.
+    DELETE FROM PUJA_SUBASTA WHERE fk_sub_id IN (SELECT sub_id FROM SUBASTA WHERE fk_pro_id = proId);
+    DELETE FROM SUBASTA WHERE fk_pro_id = proId;
+
+    -- Historial de ventas e inventario del producto.
+    DELETE FROM DETALLE_COMPRA WHERE fk_pro_id = proId;
+    DELETE FROM INVENTARIO WHERE fk_pro_id = proId;
+
+    -- Sets que lo incluyen y profesiones del multiverso.
+    DELETE FROM DETALLE_SET WHERE fk_pro1 = proId OR fk_pro2 = proId;
+    DELETE FROM HISTORICO_PROFESION WHERE fk_pro_id = proId;
+
     DELETE FROM PRODUCTO WHERE pro_id = proId;
+
+    -- El genoma (juguete) solo se borra si ningun otro producto lo usa.
+    IF vJug IS NOT NULL AND NOT EXISTS (SELECT 1 FROM PRODUCTO WHERE fk_jug_id = vJug) THEN
+        DELETE FROM COLOR_PRODUCTO WHERE fk_jug_id = vJug;
+        DELETE FROM MATERIAL_PRODUCTO WHERE fk_jug_id = vJug;
+        DELETE FROM COMPATIBILIDAD_JUGUETE WHERE fk_juguete1 = vJug OR fk_juguete2 = vJug;
+        DELETE FROM JUGUETE WHERE jug_id = vJug;
+    END IF;
 END
 $$;
 
@@ -2057,13 +2089,15 @@ END
 $$;
 CREATE OR REPLACE PROCEDURE updatePermiso (
     permId INT,
-    permModuloacceso VARCHAR(50)
+    permRecurso VARCHAR(50),
+    permAccion VARCHAR(20)
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     UPDATE PERMISO
-    SET perm_moduloacceso = permModuloacceso
+    SET perm_recurso = permRecurso,
+        perm_accion = permAccion
     WHERE perm_id = permId;
 END
 $$;
@@ -2109,12 +2143,18 @@ BEGIN
     WHERE rol_id = rolId;
 END
 $$;
+-- Borra un rol y sus permisos (PERMISO_ROL). Si tiene usuarios asignados se
+-- bloquea con un mensaje claro: dejarlos sin rol violaria la integridad.
 CREATE OR REPLACE PROCEDURE deleteRol (
     rolId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF EXISTS (SELECT 1 FROM USUARIO WHERE fk_rol_id = rolId) THEN
+        RAISE EXCEPTION 'No se puede eliminar el rol %: tiene usuarios asignados. Reasigna esos usuarios a otro rol antes de borrarlo.', rolId;
+    END IF;
+    DELETE FROM PERMISO_ROL WHERE fk_rol_id = rolId;
     DELETE FROM ROL WHERE rol_id = rolId;
 END
 $$;
@@ -2161,12 +2201,24 @@ BEGIN
     WHERE usu_id = usuId;
 END
 $$;
+-- Borrado en cascada total de un usuario: elimina sus pujas y todas sus compras
+-- con sus dependientes (detalle, pagos, descuentos, historial de estatus).
 CREATE OR REPLACE PROCEDURE deleteUsuario (
     usuId INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    -- Pujas del usuario en subastas.
+    DELETE FROM PUJA_SUBASTA WHERE fk_usu_id = usuId;
+
+    -- Compras del usuario y todo lo que cuelga de cada compra.
+    DELETE FROM HISTORICO_ESTATUS WHERE fk_com_id IN (SELECT com_id FROM COMPRA WHERE fk_usu_id = usuId);
+    DELETE FROM DESCUENTO_COMPRA WHERE fk_com_id IN (SELECT com_id FROM COMPRA WHERE fk_usu_id = usuId);
+    DELETE FROM PAGO WHERE fk_com_id IN (SELECT com_id FROM COMPRA WHERE fk_usu_id = usuId);
+    DELETE FROM DETALLE_COMPRA WHERE fk_com_id IN (SELECT com_id FROM COMPRA WHERE fk_usu_id = usuId);
+    DELETE FROM COMPRA WHERE fk_usu_id = usuId;
+
     DELETE FROM USUARIO WHERE usu_id = usuId;
 END
 $$;
@@ -2947,13 +2999,14 @@ $$;
 CREATE OR REPLACE PROCEDURE createMoldeRostro (
     nombreMolde VARCHAR(100),
     patenteMolde VARCHAR(100),
-    fkPerId INT
+    fkPerId INT,
+    anoPatente INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO MOLDE_ROSTRO (molros_nombre, molros_patente, fk_per_id)
-    VALUES (nombreMolde, patenteMolde, fkPerId);
+    INSERT INTO MOLDE_ROSTRO (molros_nombre, molros_patente, fk_per_id, molros_anopatente)
+    VALUES (nombreMolde, patenteMolde, fkPerId, anoPatente);
 END
 $$;
 
@@ -2985,13 +3038,14 @@ END
 $$;
 
 CREATE OR REPLACE PROCEDURE createDiseno (
-    patenteCodDiseno VARCHAR(50)
+    patenteCodDiseno VARCHAR(50),
+    fkEmpId INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO DISENO (dis_patentecod)
-    VALUES (patenteCodDiseno);
+    INSERT INTO DISENO (dis_patentecod, fk_emp_id)
+    VALUES (patenteCodDiseno, fkEmpId);
 END
 $$;
 
@@ -3235,9 +3289,10 @@ BEGIN
 END
 $$;
 
+-- CORREGIDO: pro_id se omite del INSERT para que lo genere el SERIAL
+-- (antes exigía recibir un id explícito, impidiendo crear productos nuevos).
 CREATE OR REPLACE PROCEDURE createProducto (
     fkJugId INT,
-    proId INT,
     proSku INT,
     proNombre VARCHAR(100),
     proPrecioBase FLOAT,
@@ -3252,15 +3307,93 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     INSERT INTO PRODUCTO (
-        fk_jug_id, pro_id, pro_sku, pro_nombre, pro_preciobase, 
-        pro_lanzamientofecha, pro_tipo, fk_catpro_id, fk_lotpro_id, 
+        fk_jug_id, pro_sku, pro_nombre, pro_preciobase,
+        pro_lanzamientofecha, pro_tipo, fk_catpro_id, fk_lotpro_id,
         fk_edi_id, fk_exc_id
     )
     VALUES (
-        fkJugId, proId, proSku, proNombre, proPrecioBase, 
-        proLanzamientoFecha, proTipo, fkCatproId, fkLotproId, 
+        fkJugId, proSku, proNombre, proPrecioBase,
+        proLanzamientoFecha, proTipo, fkCatproId, fkLotproId,
         fkEdiId, fkExcId
     );
+END
+$$;
+
+-- ===================== ALTA COMPLETA DE UNA MUÑECA =====================
+-- Crea, en una sola transacción: el JUGUETE (genoma) con ADN autogenerado,
+-- sus colores por zona, el PRODUCTO con SKU autogenerado y (opcional) su
+-- profesión en el multiverso. Devuelve el id del producto creado.
+-- Se elimina la firma anterior (15 args) para que la nueva no quede como
+-- una sobrecarga separada al recrearla.
+DROP FUNCTION IF EXISTS crear_muneca(VARCHAR, FLOAT, DATE, INT, INT, INT, INT, INT, INT, INT, INT, INT[], VARCHAR[], INT, VARCHAR);
+CREATE OR REPLACE FUNCTION crear_muneca (
+    pNombre VARCHAR(100), pPrecio FLOAT, pFecha DATE,
+    pMolros INT, pTipcue INT, pEra INT, pDis INT,
+    pCat INT, pEdi INT, pLote INT, pExc INT,
+    pColIds INT[], pZonas VARCHAR[],
+    pMatIds INT[], pMatCants INT[],
+    pStock INT DEFAULT 0, pAlm INT DEFAULT NULL,
+    pProf INT DEFAULT NULL, pProfAno VARCHAR(4) DEFAULT NULL
+)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    vJug INT;
+    vPro INT;
+    vAdn VARCHAR(50);
+    vSku INT;
+    i INT;
+BEGIN
+    -- ADN autogenerado a partir del personaje + molde
+    SELECT 'ADN-' || UPPER(LEFT(REPLACE(COALESCE(per.per_nombre, 'GEN'), ' ', ''), 12)) || '-' || UPPER(LEFT(REPLACE(COALESCE(mr.molros_nombre, 'X'), ' ', ''), 14))
+      INTO vAdn
+      FROM MOLDE_ROSTRO mr LEFT JOIN PERSONAJE per ON per.per_id = mr.fk_per_id
+     WHERE mr.molros_id = pMolros;
+    vAdn := COALESCE(vAdn, 'ADN-GEN-' || pMolros);
+
+    INSERT INTO JUGUETE (jug_adn, fk_molros_id, fk_tipcue_id, fk_erahis_id, fk_dis_id)
+    VALUES (vAdn, pMolros, pTipcue, pEra, pDis)
+    RETURNING jug_id INTO vJug;
+
+    IF pColIds IS NOT NULL THEN
+        FOR i IN 1 .. COALESCE(array_length(pColIds, 1), 0) LOOP
+            IF pColIds[i] IS NOT NULL THEN
+                INSERT INTO COLOR_PRODUCTO (fk_col_id, fk_jug_id, colpro_zonaaplicacion)
+                VALUES (pColIds[i], vJug, pZonas[i]);
+            END IF;
+        END LOOP;
+    END IF;
+
+    -- Receta de materiales (BOM): material + cantidad por genoma.
+    IF pMatIds IS NOT NULL THEN
+        FOR i IN 1 .. COALESCE(array_length(pMatIds, 1), 0) LOOP
+            IF pMatIds[i] IS NOT NULL THEN
+                INSERT INTO MATERIAL_PRODUCTO (fk_mat_id, fk_jug_id, matpro_cantidad)
+                VALUES (pMatIds[i], vJug, COALESCE(pMatCants[i], 1));
+            END IF;
+        END LOOP;
+    END IF;
+
+    SELECT COALESCE(MAX(pro_sku), 100000) + 1 INTO vSku FROM PRODUCTO;
+
+    INSERT INTO PRODUCTO (fk_jug_id, pro_sku, pro_nombre, pro_preciobase, pro_lanzamientofecha,
+                          pro_tipo, fk_catpro_id, fk_lotpro_id, fk_edi_id, fk_exc_id)
+    VALUES (vJug, vSku, pNombre, pPrecio, pFecha, 'INDIVIDUAL', pCat, pLote, pEdi, pExc)
+    RETURNING pro_id INTO vPro;
+
+    -- Stock inicial en un almacen (INVENTARIO), si se indico.
+    IF pStock IS NOT NULL AND pStock > 0 AND pAlm IS NOT NULL THEN
+        INSERT INTO INVENTARIO (fk_pro_id, fk_alm_id, inv_stockdisponible, inv_cantidad, inv_fecha_actualizacion)
+        VALUES (vPro, pAlm, pStock, pStock, CURRENT_DATE);
+    END IF;
+
+    IF pProf IS NOT NULL THEN
+        INSERT INTO HISTORICO_PROFESION (hispro_anoasignacion, fk_prof_id, fk_pro_id)
+        VALUES (COALESCE(pProfAno, EXTRACT(YEAR FROM CURRENT_DATE)::TEXT), pProf, vPro);
+    END IF;
+
+    RETURN vPro;
 END
 $$;
 
@@ -3512,13 +3645,48 @@ END
 $$;
 
 CREATE OR REPLACE PROCEDURE createPermiso (
-    moduloAcceso VARCHAR(50)
+    permRecurso VARCHAR(50),
+    permAccion VARCHAR(20)
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO PERMISO (perm_moduloacceso)
-    VALUES (moduloAcceso);
+    INSERT INTO PERMISO (perm_recurso, perm_accion)
+    VALUES (permRecurso, permAccion);
+END
+$$;
+
+-- ===================== AUTENTICACIÓN / PERMISOS =====================
+-- Valida credenciales contra la BD (la comparación vive aquí, no en el front).
+CREATE OR REPLACE FUNCTION validar_login (
+    pUsuario VARCHAR(50),
+    pClave VARCHAR(50)
+)
+RETURNS TABLE (usu_id INT, usu_nombre VARCHAR(50), rol_id INT, rol_nombre VARCHAR(50))
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT u.usu_id, u.usu_nombre, r.rol_id, r.rol_nombre
+    FROM USUARIO u
+    JOIN ROL r ON r.rol_id = u.fk_rol_id
+    WHERE u.usu_nombre = pUsuario AND u.usu_clave = pClave;
+END
+$$;
+
+-- Devuelve la lista (recurso, accion) que concede un rol.
+CREATE OR REPLACE FUNCTION permisos_de_rol (
+    pRolId INT
+)
+RETURNS TABLE (perm_recurso VARCHAR(50), perm_accion VARCHAR(20))
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT p.perm_recurso, p.perm_accion
+    FROM PERMISO_ROL pr
+    JOIN PERMISO p ON p.perm_id = pr.fk_perm_id
+    WHERE pr.fk_rol_id = pRolId;
 END
 $$;
 
@@ -3562,7 +3730,7 @@ CREATE OR REPLACE PROCEDURE createPermisoRol (
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO PERMISO_ROL (fk_rol_id, fk_per_id)
+    INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
     VALUES (fkRolId, fkPerId);
 END
 $$;

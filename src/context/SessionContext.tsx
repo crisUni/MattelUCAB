@@ -1,57 +1,82 @@
 /**
- * Contexto de sesión + simulador de rol.
+ * Contexto de sesión + control de acceso (RBAC).
  *
- * Mantiene en memoria (sin localStorage) el rol con el que se "inicia sesión"
- * para demostrar cómo cambian menús, columnas sensibles y acciones según el perfil.
- * La navegación y los permisos del resto de la app se derivan de aquí.
+ * La sesión arranca como INVITADO = rol "Cliente" (catálogo de solo lectura).
+ * Al iniciar sesión se reemplaza por el usuario real y sus permisos, todo
+ * resuelto en la base de datos (POST /api/login). El front sólo filtra
+ * pantallas y botones según `puede(recurso, accion)`.
  */
 import {
-  createContext, useContext, useMemo, useState, type ReactNode,
+  createContext, useContext, useEffect, useMemo, useState, type ReactNode,
 } from "react";
-import { roles as rolesMock, permisos as permisosMock } from "../data/mock/seguridad";
-import type { Rol, Permiso } from "../data/types";
+import {
+  login as apiLogin, getPermisosDeRol, type PermisoSesion,
+} from "../services/api";
+import type { AccionPermiso } from "../data/types";
+
+interface Sesion {
+  /** null = invitado (no autenticado). */
+  usuario: { id: string; nombre: string } | null;
+  rolNombre: string;
+  permisos: PermisoSesion[];
+}
 
 interface SessionValue {
-  roles: Rol[];
-  permisos: Permiso[];
-  rolActual: Rol;
-  setRolActualId: (id: string) => void;
-  /** ¿El rol actual tiene este permiso (por id)? */
-  can: (permisoId: string) => boolean;
-  /** ¿Tiene algún permiso del módulo indicado? */
-  canModulo: (modulo: string) => boolean;
-  /** ¿Puede ver costos de producción / márgenes? Reservado al módulo "Costos". */
+  sesion: Sesion;
+  esInvitado: boolean;
+  autenticado: boolean;
+  /** Inicia sesión contra la BD. Devuelve false si las credenciales no coinciden. */
+  iniciarSesion: (usuario: string, clave: string) => Promise<boolean>;
+  /** Entra como invitado (rol Cliente). */
+  entrarComoInvitado: () => Promise<void>;
+  cerrarSesion: () => void;
+  /** ¿La sesión actual puede ejecutar `accion` sobre `recurso`? */
+  puede: (recurso: string, accion: AccionPermiso) => boolean;
+  /** ¿Puede ver costos/márgenes? (permiso VER sobre COSTO). */
   puedeVerCostos: boolean;
 }
+
+const INVITADO: Sesion = { usuario: null, rolNombre: "Cliente", permisos: [] };
 
 const SessionContext = createContext<SessionValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  // Por defecto se inicia como Administrador (acceso total) para la demo.
-  const [rolActualId, setRolActualId] = useState<string>("rol-admin");
+  const [sesion, setSesion] = useState<Sesion>(INVITADO);
+
+  // Carga los permisos del rol Cliente para la sesión de invitado por defecto.
+  useEffect(() => {
+    let alive = true;
+    getPermisosDeRol("Cliente").then((permisos) => {
+      if (alive) setSesion((s) => (s.usuario ? s : { ...INVITADO, permisos }));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   const value = useMemo<SessionValue>(() => {
-    const rolActual =
-      rolesMock.find((r) => r.id === rolActualId) ?? rolesMock[0]!;
-    const permisosSet = new Set(rolActual.permisosIds);
-    const can = (permisoId: string) => permisosSet.has(permisoId);
-    const canModulo = (modulo: string) =>
-      permisosMock.some(
-        (p) => p.modulo === modulo && permisosSet.has(p.id)
-      );
-    // Ver costos de producción = tener acceso al módulo "Costos" (ER: Permiso_ModuloAcceso).
-    // En la práctica sólo lo poseen ciertos roles de back-office (Admin, Gerente de Inv.).
-    const puedeVerCostos = canModulo("Costos");
+    const puede = (recurso: string, accion: AccionPermiso) =>
+      sesion.permisos.some((p) => p.recurso === recurso && p.accion === accion);
+
     return {
-      roles: rolesMock,
-      permisos: permisosMock,
-      rolActual,
-      setRolActualId,
-      can,
-      canModulo,
-      puedeVerCostos,
+      sesion,
+      esInvitado: sesion.usuario === null,
+      autenticado: sesion.usuario !== null,
+      iniciarSesion: async (usuario: string, clave: string) => {
+        const r = await apiLogin(usuario, clave);
+        if (!r) return false;
+        setSesion({ usuario: r.usuario, rolNombre: r.rol.nombre, permisos: r.permisos });
+        return true;
+      },
+      entrarComoInvitado: async () => {
+        const permisos = await getPermisosDeRol("Cliente");
+        setSesion({ ...INVITADO, permisos });
+      },
+      cerrarSesion: () => {
+        getPermisosDeRol("Cliente").then((permisos) => setSesion({ ...INVITADO, permisos }));
+      },
+      puede,
+      puedeVerCostos: puede("COSTO", "VER"),
     };
-  }, [rolActualId]);
+  }, [sesion]);
 
   return (
     <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

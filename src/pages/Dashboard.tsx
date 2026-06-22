@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSession } from "../context/SessionContext";
 import { Sidebar, type NavItem } from "../components/layout/Sidebar";
-import { RoleSelector } from "../components/layout/RoleSelector";
 import { Footer } from "../components/layout/Footer";
 import { Card, EmptyState } from "../components/ui/primitives";
 import { IconUsers, IconDna, IconReport, IconHome, IconLock, IconMenu } from "../components/ui/icons";
@@ -11,8 +11,8 @@ import { ReportesModule } from "../components/modules/reportes/ReportesModule";
 import { InicioView } from "./InicioView";
 
 interface ModuleDef extends NavItem {
-  /** Permiso requerido para ver el módulo (undefined = siempre visible). */
-  permiso?: string;
+  /** Recurso cuyo permiso VER se requiere para ver el módulo (undefined = siempre visible). */
+  recurso?: string;
   render: () => React.ReactNode;
   titulo: string;
   subtitulo: string;
@@ -20,19 +20,20 @@ interface ModuleDef extends NavItem {
 
 const MODULES: ModuleDef[] = [
   { id: "inicio", label: "Inicio", icon: <IconHome className="h-5 w-5" />, scope: "AMBOS", render: () => <InicioView />, titulo: "Panel principal", subtitulo: "Resumen del sistema Dream Legacy" },
-  { id: "usuarios", label: "Usuarios & Seguridad", icon: <IconUsers className="h-5 w-5" />, scope: "BACK_OFFICE", permiso: "perm-usuarios-admin", render: () => <UsuariosModule />, titulo: "Gestión de Usuarios, Roles y Privilegios", subtitulo: "Hermeticidad de la información según el perfil" },
-  { id: "productos", label: "Genoma Barbie", icon: <IconDna className="h-5 w-5" />, scope: "AMBOS", permiso: "perm-prod-ver", render: () => <ProductosModule />, titulo: "Catálogo y Diseño de Productos", subtitulo: "El ADN de cada muñeca y sus reglas de compatibilidad" },
-  { id: "reportes", label: "Reportes", icon: <IconReport className="h-5 w-5" />, scope: "AMBOS", permiso: "perm-reportes-ver", render: () => <ReportesModule />, titulo: "Reportes", subtitulo: "Visores tipo JasperReports" },
+  { id: "usuarios", label: "Usuarios & Seguridad", icon: <IconUsers className="h-5 w-5" />, scope: "BACK_OFFICE", recurso: "USUARIO", render: () => <UsuariosModule />, titulo: "Gestión de Usuarios, Roles y Privilegios", subtitulo: "Hermeticidad de la información según el perfil" },
+  { id: "productos", label: "Genoma Barbie", icon: <IconDna className="h-5 w-5" />, scope: "AMBOS", recurso: "PRODUCTO", render: () => <ProductosModule />, titulo: "Catálogo y Diseño de Productos", subtitulo: "El ADN de cada muñeca y sus reglas de compatibilidad" },
+  { id: "reportes", label: "Reportes", icon: <IconReport className="h-5 w-5" />, scope: "AMBOS", recurso: "REPORTE", render: () => <ReportesModule />, titulo: "Reportes", subtitulo: "Visores tipo JasperReports" },
 ];
 
 export function Dashboard() {
-  const { can, rolActual } = useSession();
+  const { puede, sesion, autenticado, cerrarSesion } = useSession();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [active, setActive] = useState("inicio");
 
   const visibles = useMemo(
-    () => MODULES.filter((m) => !m.permiso || can(m.permiso)),
-    [can]
+    () => MODULES.filter((m) => !m.recurso || puede(m.recurso, "VER")),
+    [puede]
   );
 
   // Si al cambiar de rol el módulo activo deja de ser visible, vuelve a Inicio.
@@ -41,7 +42,7 @@ export function Dashboard() {
   }, [visibles, active]);
 
   const current = MODULES.find((m) => m.id === active) ?? MODULES[0]!;
-  const accesible = !current.permiso || can(current.permiso);
+  const accesible = !current.recurso || puede(current.recurso, "VER");
 
   return (
     <div className="flex h-full bg-slate-50 text-navy-700">
@@ -65,22 +66,32 @@ export function Dashboard() {
               <p className="hidden text-xs text-slate-400 sm:block">{current.subtitulo}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <RoleSelector />
+          <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-1.5">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-500 text-[10px] font-bold text-white">{sesion.rolNombre.slice(0, 2).toUpperCase()}</span>
+            <div className="leading-tight">
+              <p className="text-xs font-bold text-navy-700">{sesion.usuario?.nombre ?? "Invitado"}</p>
+              <p className="text-[10px] text-slate-400">{sesion.rolNombre}</p>
+            </div>
           </div>
+          <button
+            onClick={() => { cerrarSesion(); navigate("/"); }}
+            className="rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-navy-700"
+          >
+            {autenticado ? "Cerrar sesión" : "Iniciar sesión"}
+          </button>
         </div>
 
         {/* Contenido del módulo */}
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-7xl px-5 py-6">
             {accesible ? (
-              <div key={active + rolActual.id} className="animate-fade-in">{current.render()}</div>
+              <div key={active + sesion.rolNombre} className="animate-fade-in">{current.render()}</div>
             ) : (
               <Card className="p-2">
                 <EmptyState
                   icon={<IconLock />}
                   title="Acceso restringido"
-                  hint={`El rol "${rolActual.nombre}" no tiene permiso para ver este módulo. Cambia de rol en el simulador de sesión.`}
+                  hint={`El rol "${sesion.rolNombre}" no tiene permiso para ver este módulo.`}
                 />
               </Card>
             )}

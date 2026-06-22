@@ -9,6 +9,9 @@
     "start": "NODE_ENV=production bun src/index.ts"
   },
   "dependencies": {
+    "@jsreport/jsreport-chrome-pdf": "^4.4.1",
+    "@jsreport/jsreport-core": "^4.10.0",
+    "@jsreport/jsreport-handlebars": "^4.1.1",
     "react": "^19",
     "react-dom": "^19",
     "react-router-dom": "^6.22.0"

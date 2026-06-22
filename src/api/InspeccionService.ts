@@ -1,4 +1,4 @@
-import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
+import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll, fetchAll } from "./CorsHeaders";
 
 type LoteProduccion = {
     lotpro_id: number
@@ -27,6 +27,10 @@ type DefectoLote = {
 
 class InspeccionService{
     routes = {
+        // Resumen de lotes (vista): QA, inspector, # productos, defectos. Trazabilidad.
+        "/api/lote_resumen": {
+            GET: async (_: Bun.BunRequest<"/api/lote_resumen">) => fetchAll("vw_lote_resumen"),
+        },
         "/api/lote_produccion": {
             GET: async (_: Bun.BunRequest<"/api/lote_produccion">) => listAll<LoteProduccion>("listLoteProduccion"),
             POST: async (req: Bun.BunRequest<"/api/lote_produccion">) => {

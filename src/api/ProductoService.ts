@@ -1,4 +1,5 @@
-import { CORS_HEADERS, callProcedure, callDelete, callUpdate, listAll } from "./CorsHeaders";
+import { sql } from "bun";
+import { CORS_HEADERS, callProcedure, callUpdate, callDelete, listAll, fetchAll } from "./CorsHeaders";
 
 type CategoriaProducto = {
     catpro_id: number
@@ -141,6 +142,42 @@ class ProductoService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateExclusividad", [id, body.exc_nombre, body.exc_limiteproducto])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/exclusividad/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteExclusividad", [id])
+            }
+        },
+        // Catálogo resuelto (vista VW_PRODUCTO_ADN): joins + stock + costo calculados en la BD.
+        "/api/producto_adn": {
+            GET: async (_: Bun.BunRequest<"/api/producto_adn">) => fetchAll("vw_producto_adn"),
+        },
+        // Alta completa de una muñeca (genoma + colores + producto + profesión) en la BD.
+        "/api/muneca": {
+            POST: async (req: Bun.BunRequest<"/api/muneca">) => {
+                const b = await req.json();
+                if (!b.nombre || b.precio === undefined || !b.fecha || b.molros === undefined || b.tipcue === undefined || b.era === undefined || b.dis === undefined || b.cat === undefined || b.edi === undefined || b.lote === undefined || b.exc === undefined)
+                    return new Response('Faltan campos del genoma/producto', { status: 400, headers: CORS_HEADERS })
+                // Las arrays se envian como texto delimitado y se reconstruyen en SQL (string_to_array);
+                // se usa sql.unsafe con placeholders posicionales, igual que callProcedure.
+                const colIds = Array.isArray(b.colIds) && b.colIds.length ? b.colIds.join(',') : null;
+                const zonas = Array.isArray(b.zonas) && b.zonas.length ? b.zonas.join(',') : null;
+                const matIds = Array.isArray(b.matIds) && b.matIds.length ? b.matIds.join(',') : null;
+                const matCants = Array.isArray(b.matCants) && b.matCants.length ? b.matCants.join(',') : null;
+                try {
+                    const q = `SELECT crear_muneca($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,`
+                        + ` COALESCE(string_to_array($12, ','), '{}')::int[], COALESCE(string_to_array($13, ','), '{}')::varchar[],`
+                        + ` COALESCE(string_to_array($14, ','), '{}')::int[], COALESCE(string_to_array($15, ','), '{}')::int[],`
+                        + ` $16, $17, $18, $19) AS pro_id`;
+                    const params = [b.nombre, b.precio, b.fecha, b.molros, b.tipcue, b.era, b.dis, b.cat, b.edi, b.lote, b.exc,
+                        colIds, zonas, matIds, matCants, b.stock ?? 0, b.alm ?? null, b.prof ?? null, b.profAno ?? null];
+                    const rows = await sql.unsafe(q, params) as any[];
+                    return Response.json({ pro_id: rows[0].pro_id }, { status: 201, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } })
+                } catch (e) {
+                    return new Response(String(e), { status: 500, headers: CORS_HEADERS });
+                }
             }
         },
         "/api/producto": {
@@ -149,7 +186,7 @@ class ProductoService{
                 const body = await req.json();
                 if (!body.pro_nombre || body.pro_preciobase === undefined || !body.pro_lanzamientofecha || !body.pro_tipo || body.fk_jug_id === undefined || body.fk_catpro_id === undefined || body.fk_lotpro_id === undefined || body.fk_edi_id === undefined || body.fk_exc_id === undefined)
                     return new Response('pro_nombre, pro_preciobase, pro_lanzamientofecha, pro_tipo, fk_jug_id, fk_catpro_id, fk_lotpro_id, fk_edi_id, fk_exc_id are required', { status: 400, headers: CORS_HEADERS })
-                return callProcedure("createProducto", [body.fk_jug_id, body.pro_id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
+                return callProcedure("createProducto", [body.fk_jug_id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
             }
         },
         "/api/producto/:id": {
@@ -165,6 +202,12 @@ class ProductoService{
                     return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
                 const body = await req.json();
                 return callUpdate("updateProducto", [id, body.pro_sku, body.pro_nombre, body.pro_preciobase, body.pro_lanzamientofecha, body.pro_tipo, body.fk_jug_id, body.fk_catpro_id, body.fk_lotpro_id, body.fk_edi_id, body.fk_exc_id])
+            },
+            DELETE: async (req: Bun.BunRequest<"/api/producto/:id">) => {
+                const id = Number(req.params.id);
+                if (!Number.isInteger(id))
+                    return new Response("Id must be a valid integer", { status: 400, headers: CORS_HEADERS })
+                return callDelete("deleteProducto", [id])
             }
         },
         "/api/detalle_set": {

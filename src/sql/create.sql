@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS MOLDE_ROSTRO (
     molros_id SERIAL PRIMARY KEY,
     molros_nombre VARCHAR(100) NOT NULL,
     molros_patente VARCHAR(100) NOT NULL,
+    molros_anopatente INT,                  -- AÑADIDO: año de patente del molde (ej. Mackie 1991)
     fk_per_id INT NOT NULL,
     FOREIGN KEY (fk_per_id) REFERENCES PERSONAJE (per_id)
 );
@@ -68,7 +69,8 @@ CREATE TABLE IF NOT EXISTS MATERIAL (
 
 CREATE TABLE IF NOT EXISTS DISENO (
     dis_id SERIAL PRIMARY KEY,
-    dis_patentecod VARCHAR(50) NOT NULL
+    dis_patentecod VARCHAR(50) NOT NULL,
+    fk_emp_id INT                           -- AÑADIDO: empleado (I+D) que diseñó el ADN (FK en constraints.sql)
 );
 
 CREATE TABLE IF NOT EXISTS JUGUETE (
@@ -99,11 +101,14 @@ CREATE TABLE IF NOT EXISTS COMPATIBILIDAD_JUGUETE (
 -- JUGUETE, por lo que se mantiene el enlace a JUGUETE (como en el script
 -- original). Para conformidad estricta con el ER, cambiar fk_jug_id por
 -- una FK a PRODUCTO(pro_id).
+-- PK por (juguete, zona): cada zona admite un unico color, pero un mismo color
+-- puede repetirse en varias zonas (p.ej. piel y labios rosados). La PK anterior
+-- (fk_col_id, fk_jug_id) impedia reutilizar un color en otra zona.
 CREATE TABLE IF NOT EXISTS COLOR_PRODUCTO (
-    fk_col_id INT,
+    fk_col_id INT NOT NULL,
     fk_jug_id INT,
     colpro_zonaaplicacion VARCHAR(50) NOT NULL,
-    PRIMARY KEY (fk_col_id, fk_jug_id),
+    PRIMARY KEY (fk_jug_id, colpro_zonaaplicacion),
     FOREIGN KEY (fk_col_id) REFERENCES COLOR (col_id),
     FOREIGN KEY (fk_jug_id) REFERENCES JUGUETE (jug_id)
 );
@@ -186,7 +191,7 @@ CREATE TABLE IF NOT EXISTS INSPECCION_CALIDAD (
     fk_emp_id INT NOT NULL,
     FOREIGN KEY (fk_lotpro_id) REFERENCES LOTE_PRODUCCION(lotpro_id),
     Foreign Key (fk_emp_id) REFERENCES EMPLEADO(emp_id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS DEFECTO (
     def_id SERIAL PRIMARY KEY,
@@ -406,9 +411,13 @@ CREATE TABLE IF NOT EXISTS PERSONA_JURIDICA (
 -- SECCIÓN: USUARIOS / SEGURIDAD
 -- =====================================================================
 -- CORREGIDO: prefijo perm_ para evitar choque con PERSONAJE (per_).
+-- Permiso granular = (recurso, accion). Cada par define un privilegio concreto
+-- (ej. PRODUCTO/CREAR). Los roles se componen asignando varios permisos.
 CREATE TABLE IF NOT EXISTS PERMISO (
     perm_id SERIAL PRIMARY KEY,
-    perm_moduloacceso VARCHAR(50) NOT NULL
+    perm_recurso VARCHAR(50) NOT NULL,
+    perm_accion VARCHAR(20) NOT NULL CHECK (perm_accion IN ('VER', 'CREAR', 'EDITAR', 'ELIMINAR')),
+    UNIQUE (perm_recurso, perm_accion)
 );
 
 CREATE TABLE IF NOT EXISTS ROL (
@@ -584,3 +593,65 @@ CREATE TABLE IF NOT EXISTS HISTORICO_MEMBRESIA (
     FOREIGN KEY (fk_mem_id) REFERENCES MEMBRESIA (mem_id),
     FOREIGN KEY (fk_cli_id) REFERENCES CLIENTE (cli_id)
 );
+
+-- ---------------------------------------------------------------------
+-- VISTA: catálogo de productos resuelto (ADN). Resuelve en la BD las
+-- uniones (juguete → molde → diseño → empleado), el stock total y el
+-- COSTO de producción (Σ costo material × cantidad del BOM), para que el
+-- front no calcule nada: sólo lee la vista.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE VIEW VW_PRODUCTO_ADN AS
+SELECT
+    p.pro_id,
+    p.pro_sku,
+    p.pro_nombre,
+    p.pro_preciobase,
+    p.pro_lanzamientofecha,
+    p.pro_tipo,
+    p.fk_exc_id,
+    p.fk_jug_id,
+    p.fk_lotpro_id,
+    p.fk_catpro_id,
+    p.fk_edi_id,
+    j.jug_adn,
+    j.fk_molros_id,
+    j.fk_tipcue_id,
+    j.fk_erahis_id,
+    mr.fk_per_id AS personaje_id,
+    d.dis_patentecod AS diseno_patente,
+    d.fk_emp_id AS disenador_id,
+    CASE WHEN e.emp_id IS NULL THEN NULL
+         ELSE e.emp_pnombre || ' ' || e.emp_papellido END AS disenador,
+    COALESCE((SELECT SUM(i.inv_stockdisponible) FROM INVENTARIO i WHERE i.fk_pro_id = p.pro_id), 0) AS stock,
+    COALESCE(p.pro_costoproduccion,
+             (SELECT SUM(m.mat_costo * mp.matpro_cantidad)
+                FROM MATERIAL_PRODUCTO mp JOIN MATERIAL m ON m.mat_id = mp.fk_mat_id
+               WHERE mp.fk_jug_id = p.fk_jug_id),
+             0) AS costo_produccion
+FROM PRODUCTO p
+LEFT JOIN JUGUETE j      ON j.jug_id    = p.fk_jug_id
+LEFT JOIN MOLDE_ROSTRO mr ON mr.molros_id = j.fk_molros_id
+LEFT JOIN DISENO d       ON d.dis_id    = j.fk_dis_id
+LEFT JOIN EMPLEADO e     ON e.emp_id    = d.fk_emp_id;
+
+-- ---------------------------------------------------------------------
+-- VISTA: resumen de lote de produccion. Cruza el lote con su inspeccion
+-- de calidad (resultado + inspector), el numero de productos fabricados
+-- y los defectos detectados, para la trazabilidad de manufactura.
+-- (En los datos hay 1 inspeccion por lote.)
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE VIEW VW_LOTE_RESUMEN AS
+SELECT
+    l.lotpro_id,
+    l.lotpro_fechaini,
+    l.lotpro_fechafin,
+    ic.inscal_resultado,
+    ic.inscal_fecha,
+    CASE WHEN e.emp_id IS NULL THEN NULL
+         ELSE e.emp_pnombre || ' ' || e.emp_papellido END AS inspector,
+    (SELECT COUNT(*) FROM PRODUCTO p WHERE p.fk_lotpro_id = l.lotpro_id) AS num_productos,
+    (SELECT COUNT(*) FROM DEFECTO_LOTE dl WHERE dl.fk_lotpro_id = l.lotpro_id) AS num_defectos,
+    COALESCE((SELECT SUM(dl.deflot_cantidadafectada) FROM DEFECTO_LOTE dl WHERE dl.fk_lotpro_id = l.lotpro_id), 0) AS unidades_afectadas
+FROM LOTE_PRODUCCION l
+LEFT JOIN INSPECCION_CALIDAD ic ON ic.fk_lotpro_id = l.lotpro_id
+LEFT JOIN EMPLEADO e            ON e.emp_id        = ic.fk_emp_id;

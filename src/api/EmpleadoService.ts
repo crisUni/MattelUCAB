@@ -81,27 +81,6 @@ class RolService{
             }
         },
 
-        //NOTE - change so that you can see what department and role the employee has
-        "/api/empleado/:id": {
-            GET: async (req: Bun.BunRequest<"/api/empleado/:id">) => {
-                let found: []
-
-                if (!Number.isInteger(Number(req.params.id)))
-                    return new Response("Id of rol must be valid integer", { status: 400 })
-
-                // TODO - TEST THIS!!!
-                try {
-                    found = await sql`SELECT * FROM Permiso p, Permiso_Rol pr WHERE pr.fk_rol_id = ${req.params.id} AND pr.fk_per_id = p.per_id`
-                } catch (e) {
-                    return new Response(String(e), { status: 500 });
-                }
-
-                if (!found.length)
-                    return new Response('No resources found', { status: 404 })
-                return Response.json(found, { status: 200 , headers: { ...CORS_HEADERS, "Content-Type": "application/json"}})
-            }
-        },
-
         "/api/cargo": {
             GET: async (_: Bun.BunRequest<"/api/cargo">) => listAll<Cargo>("listCargo"),
             POST: async (req: Bun.BunRequest<"/api/cargo">) => {

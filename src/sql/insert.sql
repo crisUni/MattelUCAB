@@ -438,12 +438,12 @@ INSERT INTO TIPO_CUERPO (tipcue_id, tipcue_nombre) VALUES
     (2, 'Curvy'),
     (3, 'Petite'),
     (4, 'Tall'),
-    (5, 'Bebe'),
-    (6, 'Infantil'),
-    (7, 'Articulado'),
-    (8, 'Flexible'),
-    (9, 'Clasico'),
-    (10, 'Deportivo');
+    (5, 'Made-to-Move'),
+    (6, 'Slim'),
+    (7, 'Atletica'),
+    (8, 'Clasica'),
+    (9, 'Articulada'),
+    (10, 'Vintage');
 
 -- PERSONAJE (10 filas)
 INSERT INTO PERSONAJE (per_id, per_nombre) VALUES
@@ -472,30 +472,30 @@ INSERT INTO VINCULO_PERSONAJE (fk_personaje1, fk_personaje2, vinper_tipo_relacio
     (10, 1, 'Familia');
 
 -- MOLDE_ROSTRO (10 filas)
-INSERT INTO MOLDE_ROSTRO (molros_id, molros_nombre, molros_patente, fk_per_id) VALUES
-    (1, 'Molde Barbie', 'PAT-MOL-001', 1),
-    (2, 'Molde Ken', 'PAT-MOL-002', 2),
-    (3, 'Molde Skipper', 'PAT-MOL-003', 3),
-    (4, 'Molde Christie', 'PAT-MOL-004', 4),
-    (5, 'Molde Midge', 'PAT-MOL-005', 5),
-    (6, 'Molde Teresa', 'PAT-MOL-006', 6),
-    (7, 'Molde Raquelle', 'PAT-MOL-007', 7),
-    (8, 'Molde Stacie', 'PAT-MOL-008', 8),
-    (9, 'Molde Chelsea', 'PAT-MOL-009', 9),
-    (10, 'Molde Nikki', 'PAT-MOL-010', 10);
+INSERT INTO MOLDE_ROSTRO (molros_id, molros_nombre, molros_patente, fk_per_id, molros_anopatente) VALUES
+    (1, 'Superstar', 'PAT-MOL-001', 1, 1977),
+    (2, 'Ken Original', 'PAT-MOL-002', 2, 1961),
+    (3, 'Steffie', 'PAT-MOL-003', 3, 1972),
+    (4, 'Goddess', 'PAT-MOL-004', 4, 1999),
+    (5, 'Mackie', 'PAT-MOL-005', 5, 1991),
+    (6, 'Diva', 'PAT-MOL-006', 6, 2001),
+    (7, 'Lea', 'PAT-MOL-007', 7, 2010),
+    (8, 'Generation Girl', 'PAT-MOL-008', 8, 1999),
+    (9, 'Belly Button', 'PAT-MOL-009', 9, 2000),
+    (10, 'Millie', 'PAT-MOL-010', 10, 2015);
 
 -- ERA_HISTORICO (10 filas)
 INSERT INTO ERA_HISTORICO (erahis_id, erahis_nombre, erahis_fechaini, erahis_fechafin) VALUES
-    (1, 'Era 1959s', '1959-01-01', '1963-12-31'),
-    (2, 'Era 1964s', '1964-01-01', '1968-12-31'),
-    (3, 'Era 1969s', '1969-01-01', '1973-12-31'),
-    (4, 'Era 1974s', '1974-01-01', '1978-12-31'),
-    (5, 'Era 1979s', '1979-01-01', '1983-12-31'),
-    (6, 'Era 1984s', '1984-01-01', '1988-12-31'),
-    (7, 'Era 1989s', '1989-01-01', '1993-12-31'),
-    (8, 'Era 1994s', '1994-01-01', '1998-12-31'),
-    (9, 'Era 1999s', '1999-01-01', '2003-12-31'),
-    (10, 'Era 2004s', '2004-01-01', '2008-12-31');
+    (1, 'Vintage Era', '1959-01-01', '1966-12-31'),
+    (2, 'Mod Era', '1967-01-01', '1972-12-31'),
+    (3, 'Superstar Era', '1977-01-01', '1989-12-31'),
+    (4, 'Pink Box Era', '1990-01-01', '1997-12-31'),
+    (5, 'Generation Girl Era', '1998-01-01', '2003-12-31'),
+    (6, 'Fashionistas Era', '2004-01-01', '2009-12-31'),
+    (7, 'Diversity Era', '2010-01-01', '2015-12-31'),
+    (8, 'Made-to-Move Era', '2016-01-01', '2019-12-31'),
+    (9, 'Movie Era', '2020-01-01', '2022-12-31'),
+    (10, 'Modern Era', '2023-01-01', '2025-12-31');
 
 -- MATERIAL (10 filas)
 INSERT INTO MATERIAL (mat_id, mat_nombre, mat_tipo, mat_unidad, mat_costo) VALUES
@@ -511,6 +511,7 @@ INSERT INTO MATERIAL (mat_id, mat_nombre, mat_tipo, mat_unidad, mat_costo) VALUE
     (10, 'Silicona', 'Polimero', 'kg', 18.25);
 
 -- DISENO (10 filas)
+-- fk_emp_id (diseñador) se asigna mas abajo, tras cargar EMPLEADO.
 INSERT INTO DISENO (dis_id, dis_patentecod) VALUES
     (1, 'PAT-DIS-0001'),
     (2, 'PAT-DIS-0002'),
@@ -525,16 +526,16 @@ INSERT INTO DISENO (dis_id, dis_patentecod) VALUES
 
 -- JUGUETE (10 filas)
 INSERT INTO JUGUETE (jug_id, jug_adn, fk_molros_id, fk_tipcue_id, fk_erahis_id, fk_dis_id) VALUES
-    (1, 'ADN-00001', 1, 1, 1, 1),
-    (2, 'ADN-00002', 2, 2, 2, 2),
-    (3, 'ADN-00003', 3, 3, 3, 3),
-    (4, 'ADN-00004', 4, 4, 4, 4),
-    (5, 'ADN-00005', 5, 5, 5, 5),
-    (6, 'ADN-00006', 6, 6, 6, 6),
-    (7, 'ADN-00007', 7, 7, 7, 7),
-    (8, 'ADN-00008', 8, 8, 8, 8),
-    (9, 'ADN-00009', 9, 9, 9, 9),
-    (10, 'ADN-00010', 10, 10, 10, 10);
+    (1, 'ADN-BARBIE-SUPERSTAR', 1, 1, 1, 1),
+    (2, 'ADN-KEN-ORIGINAL', 2, 2, 2, 2),
+    (3, 'ADN-SKIPPER-STEFFIE', 3, 3, 3, 3),
+    (4, 'ADN-CHRISTIE-GODDESS', 4, 4, 4, 4),
+    (5, 'ADN-MIDGE-MACKIE', 5, 5, 5, 5),
+    (6, 'ADN-TERESA-DIVA', 6, 6, 6, 6),
+    (7, 'ADN-RAQUELLE-LEA', 7, 7, 7, 7),
+    (8, 'ADN-STACIE-GENGIRL', 8, 8, 8, 8),
+    (9, 'ADN-CHELSEA-BELLYBTN', 9, 9, 9, 9),
+    (10, 'ADN-NIKKI-MILLIE', 10, 10, 10, 10);
 
 -- COMPATIBILIDAD_JUGUETE (10 filas)
 INSERT INTO COMPATIBILIDAD_JUGUETE (fk_juguete1, fk_juguete2) VALUES
@@ -550,17 +551,19 @@ INSERT INTO COMPATIBILIDAD_JUGUETE (fk_juguete1, fk_juguete2) VALUES
     (10, 1);
 
 -- COLOR_PRODUCTO (10 filas)
+-- Cada juguete tiene tono de piel, color de ojos y color de cabello (zonas distintas,
+-- colores tomados de conjuntos disjuntos para respetar el trigger "un color por zona").
 INSERT INTO COLOR_PRODUCTO (fk_col_id, fk_jug_id, colpro_zonaaplicacion) VALUES
-    (1, 1, 'Cabello'),
-    (2, 2, 'Ojos'),
-    (3, 3, 'Vestido'),
-    (4, 4, 'Zapatos'),
-    (5, 5, 'Piel'),
-    (6, 6, 'Accesorio'),
-    (7, 7, 'Labios'),
-    (8, 8, 'Manos'),
-    (9, 9, 'Cara'),
-    (10, 10, 'Base');
+    (10, 1, 'Piel'),  (2, 1, 'Ojos'),  (3, 1, 'Cabello'),
+    (9, 2, 'Piel'),   (7, 2, 'Ojos'),  (4, 2, 'Cabello'),
+    (6, 3, 'Piel'),   (8, 3, 'Ojos'),  (3, 3, 'Cabello'),
+    (1, 4, 'Piel'),   (5, 4, 'Ojos'),  (4, 4, 'Cabello'),
+    (10, 5, 'Piel'),  (2, 5, 'Ojos'),  (3, 5, 'Cabello'),
+    (9, 6, 'Piel'),   (7, 6, 'Ojos'),  (4, 6, 'Cabello'),
+    (6, 7, 'Piel'),   (8, 7, 'Ojos'),  (3, 7, 'Cabello'),
+    (1, 8, 'Piel'),   (5, 8, 'Ojos'),  (4, 8, 'Cabello'),
+    (10, 9, 'Piel'),  (2, 9, 'Ojos'),  (3, 9, 'Cabello'),
+    (9, 10, 'Piel'),  (7, 10, 'Ojos'), (4, 10, 'Cabello');
 
 -- MATERIAL_PRODUCTO (10 filas)
 INSERT INTO MATERIAL_PRODUCTO (fk_mat_id, fk_jug_id, matpro_cantidad) VALUES
@@ -573,7 +576,10 @@ INSERT INTO MATERIAL_PRODUCTO (fk_mat_id, fk_jug_id, matpro_cantidad) VALUES
     (7, 7, 35),
     (8, 8, 40),
     (9, 9, 45),
-    (10, 10, 50);
+    (10, 10, 50),
+    -- Material 1 es un subensamblaje comun (presente en todos los juguetes).
+    (1, 2, 4), (1, 3, 4), (1, 4, 4), (1, 5, 4), (1, 6, 4),
+    (1, 7, 4), (1, 8, 4), (1, 9, 4), (1, 10, 4);
 
 -- DEPARTAMENTO (10 filas)
 INSERT INTO DEPARTAMENTO (dep_id, dep_nombre, dep_descripcion) VALUES
@@ -629,16 +635,19 @@ INSERT INTO EMPLEADO (emp_id, emp_pnombre, emp_snombre, emp_papellido, emp_sapel
 
 -- DEP_EMP (10 filas)
 INSERT INTO DEP_EMP (depemp_fechaini, depemp_fechafin, fk_dep_id, fk_emp_id, fk_car_id) VALUES
-    ('2022-01-01', NULL, 1, 1, 1),
-    ('2022-02-01', NULL, 2, 2, 2),
-    ('2022-03-01', NULL, 3, 3, 3),
-    ('2022-04-01', NULL, 4, 4, 4),
-    ('2022-05-01', NULL, 5, 5, 5),
-    ('2022-06-01', NULL, 6, 6, 6),
-    ('2022-07-01', NULL, 7, 7, 7),
-    ('2022-08-01', NULL, 8, 8, 8),
-    ('2022-09-01', NULL, 9, 9, 9),
-    ('2022-10-01', NULL, 10, 10, 10);
+    -- Empleados 1-5: departamento de Diseño (2) con cargo Diseñador (5).
+    -- Son el personal de I+D que firma las patentes (DISENO.fk_emp_id apunta a 1-5).
+    ('2022-01-01', NULL, 2, 1, 5),
+    ('2022-02-01', NULL, 2, 2, 5),
+    ('2022-03-01', NULL, 2, 3, 5),
+    ('2022-04-01', NULL, 2, 4, 5),
+    ('2022-05-01', NULL, 2, 5, 5),
+    -- Empleados 6-10: resto de departamentos operativos.
+    ('2022-06-01', NULL, 1, 6, 1),   -- Produccion / Gerente
+    ('2022-07-01', NULL, 3, 7, 7),   -- Calidad / Inspector
+    ('2022-08-01', NULL, 4, 8, 4),   -- Logistica / Operario
+    ('2022-09-01', NULL, 5, 9, 6),   -- Ventas / Vendedor
+    ('2022-10-01', NULL, 10, 10, 8); -- Compras / Almacenista
 
 -- CAR_EMP (10 filas)
 
@@ -670,17 +679,18 @@ INSERT INTO LOTE_PRODUCCION (lotpro_id, lotpro_fechaini, lotpro_fechafin) VALUES
     (10, '2024-10-01', '2024-10-15');
 
 -- INSPECCION_CALIDAD (10 filas)
+-- Las inspecciones las firma el inspector de Calidad (empleado 7).
 INSERT INTO INSPECCION_CALIDAD (inscal_id, inscal_fecha, inscal_resultado, fk_lotpro_id, fk_emp_id) VALUES
-    (1, '2024-01-16', 'APROBADO', 1, 1),
-    (2, '2024-02-16', 'RECHAZADO', 2, 2),
-    (3, '2024-03-16', 'APROBADO', 3, 1),
-    (4, '2024-04-16', 'RECHAZADO', 4, 3),
-    (5, '2024-05-16', 'APROBADO', 5, 1),
-    (6, '2024-06-16', 'RECHAZADO', 6, 2),
-    (7, '2024-07-16', 'APROBADO', 7, 1),
-    (8, '2024-08-16', 'RECHAZADO', 8, 1),
-    (9, '2024-09-16', 'APROBADO', 9, 1),
-    (10, '2024-10-16', 'RECHAZADO', 10, 5);
+    (1, '2024-01-16', 'APROBADO', 1, 7),
+    (2, '2024-02-16', 'RECHAZADO', 2, 7),
+    (3, '2024-03-16', 'APROBADO', 3, 7),
+    (4, '2024-04-16', 'RECHAZADO', 4, 7),
+    (5, '2024-05-16', 'APROBADO', 5, 7),
+    (6, '2024-06-16', 'RECHAZADO', 6, 7),
+    (7, '2024-07-16', 'APROBADO', 7, 7),
+    (8, '2024-08-16', 'RECHAZADO', 8, 7),
+    (9, '2024-09-16', 'APROBADO', 9, 7),
+    (10, '2024-10-16', 'RECHAZADO', 10, 7);
 
 -- DEFECTO (10 filas)
 INSERT INTO DEFECTO (def_id, def_nombre) VALUES
@@ -696,30 +706,27 @@ INSERT INTO DEFECTO (def_id, def_nombre) VALUES
     (10, 'Falta pieza');
 
 -- DEFECTO_LOTE (10 filas)
+-- Los defectos solo se registran en lotes RECHAZADOS (2,4,6,8,10);
+-- los lotes APROBADOS no tienen defectos (consistencia QA, forzada por trigger).
 INSERT INTO DEFECTO_LOTE (deflot_cantidadafectada, fk_def_id, fk_lotpro_id) VALUES
-    (3, 1, 1),
-    (6, 2, 2),
-    (9, 3, 3),
-    (12, 4, 4),
-    (15, 5, 5),
-    (18, 6, 6),
-    (21, 7, 7),
-    (24, 8, 8),
-    (27, 9, 9),
-    (30, 10, 10);
+    (6, 1, 2),  (4, 2, 2),
+    (12, 3, 4), (5, 4, 4),
+    (8, 5, 6),  (3, 6, 6),
+    (10, 7, 8), (7, 8, 8),
+    (15, 9, 10),(9, 10, 10);
 
 -- CATEGORIA_PRODUCTO (10 filas)
 INSERT INTO CATEGORIA_PRODUCTO (catpro_id, catpro_descripcion) VALUES
-    (1, 'Categoria Munecas'),
-    (2, 'Categoria Vehiculos'),
-    (3, 'Categoria Casas'),
-    (4, 'Categoria Accesorios'),
-    (5, 'Categoria Sets'),
-    (6, 'Categoria Ropa'),
-    (7, 'Categoria Mascotas'),
-    (8, 'Categoria Coleccionables'),
-    (9, 'Categoria Juegos'),
-    (10, 'Categoria Figuras');
+    (1, 'Munecas'),
+    (2, 'Vehiculos'),
+    (3, 'Casas (Dreamhouse)'),
+    (4, 'Accesorios'),
+    (5, 'Sets de regalo'),
+    (6, 'Ropa y moda'),
+    (7, 'Mascotas'),
+    (8, 'Coleccionables'),
+    (9, 'Juegos'),
+    (10, 'Figuras');
 
 -- EDICION (10 filas)
 INSERT INTO EDICION (edi_id, edi_nombre) VALUES
@@ -749,42 +756,42 @@ INSERT INTO PROFESION (prof_id, prof_nombre) VALUES
 
 -- EXCLUSIVIDAD (10 filas)
 INSERT INTO EXCLUSIVIDAD (exc_id, exc_nombre, exc_limiteproducto) VALUES
-    (1, 'Exclusiva 1', 100),
-    (2, 'Exclusiva 2', 200),
-    (3, 'Exclusiva 3', 300),
-    (4, 'Exclusiva 4', 400),
-    (5, 'Exclusiva 5', 500),
-    (6, 'Exclusiva 6', 600),
-    (7, 'Exclusiva 7', 700),
-    (8, 'Exclusiva 8', 800),
-    (9, 'Exclusiva 9', 900),
-    (10, 'Exclusiva 10', 1000);
+    (1, 'Pink Label', 1000000),
+    (2, 'Black Label', 100000),
+    (3, 'Gold Label', 25000),
+    (4, 'Platinum Label', 1000),
+    (5, 'Signature', 5000),
+    (6, 'Holiday Edition', 10000),
+    (7, 'Anniversary', 3000),
+    (8, 'Designer Edition', 2000),
+    (9, 'Convention Exclusive', 500),
+    (10, 'Prototype', 50);
 
 -- PRODUCTO (10 filas)
 INSERT INTO PRODUCTO (pro_id, pro_sku, pro_nombre, pro_preciobase, pro_lanzamientofecha, pro_tipo, fk_jug_id, fk_catpro_id, fk_lotpro_id, fk_edi_id, fk_exc_id) VALUES
-    (1, 100000, 'Producto 1', 19.99, '2024-01-01', 'INDIVIDUAL', 1, 1, 1, 1, 1),
-    (2, 100001, 'Producto 2', 24.99, '2024-02-01', 'SET', 2, 2, 2, 2, 2),
-    (3, 100002, 'Producto 3', 29.99, '2024-03-01', 'INDIVIDUAL', 3, 3, 3, 3, 3),
-    (4, 100003, 'Producto 4', 34.99, '2024-04-01', 'SET', 4, 4, 4, 4, 4),
-    (5, 100004, 'Producto 5', 39.99, '2024-05-01', 'INDIVIDUAL', 5, 5, 5, 5, 5),
-    (6, 100005, 'Producto 6', 44.99, '2024-06-01', 'SET', 6, 6, 6, 6, 6),
-    (7, 100006, 'Producto 7', 49.99, '2024-07-01', 'INDIVIDUAL', 7, 7, 7, 7, 7),
-    (8, 100007, 'Producto 8', 54.99, '2024-08-01', 'SET', 8, 8, 8, 8, 8),
-    (9, 100008, 'Producto 9', 59.99, '2024-09-01', 'INDIVIDUAL', 9, 9, 9, 9, 9),
-    (10, 100009, 'Producto 10', 64.99, '2024-10-01', 'SET', 10, 10, 10, 10, 10);
+    (1, 100000, 'Barbie Doctora', 149.99, '2024-01-01', 'INDIVIDUAL', 1, 1, 1, 1, 1),
+    (2, 100001, 'Ken Astronauta', 199.99, '2024-02-01', 'INDIVIDUAL', 2, 1, 2, 2, 2),
+    (3, 100002, 'Skipper Maestra', 259.99, '2024-03-01', 'INDIVIDUAL', 3, 1, 3, 3, 3),
+    (4, 100003, 'Christie Chef', 329.99, '2024-04-01', 'INDIVIDUAL', 4, 1, 4, 4, 4),
+    (5, 100004, 'Midge Veterinaria', 399.99, '2024-05-01', 'INDIVIDUAL', 5, 1, 5, 5, 5),
+    (6, 100005, 'Teresa Piloto', 479.99, '2024-06-01', 'INDIVIDUAL', 6, 1, 6, 6, 6),
+    (7, 100006, 'Raquelle Cientifica', 559.99, '2024-07-01', 'INDIVIDUAL', 7, 1, 7, 7, 7),
+    (8, 100007, 'Stacie Bombera', 649.99, '2024-08-01', 'INDIVIDUAL', 8, 1, 8, 8, 8),
+    (9, 100008, 'Chelsea Cantante', 749.99, '2024-09-01', 'INDIVIDUAL', 9, 1, 9, 9, 9),
+    (10, 100009, 'Nikki Atleta', 899.99, '2024-10-01', 'INDIVIDUAL', 10, 1, 10, 10, 10);
 
 -- DETALLE_SET (10 filas)
 INSERT INTO DETALLE_SET (fk_pro1, fk_pro2, detset_nombre) VALUES
-    (1, 2, 'Set 1'),
-    (2, 3, 'Set 2'),
-    (3, 4, 'Set 3'),
-    (4, 5, 'Set 4'),
-    (5, 6, 'Set 5'),
-    (6, 7, 'Set 6'),
-    (7, 8, 'Set 7'),
-    (8, 9, 'Set 8'),
-    (9, 10, 'Set 9'),
-    (10, 1, 'Set 10');
+    (1, 2, 'Set Profesiones'),
+    (2, 3, 'Pack Aventuras'),
+    (3, 4, 'Set Carreras'),
+    (4, 5, 'Pack Familia'),
+    (5, 6, 'Set Duo Estelar'),
+    (6, 7, 'Pack Coleccionista'),
+    (7, 8, 'Set Heroinas'),
+    (8, 9, 'Pack Suenos'),
+    (9, 10, 'Set Hermanas'),
+    (10, 1, 'Pack Fiesta');
 
 -- HISTORICO_PROFESION (10 filas)
 INSERT INTO HISTORICO_PROFESION (hispro_anoasignacion, fk_prof_id, fk_pro_id) VALUES
@@ -833,10 +840,10 @@ INSERT INTO INVENTARIO (fk_pro_id, fk_alm_id, inv_stockdisponible, inv_cantidad,
     (4, 4, 470, 940, '2025-04-10'),
     (5, 5, 460, 920, '2025-05-10'),
     (6, 6, 450, 900, '2025-06-10'),
-    (7, 7, 440, 880, '2025-01-10'),
-    (8, 8, 430, 860, '2025-02-10'),
-    (9, 9, 420, 840, '2025-03-10'),
-    (10, 10, 410, 820, '2025-04-10');
+    (7, 7, 0, 880, '2025-01-10'),
+    (8, 8, 0, 860, '2025-02-10'),
+    (9, 9, 0, 840, '2025-03-10'),
+    (10, 10, 0, 820, '2025-04-10');
 
 -- METODO_PAGO (70 filas)
 INSERT INTO METODO_PAGO (metpag_id) VALUES
@@ -1814,17 +1821,17 @@ INSERT INTO PERSONA_JURIDICA (fk_cli_id, perjur_rif, perjur_razonsocial, perjur_
     (400, 'J-20000400-0', 'Empresa 400 C.A.', 'Representante 400');
 
 -- PERMISO (10 filas)
-INSERT INTO PERMISO (perm_id, perm_moduloacceso) VALUES
-    (1, 'VENTAS'),
-    (2, 'COMPRAS'),
-    (3, 'INVENTARIO'),
-    (4, 'USUARIOS'),
-    (5, 'REPORTES'),
-    (6, 'SUBASTAS'),
-    (7, 'PRODUCCION'),
-    (8, 'CALIDAD'),
-    (9, 'FINANZAS'),
-    (10, 'CONFIG');
+-- Permisos granulares: VER/CREAR/EDITAR/ELIMINAR por cada recurso administrable.
+INSERT INTO PERMISO (perm_recurso, perm_accion)
+SELECT res.r, act.a
+FROM (VALUES
+    ('USUARIO'),('ROL'),
+    ('PRODUCTO'),('MOLDE_ROSTRO'),('TIPO_CUERPO'),('COLOR'),('MATERIAL'),('ERA'),('EXCLUSIVIDAD'),
+    ('PERSONAJE'),('PROFESION'),('COMPATIBILIDAD'),('PACK'),('PATENTE'),
+    ('LOTE'),('CALIDAD'),
+    ('REPORTE'),('COSTO')
+) AS res(r)
+CROSS JOIN (VALUES ('VER'),('CREAR'),('EDITAR'),('ELIMINAR')) AS act(a);
 
 -- ROL (10 filas)
 INSERT INTO ROL (rol_id, rol_nombre) VALUES
@@ -2243,18 +2250,52 @@ INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_em
     (399, 'cliente399', 'hash_00399', 'cliente399@mail.com', 9, NULL, 399),
     (400, 'cliente400', 'hash_00400', 'cliente400@mail.com', 10, NULL, 400);
 
+-- Usuarios administradores del equipo (rol Admin = 1, vinculados a empleados, contraseña: password)
+INSERT INTO USUARIO (usu_id, usu_nombre, usu_clave, usu_correo, fk_rol_id, fk_emp_id, fk_cli_id) VALUES
+    (401, 'Ana K', 'password', 'ana.k@mattelucab.com', 1, 1, NULL),
+    (402, 'Cris', 'password', 'cris@mattelucab.com', 1, 2, NULL),
+    (403, 'Marian', 'password', 'marian@mattelucab.com', 1, 3, NULL),
+    (404, 'Leo', 'password', 'leo@mattelucab.com', 1, 4, NULL);
+
 -- PERMISO_ROL (10 filas)
-INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id) VALUES
-    (1, 1),
-    (2, 2),
-    (3, 3),
-    (4, 4),
-    (5, 5),
-    (6, 6),
-    (7, 7),
-    (8, 8),
-    (9, 9),
-    (10, 10);
+-- Matriz de permisos por rol (compuesta con permisos granulares).
+-- Admin (1): acceso total.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id) SELECT 1, perm_id FROM PERMISO;
+-- Gerente (2): CRUD completo del genoma + ver reportes y costos.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 2, perm_id FROM PERMISO
+     WHERE perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL','ERA','EXCLUSIVIDAD','PERSONAJE','PROFESION','COMPATIBILIDAD','PACK','PATENTE','LOTE','CALIDAD')
+        OR (perm_recurso IN ('REPORTE','COSTO') AND perm_accion = 'VER');
+-- Vendedor (3): ver catalogo y fichas (sin costos).
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 3, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('PRODUCTO','PACK','PERSONAJE','PROFESION','COMPATIBILIDAD');
+-- Cliente (4): igual que invitado — ver catalogo (sin costos).
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 4, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('PRODUCTO','PACK','PERSONAJE','PROFESION','COMPATIBILIDAD');
+-- Inspector (5): ver catalogo/maestros y gestionar lotes + calidad.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 5, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('PRODUCTO','MOLDE_ROSTRO','TIPO_CUERPO','COLOR','MATERIAL');
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 5, perm_id FROM PERMISO
+     WHERE (perm_recurso = 'LOTE' AND perm_accion IN ('VER','CREAR'))
+        OR (perm_recurso = 'CALIDAD' AND perm_accion IN ('VER','CREAR'));
+-- Almacen (6): ver catalogo.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 6, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
+-- Comprador (7): ver catalogo.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 7, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
+-- Auditor (8): ver reportes, costos y catalogo (solo lectura).
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 8, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso IN ('REPORTE','COSTO','PRODUCTO');
+-- Soporte (9): administrar usuarios (ver/editar) y ver roles.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 9, perm_id FROM PERMISO
+     WHERE (perm_recurso='USUARIO' AND perm_accion IN ('VER','EDITAR'))
+        OR (perm_recurso='ROL' AND perm_accion='VER');
+-- Invitado (10): ver catalogo.
+INSERT INTO PERMISO_ROL (fk_rol_id, fk_perm_id)
+    SELECT 10, perm_id FROM PERMISO WHERE perm_accion='VER' AND perm_recurso='PRODUCTO';
 
 -- CONDICION_SUBASTA (10 filas)
 INSERT INTO CONDICION_SUBASTA (consub_id, consub_nombre) VALUES
@@ -10950,6 +10991,11 @@ INSERT INTO HISTORICO_MEMBRESIA (hismem_fechaini, hismem_fechafin, fk_mem_id, fk
     ('2024-09-01', NULL, 9, 9),
     ('2024-10-01', NULL, 10, 10);
 
+-- Diseñador (I+D) de cada diseño (se asigna aqui, ya cargado EMPLEADO).
+UPDATE DISENO SET fk_emp_id = CASE dis_id
+    WHEN 1 THEN 1 WHEN 2 THEN 2 WHEN 3 THEN 3 WHEN 4 THEN 4 WHEN 5 THEN 5
+    WHEN 6 THEN 1 WHEN 7 THEN 2 WHEN 8 THEN 3 WHEN 9 THEN 4 WHEN 10 THEN 5 END;
+
 -- ---------------------------------------------------------------
 -- Reinicio de secuencias SERIAL (se insertaron IDs explicitos)
 -- ---------------------------------------------------------------
@@ -10978,9 +11024,9 @@ SELECT setval('hub_regional_hubreg_id_seq', 10, true);
 SELECT setval('almacen_alm_id_seq', 10, true);
 SELECT setval('metodo_pago_metpag_id_seq', 70, true);
 SELECT setval('cliente_cli_id_seq', 400, true);
-SELECT setval('permiso_perm_id_seq', 10, true);
+SELECT setval('permiso_perm_id_seq', (SELECT MAX(perm_id) FROM PERMISO), true);
 SELECT setval('rol_rol_id_seq', 10, true);
-SELECT setval('usuario_usu_id_seq', 400, true);
+SELECT setval('usuario_usu_id_seq', 404, true);
 SELECT setval('condicion_subasta_consub_id_seq', 10, true);
 SELECT setval('subasta_sub_id_seq', 100, true);
 SELECT setval('puja_subasta_pujsub_id_seq', 6000, true);

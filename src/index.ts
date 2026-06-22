@@ -13,6 +13,8 @@ import ClienteService from "./api/ClienteService";
 import UsuarioService from "./api/UsuarioService";
 import SubastaService from "./api/SubastaService";
 import CompraService from "./api/CompraService";
+import AuthService from "./api/AuthService";
+import ReportesService from "./api/ReportesService";
 
 const server = serve({
   routes: {
@@ -30,6 +32,8 @@ const server = serve({
     ...UsuarioService.routes,
     ...SubastaService.routes,
     ...CompraService.routes,
+    ...AuthService.routes,
+    ...ReportesService.routes,
   },
 
   development: process.env.NODE_ENV !== "production" && {
