@@ -366,14 +366,29 @@ export async function getPacks(): Promise<Pack[]> {
   ]);
   const precio = (id: number) =>
     productos.find((p: any) => p.pro_id === id)?.pro_preciobase ?? 0;
-  return sets.map((s: any): Pack => ({
-    id: `${s.fk_pro1}-${s.fk_pro2}`,
-    sku: `SET-${s.fk_pro1}-${s.fk_pro2}`,
-    nombre: s.detset_nombre,
-    precioUsd: precio(s.fk_pro1) + precio(s.fk_pro2),
-    productosIds: [sid(s.fk_pro1), sid(s.fk_pro2)],
-    descripcion: "Set de regalo que agrupa varios productos bajo un SKU.",
-  }));
+  const byName = new Map<string, { pairs: [number, number][]; proIds: Set<number> }>();
+  for (const s of sets as any[]) {
+    const name = s.detset_nombre;
+    if (!byName.has(name)) byName.set(name, { pairs: [], proIds: new Set() });
+    const g = byName.get(name)!;
+    g.pairs.push([s.fk_pro1, s.fk_pro2]);
+    g.proIds.add(s.fk_pro1);
+    g.proIds.add(s.fk_pro2);
+  }
+  return [...byName.entries()].map(([name, g]) => {
+    const proIds = [...g.proIds];
+    const prodIds = proIds.map(sid);
+    const total = proIds.reduce((s, id) => s + precio(id), 0);
+    return {
+      id: `group-${encodeURIComponent(name)}`,
+      sku: `SET-${proIds.join("-")}`,
+      nombre: name,
+      precioUsd: total,
+      productosIds: prodIds,
+      descripcion: "Set de regalo que agrupa varios productos bajo un SKU.",
+      _proPairs: g.pairs.map(([a, b]) => [sid(a), sid(b)]),
+    };
+  });
 }
 
 /* ===================================================================== *
@@ -751,6 +766,16 @@ export async function actualizarPatente(id: string, codigo: string, empId: strin
 /** Crea un set/pack (par de productos compatibles) — aparece en la pestaña de Sets. */
 export async function crearSet(nombre: string, pro1: string, pro2: string): Promise<void> {
   await send("POST", "/detalle_set", { fk_pro1: Number(pro1), fk_pro2: Number(pro2), detset_nombre: nombre });
+}
+
+/** Actualiza el nombre de un set/pack. */
+export async function actualizarSet(pro1: string, pro2: string, nombre: string): Promise<void> {
+  await send("PUT", "/detalle_set", { fk_pro1: Number(pro1), fk_pro2: Number(pro2), detset_nombre: nombre });
+}
+
+/** Elimina un set/pack. */
+export async function eliminarSet(pro1: string, pro2: string): Promise<void> {
+  await send("DELETE", "/detalle_set", { fk_pro1: Number(pro1), fk_pro2: Number(pro2) });
 }
 
 /* --------------------- Reportes analíticos (lógica en la BD) --------------------- */
