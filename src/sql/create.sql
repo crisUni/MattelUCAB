@@ -101,11 +101,14 @@ CREATE TABLE IF NOT EXISTS COMPATIBILIDAD_JUGUETE (
 -- JUGUETE, por lo que se mantiene el enlace a JUGUETE (como en el script
 -- original). Para conformidad estricta con el ER, cambiar fk_jug_id por
 -- una FK a PRODUCTO(pro_id).
+-- PK por (juguete, zona): cada zona admite un unico color, pero un mismo color
+-- puede repetirse en varias zonas (p.ej. piel y labios rosados). La PK anterior
+-- (fk_col_id, fk_jug_id) impedia reutilizar un color en otra zona.
 CREATE TABLE IF NOT EXISTS COLOR_PRODUCTO (
-    fk_col_id INT,
+    fk_col_id INT NOT NULL,
     fk_jug_id INT,
     colpro_zonaaplicacion VARCHAR(50) NOT NULL,
-    PRIMARY KEY (fk_col_id, fk_jug_id),
+    PRIMARY KEY (fk_jug_id, colpro_zonaaplicacion),
     FOREIGN KEY (fk_col_id) REFERENCES COLOR (col_id),
     FOREIGN KEY (fk_jug_id) REFERENCES JUGUETE (jug_id)
 );
